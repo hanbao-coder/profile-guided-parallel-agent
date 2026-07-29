@@ -242,3 +242,17 @@
 - All strategies matched the serial golden output.
 - Added versioned raw reports, a comparison figure, and 3 automated tests.
 - Expanded the automated suite to 51 passing tests.
+
+## D16 — Communication-aware critical-path DAG scheduling
+
+- Added a deterministic homogeneous-worker list-scheduling model.
+- Compared FIFO with upward-rank critical-path priority including edge
+  communication estimates.
+- Added compute-critical and communication-critical DAGs.
+- Compute-critical makespan fell from 2.18 to 1.85 modeled seconds (1.178x);
+  idle ratio fell from 35.6% to 24.1%.
+- Communication-critical makespan fell from 0.98 to 0.78 modeled seconds
+  (1.256x); idle ratio fell from 39.8% to 24.4%.
+- Renamed the upward-rank field to avoid presenting it as a makespan lower bound.
+- Added versioned schedules, a comparison figure, and 3 automated tests.
+- Expanded the automated suite to 54 passing tests.

@@ -1,0 +1,5 @@
+﻿graph,policy,workers,makespan,communication_priority_longest_path,worker_idle_ratio,cross_worker_communication,speedup_over_fifo
+compute_critical,fifo,2,2.18,1.8900000000000003,0.35550458715596334,0.04,1.0
+compute_critical,critical_path,2,1.8500000000000003,1.8900000000000003,0.24054054054054064,0.06,1.1783783783783783
+communication_critical,fifo,2,0.9799999999999999,2.3800000000000003,0.3979591836734694,0.04,1.0
+communication_critical,critical_path,2,0.7799999999999999,2.3800000000000003,0.2435897435897435,0.08,1.2564102564102564

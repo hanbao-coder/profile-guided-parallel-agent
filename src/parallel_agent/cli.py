@@ -19,6 +19,10 @@ from .configuration_search_experiment import (
     run_configuration_search_experiment,
 )
 from .deepseek_adapter import DeepSeekAdapter, DeepSeekConfigurationError
+from .dag_scheduler import (
+    plot_dag_scheduling_experiment,
+    run_dag_scheduling_experiment,
+)
 from .plotting import plot_suite_results
 from .paired_generation_experiment import (
     plot_paired_generation_experiment,
@@ -208,6 +212,20 @@ def _parser() -> argparse.ArgumentParser:
     )
     plot_fusion.add_argument("summary_csv")
     plot_fusion.add_argument("--output-dir", required=True)
+
+    dag = commands.add_parser(
+        "dag-scheduling-experiment",
+        help="Compare FIFO and communication-aware critical-path scheduling.",
+    )
+    dag.add_argument("config")
+    dag.add_argument("--output-dir", required=True)
+
+    plot_dag = commands.add_parser(
+        "plot-dag-scheduling",
+        help="Plot DAG scheduling makespan and worker idle ratio.",
+    )
+    plot_dag.add_argument("summary_csv")
+    plot_dag.add_argument("--output-dir", required=True)
 
     agent = commands.add_parser("agent", help="Run the analyze-plan-generate loop.")
     agent.add_argument("source")
@@ -411,6 +429,20 @@ def main() -> None:
 
     if args.command == "plot-task-fusion":
         output = plot_task_fusion_experiment(
+            args.summary_csv, output_dir=args.output_dir
+        )
+        print(json.dumps({"figure": str(output)}, ensure_ascii=False))
+        return
+
+    if args.command == "dag-scheduling-experiment":
+        result = run_dag_scheduling_experiment(
+            args.config, output_dir=args.output_dir
+        )
+        print(json.dumps(result["overall"], indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "plot-dag-scheduling":
+        output = plot_dag_scheduling_experiment(
             args.summary_csv, output_dir=args.output_dir
         )
         print(json.dumps({"figure": str(output)}, ensure_ascii=False))

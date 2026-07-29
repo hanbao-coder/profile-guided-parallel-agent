@@ -94,7 +94,8 @@ Worker/Chunk 搜索与收益 Gate
 - 多尺度 Worker/Chunk 搜索、完整规模确认与独立留出评测；
 - DeepSeek 分析与确定性配置搜索的端到端工具接入及缓存；
 - 通信与复用感知任务融合及两类边界任务；
-- 51 项自动测试全部通过。
+- FIFO 与通信感知关键路径 DAG 调度模型；
+- 54 项自动测试全部通过。
 
 ### Agent 产物
 
@@ -323,6 +324,20 @@ Pairwise Distance 的一次生成在两轮修复后仍错误展开 NumPy 数组�
 
 ![任务融合实验](assets/task_fusion_formal_20260729/task_fusion_comparison.png)
 
+### 简化 DAG 调度模型
+
+进阶模块对比 FIFO 与包含边通信估计的 upward-rank 关键路径优先：
+
+| 图 | FIFO Makespan | 关键路径 Makespan | 提升 | 空闲比例变化 |
+|---|---:|---:|---:|---:|
+| 计算关键路径 | 2.18 | 1.85 | 1.178x | 35.6% → 24.1% |
+| 通信关键路径 | 0.98 | 0.78 | 1.256x | 39.8% → 24.4% |
+
+该结果来自确定性同构 Worker 列表调度模型，用于验证启发式，不表述为真实 Ray
+运行加速。upward rank 也只作为调度优先级，不称为实际 makespan 下界。
+
+![DAG 调度对比](assets/dag_scheduling_formal_20260729/dag_scheduling_comparison.png)
+
 ## 9. 相关工作依据
 
 - ParEval（HPDC 2024）：并行代码生成必须同时评价正确性与性能；
@@ -336,9 +351,10 @@ Pairwise Distance 的一次生成在两轮修复后仍错误展开 NumPy 数组�
 
 ## 10. 下一阶段计划
 
-1. 实现简化 DAG 的 FIFO 与关键路径优先对照；
+1. 冻结第一阶段方法并完成首次导师汇报；
 2. 条件允许时在 Linux/Ray 环境复现；
-3. 完成最终报告、PPT 和 Demo。
+3. 根据导师反馈决定是否继续扩展 DAG 或转向真实代码输入；
+4. 完成最终报告、PPT 和 Demo。
 
 ## 11. 希望导师确认的问题
 

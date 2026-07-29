@@ -1,0 +1,209 @@
+{
+  "graph": "communication_critical",
+  "tasks": [
+    {
+      "name": "load",
+      "duration": 0.12
+    },
+    {
+      "name": "light_a",
+      "duration": 0.2
+    },
+    {
+      "name": "light_b",
+      "duration": 0.2
+    },
+    {
+      "name": "transfer_1",
+      "duration": 0.18
+    },
+    {
+      "name": "transfer_2",
+      "duration": 0.18
+    },
+    {
+      "name": "transfer_3",
+      "duration": 0.18
+    },
+    {
+      "name": "merge",
+      "duration": 0.12
+    }
+  ],
+  "edges": [
+    {
+      "source": "load",
+      "target": "light_a",
+      "communication": 0.02
+    },
+    {
+      "source": "load",
+      "target": "light_b",
+      "communication": 0.02
+    },
+    {
+      "source": "load",
+      "target": "transfer_1",
+      "communication": 0.4
+    },
+    {
+      "source": "transfer_1",
+      "target": "transfer_2",
+      "communication": 0.4
+    },
+    {
+      "source": "transfer_2",
+      "target": "transfer_3",
+      "communication": 0.4
+    },
+    {
+      "source": "light_a",
+      "target": "merge",
+      "communication": 0.02
+    },
+    {
+      "source": "light_b",
+      "target": "merge",
+      "communication": 0.02
+    },
+    {
+      "source": "transfer_3",
+      "target": "merge",
+      "communication": 0.4
+    }
+  ],
+  "results": {
+    "fifo": {
+      "policy": "fifo",
+      "workers": 2,
+      "makespan": 0.9799999999999999,
+      "communication_priority_longest_path": 2.3800000000000003,
+      "worker_idle_ratio": 0.3979591836734694,
+      "cross_worker_communication": 0.04,
+      "schedule": [
+        {
+          "name": "load",
+          "worker": 0,
+          "start": 0.0,
+          "finish": 0.12,
+          "duration": 0.12,
+          "priority": 0.0
+        },
+        {
+          "name": "light_a",
+          "worker": 0,
+          "start": 0.12,
+          "finish": 0.32,
+          "duration": 0.2,
+          "priority": -1.0
+        },
+        {
+          "name": "light_b",
+          "worker": 1,
+          "start": 0.13999999999999999,
+          "finish": 0.33999999999999997,
+          "duration": 0.2,
+          "priority": -2.0
+        },
+        {
+          "name": "transfer_1",
+          "worker": 0,
+          "start": 0.32,
+          "finish": 0.5,
+          "duration": 0.18,
+          "priority": -3.0
+        },
+        {
+          "name": "transfer_2",
+          "worker": 0,
+          "start": 0.5,
+          "finish": 0.6799999999999999,
+          "duration": 0.18,
+          "priority": -4.0
+        },
+        {
+          "name": "transfer_3",
+          "worker": 0,
+          "start": 0.6799999999999999,
+          "finish": 0.8599999999999999,
+          "duration": 0.18,
+          "priority": -5.0
+        },
+        {
+          "name": "merge",
+          "worker": 0,
+          "start": 0.8599999999999999,
+          "finish": 0.9799999999999999,
+          "duration": 0.12,
+          "priority": -6.0
+        }
+      ]
+    },
+    "critical_path": {
+      "policy": "critical_path",
+      "workers": 2,
+      "makespan": 0.7799999999999999,
+      "communication_priority_longest_path": 2.3800000000000003,
+      "worker_idle_ratio": 0.2435897435897435,
+      "cross_worker_communication": 0.08,
+      "schedule": [
+        {
+          "name": "load",
+          "worker": 0,
+          "start": 0.0,
+          "finish": 0.12,
+          "duration": 0.12,
+          "priority": 2.3800000000000003
+        },
+        {
+          "name": "transfer_1",
+          "worker": 0,
+          "start": 0.12,
+          "finish": 0.3,
+          "duration": 0.18,
+          "priority": 1.86
+        },
+        {
+          "name": "light_a",
+          "worker": 1,
+          "start": 0.13999999999999999,
+          "finish": 0.33999999999999997,
+          "duration": 0.2,
+          "priority": 0.33999999999999997
+        },
+        {
+          "name": "transfer_2",
+          "worker": 0,
+          "start": 0.3,
+          "finish": 0.48,
+          "duration": 0.18,
+          "priority": 1.28
+        },
+        {
+          "name": "light_b",
+          "worker": 1,
+          "start": 0.33999999999999997,
+          "finish": 0.54,
+          "duration": 0.2,
+          "priority": 0.33999999999999997
+        },
+        {
+          "name": "transfer_3",
+          "worker": 0,
+          "start": 0.48,
+          "finish": 0.6599999999999999,
+          "duration": 0.18,
+          "priority": 0.7
+        },
+        {
+          "name": "merge",
+          "worker": 0,
+          "start": 0.6599999999999999,
+          "finish": 0.7799999999999999,
+          "duration": 0.12,
+          "priority": 0.12
+        }
+      ]
+    }
+  }
+}

@@ -90,6 +90,8 @@ DeepSeek 分析与确定性性能搜索的端到端工具接入见
 固定配置、小样本直接决策与完整三阶段方法的正式消融见
 `docs/formal-configuration-ablation.md`。
 通信与复用感知任务融合实验见 `docs/task-fusion-experiment.md`。
+FIFO 与通信感知关键路径 DAG 调度模型见
+`docs/dag-scheduling-experiment.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -213,6 +215,13 @@ parallel-agent agent benchmarks/load_imbalance/workload.py `
 ```powershell
 parallel-agent task-fusion-experiment configs/task_fusion_formal.yaml `
   --output-dir results/raw/task_fusion_formal
+```
+
+运行 DAG 调度模型实验：
+
+```powershell
+parallel-agent dag-scheduling-experiment configs/dag_scheduling_formal.yaml `
+  --output-dir results/raw/dag_scheduling_formal
 ```
 
 如果第一次接触科研项目，请从以下两份文档开始：
