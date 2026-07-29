@@ -19,3 +19,17 @@ def test_first_stage_release_verifier() -> None:
     assert completed.returncode == 0, completed.stderr
     assert "第一阶段科研交付包验收完成" in completed.stdout
     assert "DeepSeek API：未调用，费用为 0" in completed.stdout
+
+
+def test_current_research_core_verifier() -> None:
+    completed = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "verify_research_core.py")],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "当前研究核心验收完成" in completed.stdout
+    assert "Load Imbalance" in completed.stdout
+    assert "DeepSeek API：未调用，费用为 0" in completed.stdout

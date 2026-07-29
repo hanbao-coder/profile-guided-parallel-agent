@@ -48,6 +48,9 @@ jobs:
       - name: Verify frozen research package and run tests
         run: python scripts/verify_first_stage.py --run-tests
 
+      - name: Verify current Ray research core
+        run: python scripts/verify_research_core.py
+
       - name: Run real single-node Ray smoke experiment
         run: |
           mkdir -p work
