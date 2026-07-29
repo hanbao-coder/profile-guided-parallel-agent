@@ -241,3 +241,91 @@ def test_invalid_task_count_enters_code_repair_loop(
     assert report["attempts"][0]["result_correct"] is True
     assert report["attempts"][0]["task_count_valid"] is False
     assert report["attempts"][1]["task_count_valid"] is True
+
+
+def test_configuration_search_controller_can_select_serial(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_search(*args, **kwargs):
+        del args, kwargs
+        return {
+            "status": "completed",
+            "selection": {
+                "selected_label": "serial",
+                "selected_configuration": None,
+            },
+            "holdout": {
+                "selected_speedup": 1.0,
+                "fixed_speedup": 0.5,
+                "selected_over_fixed": 2.0,
+            },
+            "cache": {"enabled": False, "hit": False, "key": "test"},
+        }
+
+    monkeypatch.setattr(
+        "parallel_agent.agent_pipeline.run_configuration_search",
+        fake_search,
+    )
+    report = run_agent_pipeline(
+        ROOT / "benchmarks/tiny_tasks/workload.py",
+        output_dir=tmp_path,
+        size=8,
+        seed=42,
+        workers=2,
+        chunks=2,
+        feedback_mode="performance",
+        performance_controller="configuration_search",
+        search_warmups=0,
+    )
+
+    assert report["status"] == "accepted"
+    assert report["selected_mode"] == "serial"
+    assert report["performance_controller"] == "configuration_search"
+    assert report["configuration_search"]["selected_label"] == "serial"
+    assert not (tmp_path / "candidate.py").exists()
+
+
+def test_configuration_search_controller_deploys_selected_plan(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_search(*args, **kwargs):
+        del args, kwargs
+        return {
+            "status": "completed",
+            "selection": {
+                "selected_label": "w1_c1",
+                "selected_configuration": {"workers": 1, "chunks": 1},
+            },
+            "holdout": {
+                "selected_speedup": 1.1,
+                "fixed_speedup": 0.9,
+                "selected_over_fixed": 1.2,
+            },
+            "cache": {"enabled": True, "hit": True, "key": "test"},
+        }
+
+    monkeypatch.setattr(
+        "parallel_agent.agent_pipeline.run_configuration_search",
+        fake_search,
+    )
+    report = run_agent_pipeline(
+        ROOT / "benchmarks/prime_count/workload.py",
+        output_dir=tmp_path,
+        size=2,
+        seed=42,
+        workers=2,
+        chunks=2,
+        timeout_seconds=30,
+        feedback_mode="performance",
+        performance_repeats=1,
+        performance_controller="configuration_search",
+        search_warmups=0,
+    )
+
+    assert report["status"] == "accepted"
+    assert report["selected_mode"] == "parallel"
+    assert report["final_plan"]["workers"] == 1
+    assert report["final_plan"]["chunks"] == 1
+    assert report["configuration_search"]["cache"]["hit"] is True

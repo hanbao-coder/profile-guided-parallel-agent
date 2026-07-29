@@ -85,6 +85,8 @@ DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
 `docs/formal-paired-generation-experiment.md`。
 多尺度 Worker/Chunk 搜索与性能回退正式实验见
 `docs/formal-configuration-search.md`。
+DeepSeek 分析与确定性性能搜索的端到端工具接入见
+`docs/agent-performance-tool.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -185,6 +187,23 @@ parallel-agent configuration-search-experiment `
 
 该实验先在小样本上搜索 Worker/Chunk，再在完整规模上与固定配置比较，最后使用
 独立留出测量报告结果。
+
+让 DeepSeek 分析代码，并调用确定性多尺度性能工具：
+
+```powershell
+parallel-agent agent benchmarks/load_imbalance/workload.py `
+  --output-dir results/raw/agent_tool_run `
+  --size 64 `
+  --workers 4 `
+  --feedback-mode performance `
+  --performance-controller configuration_search `
+  --search-tuning-size 16 `
+  --search-cache-dir work/configuration-search-cache `
+  --adapter deepseek
+```
+
+正式实验不使用缓存；日常重复分析同一份代码、输入规模和机器环境时可使用缓存，
+避免重复支付完整搜索成本。
 
 如果第一次接触科研项目，请从以下两份文档开始：
 

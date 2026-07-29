@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
+import platform
 import random
 import statistics
 import time
@@ -280,6 +282,7 @@ def run_configuration_search(
     minimum_speedup: float = 1.05,
     minimum_relative_improvement: float = 1.05,
     order_seed: int = 42,
+    cache_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     source = Path(source_path).resolve()
     effective_tuning_size = (
@@ -289,6 +292,50 @@ def run_configuration_search(
         raise ValueError("size and tuning_size must be positive")
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
+    cache_payload = {
+        "schema_version": "1.0",
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "size": size,
+        "tuning_size": effective_tuning_size,
+        "seed": seed,
+        "max_workers": max_workers,
+        "chunk_multipliers": list(chunk_multipliers),
+        "tuning_repeats": tuning_repeats,
+        "confirmation_repeats": confirmation_repeats,
+        "holdout_repeats": holdout_repeats,
+        "warmups": warmups,
+        "timeout_seconds": timeout_seconds,
+        "minimum_speedup": minimum_speedup,
+        "minimum_relative_improvement": minimum_relative_improvement,
+        "order_seed": order_seed,
+        "environment": {
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            "logical_cpus": os.cpu_count(),
+        },
+    }
+    cache_key = hashlib.sha256(
+        json.dumps(
+            cache_payload, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+    ).hexdigest()
+    cache_path = (
+        Path(cache_dir).resolve() / f"{cache_key}.json"
+        if cache_dir is not None
+        else None
+    )
+    if cache_path is not None and cache_path.exists():
+        report = json.loads(cache_path.read_text(encoding="utf-8"))
+        report["cache"] = {
+            "enabled": True,
+            "hit": True,
+            "key": cache_key,
+        }
+        (destination / "configuration_search_report.json").write_text(
+            json.dumps(report, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return report
     adapter = OfflineHeuristicAdapter()
     analysis = adapter.analyze(source)
     if not analysis.parallelizable:
@@ -298,11 +345,22 @@ def run_configuration_search(
             "analysis": analysis.to_dict(),
             "selected_label": "serial",
             "reason": analysis.rationale,
+            "cache": {
+                "enabled": cache_path is not None,
+                "hit": False,
+                "key": cache_key,
+            },
         }
         (destination / "configuration_search_report.json").write_text(
             json.dumps(report, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+        if cache_path is not None:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(
+                json.dumps(report, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
         return report
 
     grid = configuration_grid(
@@ -587,9 +645,20 @@ def run_configuration_search(
             "break_even_vs_fixed_repetitions": break_even_vs_fixed,
         },
         "warmup_records": warmup_records,
+        "cache": {
+            "enabled": cache_path is not None,
+            "hit": False,
+            "key": cache_key,
+        },
     }
     (destination / "configuration_search_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    if cache_path is not None:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
     return report

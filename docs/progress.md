@@ -199,3 +199,18 @@
 - Load Imbalance improved by 1.315x over fixed configuration on average.
 - Large Payload selected serial and was 2.231x faster than fixed parallelism.
 - Added explicit search-cost amortization against serial and fixed baselines.
+
+## D13 — Agent-controlled deterministic performance tool
+
+- Added `performance_controller=configuration_search` to the end-to-end Agent.
+- DeepSeek Pro handles code analysis and Flash produces the structured plan.
+- Worker/Chunk decisions come from measured multi-scale search instead of model
+  guesses.
+- Added cache keys over source, scale, thresholds, Python, and machine environment.
+- Formal experiments leave the cache disabled; repeated deployment runs may reuse it.
+- A real DeepSeek smoke run on Load Imbalance selected 4 workers / 8 chunks:
+  - adaptive holdout speedup: 1.108x;
+  - fixed configuration speedup: 0.861x;
+  - adaptive-over-fixed ratio: 1.286x;
+  - final independent validation: 1.117x with correct output.
+- The model made two text-only calls and consumed 2,115 tokens.

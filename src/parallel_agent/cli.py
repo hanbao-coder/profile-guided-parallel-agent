@@ -167,6 +167,13 @@ def _parser() -> argparse.ArgumentParser:
         "--minimum-relative-improvement", type=float, default=1.05
     )
     search.add_argument("--order-seed", type=int, default=42)
+    search.add_argument(
+        "--cache-dir",
+        help=(
+            "Reuse an identical source/configuration/environment search "
+            "result outside formal experiments."
+        ),
+    )
 
     search_experiment = commands.add_parser(
         "configuration-search-experiment",
@@ -209,6 +216,26 @@ def _parser() -> argparse.ArgumentParser:
     )
     agent.add_argument("--minimum-speedup", type=float, default=1.05)
     agent.add_argument("--max-performance-attempts", type=int, default=1)
+    agent.add_argument(
+        "--performance-controller",
+        choices=["llm_feedback", "configuration_search"],
+        default="llm_feedback",
+        help=(
+            "Use model feedback or the deterministic multi-scale search tool "
+            "for performance decisions."
+        ),
+    )
+    agent.add_argument("--search-tuning-size", type=int)
+    agent.add_argument("--search-tuning-repeats", type=int, default=2)
+    agent.add_argument("--search-confirmation-repeats", type=int, default=2)
+    agent.add_argument("--search-holdout-repeats", type=int, default=5)
+    agent.add_argument("--search-warmups", type=int, default=1)
+    agent.add_argument(
+        "--search-minimum-relative-improvement",
+        type=float,
+        default=1.05,
+    )
+    agent.add_argument("--search-cache-dir")
     agent.add_argument(
         "--generation-mode",
         choices=["template", "llm"],
@@ -334,6 +361,7 @@ def main() -> None:
                 args.minimum_relative_improvement
             ),
             order_seed=args.order_seed,
+            cache_dir=args.cache_dir,
         )
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return
@@ -375,6 +403,18 @@ def main() -> None:
             performance_repeats=args.performance_repeats,
             minimum_speedup=args.minimum_speedup,
             max_performance_attempts=args.max_performance_attempts,
+            performance_controller=args.performance_controller,
+            search_tuning_size=args.search_tuning_size,
+            search_tuning_repeats=args.search_tuning_repeats,
+            search_confirmation_repeats=(
+                args.search_confirmation_repeats
+            ),
+            search_holdout_repeats=args.search_holdout_repeats,
+            search_warmups=args.search_warmups,
+            search_minimum_relative_improvement=(
+                args.search_minimum_relative_improvement
+            ),
+            search_cache_dir=args.search_cache_dir,
             generation_mode=args.generation_mode,
             max_code_repair_attempts=args.max_code_repairs,
             adapter=adapter,

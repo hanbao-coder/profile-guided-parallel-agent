@@ -13,6 +13,7 @@ from .controlled_codegen import (
     GeneratedCodeSafetyError,
     generate_controlled_candidate,
 )
+from .configuration_search import run_configuration_search
 from .generator import generate_candidate
 
 
@@ -183,6 +184,25 @@ def _serial_fallback_plan(
     return fallback
 
 
+def _configuration_search_summary(
+    report: dict[str, Any],
+) -> dict[str, Any]:
+    selection = report.get("selection", {})
+    holdout = report.get("holdout", {})
+    return {
+        "status": report.get("status"),
+        "report_path": "configuration_search/configuration_search_report.json",
+        "selected_label": selection.get(
+            "selected_label", report.get("selected_label")
+        ),
+        "selected_configuration": selection.get("selected_configuration"),
+        "selected_speedup": holdout.get("selected_speedup"),
+        "fixed_speedup": holdout.get("fixed_speedup"),
+        "selected_over_fixed": holdout.get("selected_over_fixed"),
+        "cache": report.get("cache"),
+    }
+
+
 def run_agent_pipeline(
     source_path: str | Path,
     *,
@@ -199,6 +219,14 @@ def run_agent_pipeline(
     max_performance_attempts: int = 1,
     generation_mode: str = "template",
     max_code_repair_attempts: int = 2,
+    performance_controller: str = "llm_feedback",
+    search_tuning_size: int | None = None,
+    search_tuning_repeats: int = 2,
+    search_confirmation_repeats: int = 2,
+    search_holdout_repeats: int = 5,
+    search_warmups: int = 1,
+    search_minimum_relative_improvement: float = 1.05,
+    search_cache_dir: str | Path | None = None,
     adapter: AgentAdapter | None = None,
     analysis_override: AnalysisArtifact | None = None,
     plan_override: ParallelPlan | None = None,
@@ -213,6 +241,29 @@ def run_agent_pipeline(
         raise ValueError("minimum_speedup must be positive")
     if generation_mode not in {"template", "llm"}:
         raise ValueError("generation_mode must be template or llm")
+    if performance_controller not in {
+        "llm_feedback",
+        "configuration_search",
+    }:
+        raise ValueError(
+            "performance_controller must be llm_feedback or "
+            "configuration_search"
+        )
+    if (
+        performance_controller == "configuration_search"
+        and feedback_mode != "performance"
+    ):
+        raise ValueError(
+            "configuration_search controller requires performance feedback mode"
+        )
+    if (
+        performance_controller == "configuration_search"
+        and generation_mode != "template"
+    ):
+        raise ValueError(
+            "configuration_search currently requires deterministic template "
+            "generation so the measured and deployed candidates are identical"
+        )
     if (analysis_override is None) != (plan_override is None):
         raise ValueError(
             "analysis_override and plan_override must be provided together"
@@ -245,6 +296,7 @@ def run_agent_pipeline(
             "adapter": selected_adapter.name,
             "feedback_mode": feedback_mode,
             "generation_mode": generation_mode,
+            "performance_controller": performance_controller,
             "correct": None,
             "selected_mode": "serial",
             "reason": plan.reasons,
@@ -255,6 +307,85 @@ def run_agent_pipeline(
         return report
 
     current_plan = plan
+    configuration_search_report: dict[str, Any] | None = None
+    if performance_controller == "configuration_search":
+        configuration_search_report = run_configuration_search(
+            source_path,
+            output_dir=destination / "configuration_search",
+            size=size,
+            tuning_size=search_tuning_size,
+            seed=seed,
+            max_workers=workers,
+            tuning_repeats=search_tuning_repeats,
+            confirmation_repeats=search_confirmation_repeats,
+            holdout_repeats=search_holdout_repeats,
+            warmups=search_warmups,
+            timeout_seconds=timeout_seconds,
+            minimum_speedup=minimum_speedup,
+            minimum_relative_improvement=(
+                search_minimum_relative_improvement
+            ),
+            order_seed=seed,
+            cache_dir=search_cache_dir,
+        )
+        search_summary = _configuration_search_summary(
+            configuration_search_report
+        )
+        selected = configuration_search_report.get(
+            "selection", {}
+        ).get("selected_configuration")
+        if (
+            configuration_search_report.get("status") != "completed"
+            or selected is None
+        ):
+            current_plan = _serial_fallback_plan(
+                current_plan,
+                reason=(
+                    "Deterministic configuration search rejected parallel "
+                    "execution or found no robust full-scale gain."
+                ),
+            )
+            _write_json(
+                destination / "parallel_plan.json", current_plan.to_dict()
+            )
+            report = {
+                "status": "accepted",
+                "adapter": selected_adapter.name,
+                "feedback_mode": feedback_mode,
+                "generation_mode": generation_mode,
+                "performance_controller": performance_controller,
+                "correct": True,
+                "selected_mode": "serial",
+                "performance_gate_passed": False,
+                "repair_attempts_used": 0,
+                "code_repair_attempts_used": 0,
+                "performance_attempts_used": 0,
+                "final_plan": current_plan.to_dict(),
+                "configuration_search": search_summary,
+                "attempts": [],
+            }
+            _write_model_traces(destination, selected_adapter)
+            _write_json(destination / "run_report.json", report)
+            return report
+        current_plan = ParallelPlan(
+            schema_version=plan.schema_version,
+            source_path=plan.source_path,
+            parallelizable=True,
+            backend="multiprocessing",
+            strategy="map_reduce",
+            workers=int(selected["workers"]),
+            chunks=int(selected["chunks"]),
+            correctness_gate=True,
+            fallback="serial",
+            reasons=plan.reasons
+            + [
+                "Deterministic multi-scale search selected "
+                f"{selected['workers']} worker(s) and "
+                f"{selected['chunks']} chunk(s)."
+            ],
+        )
+        current_plan.validate()
+        _write_json(destination / "parallel_plan.json", current_plan.to_dict())
     attempts: list[dict[str, Any]] = []
     correct = False
     selected_mode: str | None = None
@@ -460,8 +591,16 @@ def run_agent_pipeline(
             )
             continue
 
-        if feedback_mode != "performance":
+        if (
+            feedback_mode != "performance"
+            or performance_controller == "configuration_search"
+        ):
             selected_mode = "parallel"
+            performance_gate_passed = (
+                performance["beneficial"]
+                if performance_controller == "configuration_search"
+                else None
+            )
             break
 
         performance_gate_passed = performance["beneficial"]
@@ -518,6 +657,7 @@ def run_agent_pipeline(
         "adapter": selected_adapter.name,
         "feedback_mode": feedback_mode,
         "generation_mode": generation_mode,
+        "performance_controller": performance_controller,
         "correct": correct,
         "selected_mode": selected_mode,
         "performance_gate_passed": performance_gate_passed,
@@ -527,6 +667,10 @@ def run_agent_pipeline(
         "final_plan": current_plan.to_dict(),
         "attempts": attempts,
     }
+    if configuration_search_report is not None:
+        report["configuration_search"] = _configuration_search_summary(
+            configuration_search_report
+        )
     _write_model_traces(destination, selected_adapter)
     _write_json(destination / "run_report.json", report)
     return report

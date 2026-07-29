@@ -101,3 +101,38 @@ def test_configuration_search_separates_tuning_and_holdout(
     assert (
         tmp_path / "configuration_search_report.json"
     ).exists()
+
+
+def test_configuration_search_reuses_identical_environment_cache(
+    tmp_path: Path,
+) -> None:
+    arguments = {
+        "size": 2,
+        "tuning_size": 1,
+        "seed": 42,
+        "max_workers": 1,
+        "chunk_multipliers": (1,),
+        "tuning_repeats": 1,
+        "confirmation_repeats": 0,
+        "holdout_repeats": 1,
+        "warmups": 0,
+        "timeout_seconds": 30,
+        "minimum_speedup": 1.01,
+        "order_seed": 123,
+        "cache_dir": tmp_path / "cache",
+    }
+    first = run_configuration_search(
+        ROOT / "benchmarks/prime_count/workload.py",
+        output_dir=tmp_path / "first",
+        **arguments,
+    )
+    second = run_configuration_search(
+        ROOT / "benchmarks/prime_count/workload.py",
+        output_dir=tmp_path / "second",
+        **arguments,
+    )
+
+    assert first["cache"]["hit"] is False
+    assert second["cache"]["hit"] is True
+    assert first["cache"]["key"] == second["cache"]["key"]
+    assert second["selection"] == first["selection"]
