@@ -132,6 +132,12 @@ def _parser() -> argparse.ArgumentParser:
     agent.add_argument("--minimum-speedup", type=float, default=1.05)
     agent.add_argument("--max-performance-attempts", type=int, default=1)
     agent.add_argument(
+        "--generation-mode",
+        choices=["template", "llm"],
+        default="template",
+    )
+    agent.add_argument("--max-code-repairs", type=int, default=2)
+    agent.add_argument(
         "--adapter", choices=["offline", "deepseek"], default="offline"
     )
     return parser
@@ -231,6 +237,8 @@ def main() -> None:
             performance_repeats=args.performance_repeats,
             minimum_speedup=args.minimum_speedup,
             max_performance_attempts=args.max_performance_attempts,
+            generation_mode=args.generation_mode,
+            max_code_repair_attempts=args.max_code_repairs,
             adapter=adapter,
         )
     except DeepSeekConfigurationError as exc:

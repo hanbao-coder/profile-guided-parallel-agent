@@ -5,6 +5,7 @@ from typing import Protocol
 
 from .analyzer import analyze_file
 from .artifacts import AnalysisArtifact, ParallelPlan
+from .controlled_codegen import canonical_parallel_impl
 
 
 REQUIRED_CONTRACT = {"make_input", "unit", "combine", "equivalent"}
@@ -38,6 +39,17 @@ class AgentAdapter(Protocol):
         *,
         attempt: int,
     ) -> ParallelPlan: ...
+
+    def generate_parallel_impl(self, plan: ParallelPlan) -> str: ...
+
+    def repair_parallel_impl(
+        self,
+        plan: ParallelPlan,
+        code: str,
+        feedback: dict[str, object],
+        *,
+        attempt: int,
+    ) -> str: ...
 
 
 class OfflineHeuristicAdapter:
@@ -181,3 +193,18 @@ class OfflineHeuristicAdapter:
             optimized = plan
         optimized.validate()
         return optimized
+
+    def generate_parallel_impl(self, plan: ParallelPlan) -> str:
+        plan.validate()
+        return canonical_parallel_impl()
+
+    def repair_parallel_impl(
+        self,
+        plan: ParallelPlan,
+        code: str,
+        feedback: dict[str, object],
+        *,
+        attempt: int,
+    ) -> str:
+        del plan, code, feedback, attempt
+        return canonical_parallel_impl()

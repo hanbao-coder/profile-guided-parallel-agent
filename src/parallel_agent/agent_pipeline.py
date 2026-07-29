@@ -8,6 +8,10 @@ from typing import Any
 
 from .agent_adapter import AgentAdapter, OfflineHeuristicAdapter
 from .candidate_executor import execute_candidate
+from .controlled_codegen import (
+    GeneratedCodeSafetyError,
+    generate_controlled_candidate,
+)
 from .generator import generate_candidate
 
 
@@ -159,6 +163,8 @@ def run_agent_pipeline(
     performance_repeats: int = 3,
     minimum_speedup: float = 1.05,
     max_performance_attempts: int = 1,
+    generation_mode: str = "template",
+    max_code_repair_attempts: int = 2,
     adapter: AgentAdapter | None = None,
 ) -> dict[str, Any]:
     if feedback_mode not in {"one_shot", "correctness", "performance"}:
@@ -169,6 +175,8 @@ def run_agent_pipeline(
         raise ValueError("performance_repeats must be positive")
     if minimum_speedup <= 0:
         raise ValueError("minimum_speedup must be positive")
+    if generation_mode not in {"template", "llm"}:
+        raise ValueError("generation_mode must be template or llm")
     selected_adapter = adapter or OfflineHeuristicAdapter()
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
@@ -183,6 +191,7 @@ def run_agent_pipeline(
             "status": "rejected",
             "adapter": selected_adapter.name,
             "feedback_mode": feedback_mode,
+            "generation_mode": generation_mode,
             "correct": None,
             "selected_mode": "serial",
             "reason": plan.reasons,
@@ -199,11 +208,74 @@ def run_agent_pipeline(
     correctness_repairs_used = 0
     performance_attempts_used = 0
     performance_gate_passed: bool | None = None
+    parallel_impl_code: str | None = None
+    code_repairs_used = 0
     attempt_number = 0
     while True:
         attempt_number += 1
         _write_json(destination / "parallel_plan.json", current_plan.to_dict())
-        candidate = generate_candidate(current_plan, destination / "candidate.py")
+        if generation_mode == "llm":
+            if parallel_impl_code is None:
+                parallel_impl_code = selected_adapter.generate_parallel_impl(
+                    current_plan
+                )
+            impl_path = (
+                destination / f"parallel_impl_attempt_{attempt_number}.py"
+            )
+            impl_path.write_text(parallel_impl_code, encoding="utf-8")
+            try:
+                candidate, safety_report = generate_controlled_candidate(
+                    current_plan,
+                    parallel_impl_code,
+                    destination / "candidate.py",
+                )
+                _write_json(
+                    destination
+                    / f"code_safety_attempt_{attempt_number}.json",
+                    safety_report,
+                )
+            except GeneratedCodeSafetyError as exc:
+                safety_feedback = {
+                    "error_type": "generated_code_safety_error",
+                    "message": str(exc),
+                    "allowed_top_level_functions": [
+                        "partition_items",
+                        "execute_parallel",
+                    ],
+                }
+                attempts.append(
+                    {
+                        "attempt": attempt_number,
+                        "plan": current_plan.to_dict(),
+                        "generation_error": safety_feedback,
+                        "correct": False,
+                    }
+                )
+                _write_json(
+                    destination
+                    / f"code_feedback_{code_repairs_used + 1}.json",
+                    safety_feedback,
+                )
+                can_repair_code = (
+                    feedback_mode in {"correctness", "performance"}
+                    and code_repairs_used < max_code_repair_attempts
+                )
+                if not can_repair_code:
+                    break
+                code_repairs_used += 1
+                parallel_impl_code = (
+                    selected_adapter.repair_parallel_impl(
+                        current_plan,
+                        parallel_impl_code,
+                        safety_feedback,
+                        attempt=code_repairs_used,
+                    )
+                )
+                continue
+        else:
+            candidate = generate_candidate(
+                current_plan, destination / "candidate.py"
+            )
         snapshot = destination / f"candidate_attempt_{attempt_number}.py"
         snapshot.write_text(candidate.read_text(encoding="utf-8"), encoding="utf-8")
         evaluation = _evaluate_candidate(
@@ -271,6 +343,34 @@ def run_agent_pipeline(
         }
         attempts.append(attempt_record)
         if not correct:
+            if (
+                generation_mode == "llm"
+                and feedback_mode in {"correctness", "performance"}
+                and code_repairs_used < max_code_repair_attempts
+            ):
+                code_repairs_used += 1
+                code_feedback = {
+                    "error_type": "runtime_or_correctness_failure",
+                    "serial_error": serial_run.error_type,
+                    "serial_stderr": serial_run.stderr[-4000:],
+                    "parallel_error": parallel_run.error_type,
+                    "parallel_stderr": parallel_run.stderr[-4000:],
+                    "outputs_equal": False,
+                }
+                _write_json(
+                    destination
+                    / f"code_feedback_{code_repairs_used}.json",
+                    code_feedback,
+                )
+                parallel_impl_code = (
+                    selected_adapter.repair_parallel_impl(
+                        current_plan,
+                        parallel_impl_code or "",
+                        code_feedback,
+                        attempt=code_repairs_used,
+                    )
+                )
+                continue
             can_repair = (
                 feedback_mode in {"correctness", "performance"}
                 and correctness_repairs_used < max_repair_attempts
@@ -354,10 +454,12 @@ def run_agent_pipeline(
         "status": "accepted" if correct else "failed",
         "adapter": selected_adapter.name,
         "feedback_mode": feedback_mode,
+        "generation_mode": generation_mode,
         "correct": correct,
         "selected_mode": selected_mode,
         "performance_gate_passed": performance_gate_passed,
         "repair_attempts_used": correctness_repairs_used,
+        "code_repair_attempts_used": code_repairs_used,
         "performance_attempts_used": performance_attempts_used,
         "final_plan": current_plan.to_dict(),
         "attempts": attempts,

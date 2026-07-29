@@ -13,8 +13,8 @@ LLM 很容易把循环改写为 `ray.remote`，但生成的代码不一定正确
   串行，否则批量提交并行任务。
 
 当前版本已经包含统一运行器、六类 Benchmark、正确性验证、CPU/内存采样、
-AST 静态分析、Worker/Chunk 搜索、收益 Gate、性能回退、代码生成与
-DeepSeek 在线 Agent。
+AST 静态分析、Worker/Chunk 搜索、收益 Gate、性能回退，以及受控的
+DeepSeek 在线代码生成与代码级修复。
 
 ## 环境
 
@@ -80,6 +80,7 @@ DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
 性能反馈 Agent 与首轮消融见 `docs/performance-feedback-agent.md`。
 四任务、三模式、三次独立运行的正式结果见
 `docs/formal-agent-experiment.md`。
+受控 LLM 代码生成、安全门与四任务预检见 `docs/controlled-llm-codegen.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -130,6 +131,19 @@ parallel-agent agent benchmarks/tiny_tasks/workload.py `
   --performance-repeats 3 --minimum-speedup 1.05
 ```
 
+让 DeepSeek 生成受控的并行实现：
+
+```powershell
+parallel-agent agent benchmarks/prime_count/workload.py `
+  --adapter deepseek --generation-mode llm `
+  --feedback-mode correctness `
+  --output-dir generated/deepseek_llm_codegen_prime `
+  --size 8 --workers 4 --chunks 4
+```
+
+模型只允许实现任务划分与并行执行两个函数。候选必须先通过 AST 语法、函数签名、
+调用允许列表和危险操作检查，随后才能进入独立子进程执行与正确性验证。
+
 当前模型路由为：分析、修复和性能决策使用 `deepseek-v4-pro`，结构化计划
 使用关闭思考模式的 `deepseek-v4-flash`。这样把较高成本模型集中在真正影响
 正确性与效率的环节。
@@ -172,6 +186,6 @@ results/           实验原始数据、表格和图片
 
 - 目前只支持符合 `make_input/unit/combine/equivalent` 接口的基准程序；
 - 当前代码生成依赖显式函数契约，还不是任意 Python 源码重构；
-- 在线 Agent 尚未完成多任务、多次独立运行的正式实验；
+- 受控 LLM 代码生成已完成四任务功能预检，尚未完成多次独立生成的正式性能实验；
 - 本机 Ray 受中文主机名兼容问题影响，正式 Ray 结果仍需 Linux 环境；
 - AST 分析器只提供保守提示，不能替代实际正确性验证。

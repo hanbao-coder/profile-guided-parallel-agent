@@ -145,3 +145,22 @@
 - Added per-run, per-workload, and overall CSV statistics plus three verified
   report figures.
 - Expanded the automated suite to 29 passing tests.
+
+## D10 — Controlled LLM code generation
+
+- Replaced template-only candidate generation with an optional controlled LLM
+  implementation mode.
+- Restricted generated code to task partitioning and process execution functions
+  inside a trusted candidate scaffold.
+- Added AST signature, import, call allowlist, and dangerous-operation checks
+  before candidate execution.
+- Added bounded code-level repair for safety, runtime, and correctness failures.
+- In a real Prime Count run, the safety gate rejected a non-allowlisted `divmod`
+  call; DeepSeek repaired the implementation and produced the correct result.
+- Completed a four-workload preflight: template and LLM generation were both
+  4/4 correct with no final failures.
+- The template group used 8 calls and 7,762 tokens; the LLM group used 15 calls
+  and 22,832 tokens, including earlier invalid/empty response retries.
+- Disabled thinking mode for code generation and repair after calibration; the
+  resumed workloads then produced valid code in one generation call.
+- Expanded the automated suite to 37 passing tests.

@@ -41,6 +41,16 @@ def _read_trace_totals(run_dirs: list[Path]) -> tuple[int, int]:
     return calls, tokens
 
 
+def _artifact_run_dirs(destination: Path) -> list[Path]:
+    return sorted(
+        {
+            path.parent
+            for pattern in ("run_report.json", "model_trace.json")
+            for path in destination.rglob(pattern)
+        }
+    )
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -111,10 +121,7 @@ def run_agent_experiment(
             resumed_jobs += 1
             continue
 
-        existing_dirs = [
-            path.parent
-            for path in destination.rglob("run_report.json")
-        ]
+        existing_dirs = _artifact_run_dirs(destination)
         calls, tokens = _read_trace_totals(existing_dirs)
         if calls >= max_calls or tokens >= max_tokens:
             skipped_budget.append(
@@ -129,6 +136,7 @@ def run_agent_experiment(
 
         run_dir.mkdir(parents=True, exist_ok=True)
         _write_json(run_dir / "job.json", asdict(job))
+        adapter = None
         try:
             adapter = (
                 DeepSeekAdapter.from_env()
@@ -158,11 +166,27 @@ def run_agent_experiment(
                 max_performance_attempts=int(
                     execution.get("max_performance_attempts", 1)
                 ),
+                generation_mode=str(
+                    execution.get("generation_mode", "template")
+                ),
+                max_code_repair_attempts=int(
+                    execution.get("max_code_repair_attempts", 2)
+                ),
                 adapter=adapter,
             )
             completed_dirs.append(run_dir)
             executed_this_invocation += 1
+            (run_dir / "experiment_error.json").unlink(missing_ok=True)
         except Exception as exc:  # keep the experiment resumable
+            traces = getattr(adapter, "traces", None)
+            if traces is not None:
+                _write_json(
+                    run_dir / "model_trace.json",
+                    {
+                        "adapter": adapter.name,
+                        "calls": traces,
+                    },
+                )
             failure = {
                 **asdict(job),
                 "error_type": type(exc).__name__,
@@ -172,15 +196,16 @@ def run_agent_experiment(
             failed_jobs.append(failure)
             _write_json(run_dir / "experiment_error.json", failure)
 
-        all_report_dirs = [
+        all_artifact_dirs = _artifact_run_dirs(destination)
+        report_dirs_now = [
             path.parent
             for path in destination.rglob("run_report.json")
         ]
-        calls, tokens = _read_trace_totals(all_report_dirs)
+        calls, tokens = _read_trace_totals(all_artifact_dirs)
         _write_json(
             destination / "progress.json",
             {
-                "completed": len(all_report_dirs),
+                "completed": len(report_dirs_now),
                 "total_jobs": len(jobs),
                 "executed_this_invocation": executed_this_invocation,
                 "resumed_jobs": resumed_jobs,
@@ -202,7 +227,7 @@ def run_agent_experiment(
     aggregate = aggregate_agent_rows(rows, aggregate_path)
     overall_path = destination / "agent_experiment_overall.csv"
     overall = overall_agent_metrics(aggregate, overall_path)
-    calls, tokens = _read_trace_totals(report_dirs)
+    calls, tokens = _read_trace_totals(_artifact_run_dirs(destination))
     manifest = {
         "config": str(config_file),
         "adapter": adapter_name,

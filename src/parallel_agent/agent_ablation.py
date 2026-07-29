@@ -79,6 +79,9 @@ def summarize_agent_runs(
                 "run": run_dir.name,
                 "workload": analysis.get("workload_name", "unknown"),
                 "feedback_mode": report.get("feedback_mode"),
+                "generation_mode": report.get(
+                    "generation_mode", "template"
+                ),
                 "status": report.get("status"),
                 "correct": report.get("correct"),
                 "selected_mode": selected_mode,
@@ -90,6 +93,13 @@ def summarize_agent_runs(
                 "repair_attempts": report.get("repair_attempts_used", 0),
                 "performance_attempts": report.get(
                     "performance_attempts_used", 0
+                ),
+                "code_repair_attempts": report.get(
+                    "code_repair_attempts_used", 0
+                ),
+                "generation_safety_rejections": sum(
+                    "generation_error" in attempt
+                    for attempt in attempts
                 ),
                 "model_calls": len(traces),
                 "pro_calls": pro_calls,
@@ -121,13 +131,19 @@ def summarize_agent_runs(
 def aggregate_agent_rows(
     rows: list[dict[str, Any]], output_csv: str | Path
 ) -> list[dict[str, Any]]:
-    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for row in rows:
-        key = (str(row["workload"]), str(row["feedback_mode"]))
+        key = (
+            str(row["workload"]),
+            str(row["feedback_mode"]),
+            str(row.get("generation_mode", "template")),
+        )
         groups.setdefault(key, []).append(row)
 
     aggregate: list[dict[str, Any]] = []
-    for (workload, mode), group in sorted(groups.items()):
+    for (workload, mode, generation_mode), group in sorted(
+        groups.items()
+    ):
         measured = [
             float(row["final_measured_speedup"])
             for row in group
@@ -146,6 +162,7 @@ def aggregate_agent_rows(
             {
                 "workload": workload,
                 "feedback_mode": mode,
+                "generation_mode": generation_mode,
                 "runs": len(group),
                 "accepted_runs": sum(
                     row.get("status") == "accepted" for row in group
@@ -176,6 +193,14 @@ def aggregate_agent_rows(
                 "tokens_total": sum(
                     int(row.get("total_tokens") or 0) for row in group
                 ),
+                "code_repair_attempts_total": sum(
+                    int(row.get("code_repair_attempts") or 0)
+                    for row in group
+                ),
+                "generation_safety_rejections_total": sum(
+                    int(row.get("generation_safety_rejections") or 0)
+                    for row in group
+                ),
                 "estimated_cost_upper_usd_total": sum(
                     float(row.get("estimated_cost_upper_usd") or 0.0)
                     for row in group
@@ -197,12 +222,16 @@ def aggregate_agent_rows(
 def overall_agent_metrics(
     aggregate_rows: list[dict[str, Any]], output_csv: str | Path
 ) -> list[dict[str, Any]]:
-    modes: dict[str, list[dict[str, Any]]] = {}
+    modes: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for row in aggregate_rows:
-        modes.setdefault(str(row["feedback_mode"]), []).append(row)
+        key = (
+            str(row["feedback_mode"]),
+            str(row.get("generation_mode", "template")),
+        )
+        modes.setdefault(key, []).append(row)
 
     output_rows: list[dict[str, Any]] = []
-    for mode, group in sorted(modes.items()):
+    for (mode, generation_mode), group in sorted(modes.items()):
         total_runs = sum(int(row["runs"]) for row in group)
 
         def weighted(field: str) -> float:
@@ -213,6 +242,7 @@ def overall_agent_metrics(
         output_rows.append(
             {
                 "feedback_mode": mode,
+                "generation_mode": generation_mode,
                 "workloads": len(group),
                 "runs": total_runs,
                 "correct_rate": weighted("correct_rate"),

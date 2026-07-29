@@ -26,11 +26,13 @@ def test_summarize_agent_runs_accounts_for_serial_fallback(
         run_dir / "run_report.json",
         {
             "feedback_mode": "performance",
+            "generation_mode": "llm",
             "status": "accepted",
             "correct": True,
             "selected_mode": "serial",
             "repair_attempts_used": 0,
             "performance_attempts_used": 1,
+            "code_repair_attempts_used": 1,
             "attempts": [
                 {
                     "performance": {
@@ -63,6 +65,8 @@ def test_summarize_agent_runs_accounts_for_serial_fallback(
     rows = summarize_agent_runs([run_dir], tmp_path / "summary.csv")
 
     assert rows[0]["effective_speedup_after_fallback"] == 1.0
+    assert rows[0]["generation_mode"] == "llm"
+    assert rows[0]["code_repair_attempts"] == 1
     assert rows[0]["pro_calls"] == 1
     assert rows[0]["flash_calls"] == 1
     assert rows[0]["total_tokens"] == 210
@@ -74,10 +78,12 @@ def test_summarize_agent_runs_accounts_for_serial_fallback(
     assert aggregate[0]["correct_rate"] == 1.0
     assert aggregate[0]["performance_regression_rate"] == 0.0
     assert aggregate[0]["effective_speedup_mean"] == 1.0
+    assert aggregate[0]["generation_mode"] == "llm"
     overall = overall_agent_metrics(
         aggregate, tmp_path / "overall.csv"
     )
     assert overall[0]["runs"] == 1
+    assert overall[0]["generation_mode"] == "llm"
     assert overall[0]["performance_regression_rate"] == 0.0
 
     figure = plot_agent_ablation(

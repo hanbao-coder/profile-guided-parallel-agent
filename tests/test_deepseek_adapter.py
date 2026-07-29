@@ -179,3 +179,39 @@ def test_performance_controller_can_choose_serial() -> None:
     assert not optimized.parallelizable
     assert optimized.strategy == "serial"
     assert adapter.traces[-1]["model"] == "deepseek-v4-pro"
+
+
+def test_code_generation_uses_pro_and_returns_code() -> None:
+    generated_code = (
+        "def partition_items(items, chunk_count):\n"
+        "    return [list(items)]\n\n"
+        "def execute_parallel(source_path, items, workers, chunks):\n"
+        "    task_chunks = partition_items(items, chunks)\n"
+        "    with ProcessPoolExecutor(max_workers=workers) as pool:\n"
+        "        nested = list(pool.map(_safe_run_chunk, "
+        "[source_path] * len(task_chunks), task_chunks))\n"
+        "    return [item for group in nested for item in group], "
+        "len(task_chunks)\n"
+    )
+    client = fake_client([json.dumps({"code": generated_code})])
+    adapter = DeepSeekAdapter(api_key="test-key", client=client)
+    from parallel_agent.artifacts import ParallelPlan
+
+    plan = ParallelPlan(
+        schema_version="1.0",
+        source_path=str(
+            ROOT / "benchmarks/prime_count/workload.py"
+        ),
+        parallelizable=True,
+        backend="multiprocessing",
+        strategy="map_reduce",
+        workers=2,
+        chunks=2,
+        correctness_gate=True,
+        fallback="serial",
+        reasons=["test"],
+    )
+    result = adapter.generate_parallel_impl(plan)
+    assert "def execute_parallel" in result
+    assert adapter.traces[-1]["model"] == "deepseek-v4-pro"
+    assert adapter.traces[-1]["thinking_enabled"] is False
