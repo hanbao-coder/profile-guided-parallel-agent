@@ -1,0 +1,51 @@
+independent_runs: 3
+order_seed: 20260729
+
+workloads:
+  prime_count:
+    path: benchmarks/prime_count/workload.py
+    size: 32
+    tuning_size: 8
+  mandelbrot:
+    path: benchmarks/mandelbrot/workload.py
+    size: 96
+    tuning_size: 24
+  tiny_tasks:
+    path: benchmarks/tiny_tasks/workload.py
+    size: 2000
+    tuning_size: 200
+  word_count:
+    path: benchmarks/word_count/workload.py
+    size: 32
+    tuning_size: 8
+  monte_carlo_pi:
+    path: benchmarks/monte_carlo/workload.py
+    size: 16
+    tuning_size: 4
+  pairwise_distance:
+    path: benchmarks/pairwise_distance/workload.py
+    size: 16
+    tuning_size: 4
+  load_imbalance:
+    path: benchmarks/load_imbalance/workload.py
+    size: 64
+    tuning_size: 16
+  large_payload:
+    path: benchmarks/large_payload/workload.py
+    size: 32
+    tuning_size: 8
+
+execution:
+  seed: 42
+  max_workers: 4
+  chunk_multipliers:
+    - 1
+    - 2
+    - 4
+  tuning_repeats: 2
+  confirmation_repeats: 2
+  holdout_repeats: 5
+  warmups: 1
+  timeout_seconds: 180
+  minimum_speedup: 1.05
+  minimum_relative_improvement: 1.05

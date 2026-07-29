@@ -12,7 +12,7 @@ LLM 很容易把循环改写为 `ray.remote`，但生成的代码不一定正确
 - **M2 Optimized**：根据试运行耗时估计任务粒度；若预测收益不足则回退
   串行，否则批量提交并行任务。
 
-当前版本已经包含统一运行器、六类 Benchmark、正确性验证、CPU/内存采样、
+当前版本已经包含统一运行器、八类 Benchmark、正确性验证、CPU/内存采样、
 AST 静态分析、Worker/Chunk 搜索、收益 Gate、性能回退，以及受控的
 DeepSeek 在线代码生成与代码级修复。
 
@@ -83,6 +83,8 @@ DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
 受控 LLM 代码生成、安全门与四任务预检见 `docs/controlled-llm-codegen.md`。
 共享分析/计划的模板与 LLM 正式配对实验见
 `docs/formal-paired-generation-experiment.md`。
+多尺度 Worker/Chunk 搜索与性能回退正式实验见
+`docs/formal-configuration-search.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -172,6 +174,17 @@ parallel-agent paired-generation-experiment `
 
 该实验让两个生成器共享同一份分析和并行计划，并随机交错重复测量，避免把
 分析差异或运行顺序误认为代码生成器差异。
+
+运行多尺度配置搜索：
+
+```powershell
+parallel-agent configuration-search-experiment `
+  configs/configuration_search_formal.yaml `
+  --output-dir results/raw/configuration_search_formal_final_v2_20260729
+```
+
+该实验先在小样本上搜索 Worker/Chunk，再在完整规模上与固定配置比较，最后使用
+独立留出测量报告结果。
 
 如果第一次接触科研项目，请从以下两份文档开始：
 

@@ -30,6 +30,8 @@ def execute_candidate(
     size: int,
     seed: int,
     timeout_seconds: float,
+    workers: int | None = None,
+    chunks: int | None = None,
 ) -> CandidateRun:
     command = [
         sys.executable,
@@ -41,6 +43,10 @@ def execute_candidate(
         "--seed",
         str(seed),
     ]
+    if workers is not None:
+        command.extend(["--workers", str(workers)])
+    if chunks is not None:
+        command.extend(["--chunks", str(chunks)])
     started = time.perf_counter()
     try:
         completed = subprocess.run(
@@ -81,4 +87,3 @@ def execute_candidate(
         payload=payload,
         error_type=error_type,
     )
-

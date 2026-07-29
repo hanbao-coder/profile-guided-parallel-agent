@@ -13,6 +13,11 @@ from .agent_ablation import (
 )
 from .agent_experiment import run_agent_experiment
 from .agent_pipeline import run_agent_pipeline
+from .configuration_search import run_configuration_search
+from .configuration_search_experiment import (
+    plot_configuration_search_experiment,
+    run_configuration_search_experiment,
+)
 from .deepseek_adapter import DeepSeekAdapter, DeepSeekConfigurationError
 from .plotting import plot_suite_results
 from .paired_generation_experiment import (
@@ -131,6 +136,53 @@ def _parser() -> argparse.ArgumentParser:
     plot_paired.add_argument("summary_csv")
     plot_paired.add_argument("aggregate_csv")
     plot_paired.add_argument("--output-dir", required=True)
+
+    search = commands.add_parser(
+        "configuration-search",
+        help=(
+            "Measure Worker/Chunk candidates on tuning runs and verify the "
+            "selected configuration on separate holdout runs."
+        ),
+    )
+    search.add_argument("source")
+    search.add_argument("--output-dir", required=True)
+    search.add_argument("--size", type=int, required=True)
+    search.add_argument(
+        "--tuning-size",
+        type=int,
+        help="Optional smaller input used only for configuration selection.",
+    )
+    search.add_argument("--seed", type=int, default=42)
+    search.add_argument("--max-workers", type=int, default=4)
+    search.add_argument(
+        "--chunk-multipliers", nargs="+", type=int, default=[1, 2, 4]
+    )
+    search.add_argument("--tuning-repeats", type=int, default=2)
+    search.add_argument("--confirmation-repeats", type=int, default=2)
+    search.add_argument("--holdout-repeats", type=int, default=5)
+    search.add_argument("--warmups", type=int, default=1)
+    search.add_argument("--timeout", type=float, default=120.0)
+    search.add_argument("--minimum-speedup", type=float, default=1.05)
+    search.add_argument(
+        "--minimum-relative-improvement", type=float, default=1.05
+    )
+    search.add_argument("--order-seed", type=int, default=42)
+
+    search_experiment = commands.add_parser(
+        "configuration-search-experiment",
+        help="Run a resumable multi-workload configuration-search study.",
+    )
+    search_experiment.add_argument("config")
+    search_experiment.add_argument("--output-dir", required=True)
+    search_experiment.add_argument("--no-resume", action="store_true")
+
+    plot_search = commands.add_parser(
+        "plot-configuration-search",
+        help="Plot fixed versus adaptive configuration-search results.",
+    )
+    plot_search.add_argument("aggregate_csv")
+    plot_search.add_argument("overall_json")
+    plot_search.add_argument("--output-dir", required=True)
 
     agent = commands.add_parser("agent", help="Run the analyze-plan-generate loop.")
     agent.add_argument("source")
@@ -258,6 +310,47 @@ def main() -> None:
         output = plot_paired_generation_experiment(
             args.summary_csv,
             args.aggregate_csv,
+            args.output_dir,
+        )
+        print(json.dumps({"figure": str(output)}, ensure_ascii=False))
+        return
+
+    if args.command == "configuration-search":
+        report = run_configuration_search(
+            args.source,
+            output_dir=args.output_dir,
+            size=args.size,
+            tuning_size=args.tuning_size,
+            seed=args.seed,
+            max_workers=args.max_workers,
+            chunk_multipliers=args.chunk_multipliers,
+            tuning_repeats=args.tuning_repeats,
+            confirmation_repeats=args.confirmation_repeats,
+            holdout_repeats=args.holdout_repeats,
+            warmups=args.warmups,
+            timeout_seconds=args.timeout,
+            minimum_speedup=args.minimum_speedup,
+            minimum_relative_improvement=(
+                args.minimum_relative_improvement
+            ),
+            order_seed=args.order_seed,
+        )
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "configuration-search-experiment":
+        result = run_configuration_search_experiment(
+            args.config,
+            output_dir=args.output_dir,
+            resume=not args.no_resume,
+        )
+        print(json.dumps(result["manifest"], indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "plot-configuration-search":
+        output = plot_configuration_search_experiment(
+            args.aggregate_csv,
+            args.overall_json,
             args.output_dir,
         )
         print(json.dumps({"figure": str(output)}, ensure_ascii=False))

@@ -23,3 +23,11 @@ benchmarks:
     path: benchmarks/pairwise_distance/workload.py
     small: 4
     large: 16
+  load_imbalance:
+    path: benchmarks/load_imbalance/workload.py
+    small: 16
+    large: 64
+  large_payload:
+    path: benchmarks/large_payload/workload.py
+    small: 8
+    large: 32

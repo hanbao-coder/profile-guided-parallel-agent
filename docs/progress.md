@@ -183,3 +183,19 @@
   8 repairs; one Pairwise Distance candidate remained incorrect after two repairs.
 - Added a report-ready paired reliability/performance figure.
 - Expanded the automated suite to 41 passing tests.
+
+## D12 — Multi-scale configuration search
+
+- Added a measured grid search across 1/2/4 workers and 1/2/4 chunks per worker.
+- Separated tuning measurements from five-repeat holdout evaluation.
+- Added full-scale confirmation to prevent unsafe extrapolation from small inputs.
+- Added a 5% relative-improvement gate against the fixed 4/4 baseline.
+- Added result fingerprints and task-count semantic validation without storing
+  multi-megabyte outputs in experiment reports.
+- Added Load Imbalance and Large Payload boundary benchmarks.
+- Ran 8 workloads × 3 independent runs (24 jobs), with no execution failures.
+- Fixed 4/4 parallelism regressed in 62.5% of runs; adaptive selection regressed
+  in 0% and increased macro effective speedup from 0.965x to 1.186x.
+- Load Imbalance improved by 1.315x over fixed configuration on average.
+- Large Payload selected serial and was 2.231x faster than fixed parallelism.
+- Added explicit search-cost amortization against serial and fixed baselines.

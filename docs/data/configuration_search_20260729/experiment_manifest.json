@@ -1,0 +1,11 @@
+{
+  "config": "D:\\hustagent\\configs\\configuration_search_formal.yaml",
+  "total_jobs": 24,
+  "completed_jobs": 24,
+  "executed_this_invocation": 3,
+  "resumed_jobs": 21,
+  "failed_jobs": [],
+  "tuning_and_holdout_separated": true,
+  "small_sample_scale_confirmation": true,
+  "resumable": true
+}

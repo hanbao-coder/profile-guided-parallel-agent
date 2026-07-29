@@ -1,0 +1,830 @@
+{
+  "status": "completed",
+  "source": "D:\\hustagent\\benchmarks\\large_payload\\workload.py",
+  "workload": "large_payload",
+  "size": 32,
+  "tuning_size": 8,
+  "seed": 43,
+  "analysis": {
+    "schema_version": "1.0",
+    "source_path": "D:\\hustagent\\benchmarks\\large_payload\\workload.py",
+    "workload_name": "large_payload",
+    "functions": [
+      "combine",
+      "equivalent",
+      "make_input",
+      "unit"
+    ],
+    "loops": 0,
+    "hazards": [],
+    "contract_functions": [
+      "combine",
+      "equivalent",
+      "make_input",
+      "unit"
+    ],
+    "contract_complete": true,
+    "parallelizable": true,
+    "rationale": [
+      "Detected explicit make_input/unit/combine/equivalent contract.",
+      "Each item can be mapped independently and combined afterward."
+    ]
+  },
+  "grid": [
+    {
+      "workers": 1,
+      "chunks": 1
+    },
+    {
+      "workers": 1,
+      "chunks": 2
+    },
+    {
+      "workers": 1,
+      "chunks": 4
+    },
+    {
+      "workers": 2,
+      "chunks": 2
+    },
+    {
+      "workers": 2,
+      "chunks": 4
+    },
+    {
+      "workers": 2,
+      "chunks": 8
+    },
+    {
+      "workers": 4,
+      "chunks": 4
+    },
+    {
+      "workers": 4,
+      "chunks": 8
+    },
+    {
+      "workers": 4,
+      "chunks": 16
+    }
+  ],
+  "warmups": 1,
+  "tuning_repeats": 2,
+  "confirmation_repeats": 2,
+  "holdout_repeats": 5,
+  "minimum_speedup": 1.05,
+  "minimum_relative_improvement": 1.05,
+  "tuning": {
+    "execution_order": [
+      "w2_c2",
+      "serial",
+      "w2_c4",
+      "w1_c4",
+      "w4_c4",
+      "w1_c2",
+      "w2_c2",
+      "w2_c8",
+      "w1_c2",
+      "serial",
+      "w1_c4",
+      "w4_c4",
+      "w2_c8",
+      "w4_c16",
+      "w1_c1",
+      "w1_c1",
+      "w4_c8",
+      "w4_c8",
+      "w2_c4",
+      "w4_c16"
+    ],
+    "statistics": {
+      "serial": {
+        "valid": true,
+        "median_seconds": 0.09997119999934512,
+        "q1_seconds": 0.09971339999901829,
+        "q3_seconds": 0.10022899999967194,
+        "speedup": 1.0,
+        "conservative_speedup": 1.0
+      },
+      "w1_c1": {
+        "workers": 1,
+        "chunks": 1,
+        "valid": true,
+        "median_seconds": 0.19627810000110912,
+        "q1_seconds": 0.19350360000089495,
+        "q3_seconds": 0.1990526000013233,
+        "speedup": 0.5093344596202032,
+        "conservative_speedup": 0.5009399525469921,
+        "task_count_median": 1.0
+      },
+      "w1_c2": {
+        "workers": 1,
+        "chunks": 2,
+        "valid": true,
+        "median_seconds": 0.22156189999986964,
+        "q1_seconds": 0.2158840499996586,
+        "q3_seconds": 0.22723975000008068,
+        "speedup": 0.4512111513730652,
+        "conservative_speedup": 0.43880263025717503,
+        "task_count_median": 2.0
+      },
+      "w1_c4": {
+        "workers": 1,
+        "chunks": 4,
+        "valid": true,
+        "median_seconds": 0.19798775000072055,
+        "q1_seconds": 0.19096732500065627,
+        "q3_seconds": 0.20500817500078483,
+        "speedup": 0.5049362902451353,
+        "conservative_speedup": 0.4863874330798592,
+        "task_count_median": 4.0
+      },
+      "w2_c2": {
+        "workers": 2,
+        "chunks": 2,
+        "valid": true,
+        "median_seconds": 0.22325120000004972,
+        "q1_seconds": 0.2189319499998419,
+        "q3_seconds": 0.22757045000025755,
+        "speedup": 0.447796921133337,
+        "conservative_speedup": 0.43816497264431936,
+        "task_count_median": 2.0
+      },
+      "w2_c4": {
+        "workers": 2,
+        "chunks": 4,
+        "valid": true,
+        "median_seconds": 0.2076161000004504,
+        "q1_seconds": 0.20411550000062562,
+        "q3_seconds": 0.21111670000027516,
+        "speedup": 0.4815194967978314,
+        "conservative_speedup": 0.47231412767861725,
+        "task_count_median": 4.0
+      },
+      "w2_c8": {
+        "workers": 2,
+        "chunks": 8,
+        "valid": true,
+        "median_seconds": 0.20644915000048059,
+        "q1_seconds": 0.19835332500042568,
+        "q3_seconds": 0.2145449750005355,
+        "speedup": 0.484241276842808,
+        "conservative_speedup": 0.46476688628465623,
+        "task_count_median": 8.0
+      },
+      "w4_c4": {
+        "workers": 4,
+        "chunks": 4,
+        "valid": true,
+        "median_seconds": 0.22624489999998332,
+        "q1_seconds": 0.2184732000000622,
+        "q3_seconds": 0.23401659999990443,
+        "speedup": 0.44187161787670126,
+        "conservative_speedup": 0.42609541374013216,
+        "task_count_median": 4.0
+      },
+      "w4_c8": {
+        "workers": 4,
+        "chunks": 8,
+        "valid": true,
+        "median_seconds": 0.21401014999992185,
+        "q1_seconds": 0.21180822499945862,
+        "q3_seconds": 0.21621207500038508,
+        "speedup": 0.46713298411024723,
+        "conservative_speedup": 0.46118330809618613,
+        "task_count_median": 8.0
+      },
+      "w4_c16": {
+        "workers": 4,
+        "chunks": 16,
+        "valid": true,
+        "median_seconds": 0.2250413000001572,
+        "q1_seconds": 0.2195158000004085,
+        "q3_seconds": 0.23056679999990592,
+        "speedup": 0.4442349026568691,
+        "conservative_speedup": 0.43247076334953244,
+        "task_count_median": 8.0
+      }
+    },
+    "runs": [
+      {
+        "label": "w2_c2",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.21461269999963406,
+        "runtime_seconds": 0.1158661999998003,
+        "task_count": 2,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.10048679999999877,
+        "runtime_seconds": 0.0032136999998328974,
+        "task_count": 1,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w2_c4",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.21461730000009993,
+        "runtime_seconds": 0.11875860000145622,
+        "task_count": 4,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w1_c4",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.2120286000008491,
+        "runtime_seconds": 0.1140720000003057,
+        "task_count": 4,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w4_c4",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.24178829999982554,
+        "runtime_seconds": 0.14763829999901645,
+        "task_count": 4,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w1_c2",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.2329176000002917,
+        "runtime_seconds": 0.12723709999954735,
+        "task_count": 2,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w2_c2",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.23188970000046538,
+        "runtime_seconds": 0.13126159999956144,
+        "task_count": 2,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w2_c8",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.2226408000005904,
+        "runtime_seconds": 0.12538379999932658,
+        "task_count": 8,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w1_c2",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.21020619999944756,
+        "runtime_seconds": 0.11519630000111647,
+        "task_count": 2,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.09945559999869147,
+        "runtime_seconds": 0.0032007999998313608,
+        "task_count": 1,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w1_c4",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.183946900000592,
+        "runtime_seconds": 0.0991308000011486,
+        "task_count": 4,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w4_c4",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.2107015000001411,
+        "runtime_seconds": 0.12624850000065635,
+        "task_count": 4,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w2_c8",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.19025750000037078,
+        "runtime_seconds": 0.10742819999904896,
+        "task_count": 8,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w4_c16",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.23609229999965464,
+        "runtime_seconds": 0.14100110000072164,
+        "task_count": 8,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w1_c1",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.20182710000153747,
+        "runtime_seconds": 0.10603660000015225,
+        "task_count": 1,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w1_c1",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.19072910000068077,
+        "runtime_seconds": 0.1041163999998389,
+        "task_count": 1,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w4_c8",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.20960629999899538,
+        "runtime_seconds": 0.12348840000049677,
+        "task_count": 8,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w4_c8",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.21841400000084832,
+        "runtime_seconds": 0.13344649999999092,
+        "task_count": 8,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w2_c4",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.20061490000080084,
+        "runtime_seconds": 0.10496249999960128,
+        "task_count": 4,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "w4_c16",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.21399030000065977,
+        "runtime_seconds": 0.12911849999909464,
+        "task_count": 8,
+        "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+        "error_type": null,
+        "stderr_tail": ""
+      }
+    ],
+    "search_wall_seconds": 5.150701200000185
+  },
+  "selection": {
+    "preliminary_selected_label": "serial",
+    "selected_label": "serial",
+    "selected_configuration": null,
+    "fixed_configuration": {
+      "workers": 4,
+      "chunks": 4
+    },
+    "scale_confirmation": {
+      "reason": "Small-sample tuning selected a non-fixed action; probe the candidate at full scale and compare it with the fixed baseline.",
+      "probe_label": "w1_c1",
+      "probe_configuration": {
+        "workers": 1,
+        "chunks": 1
+      },
+      "execution_order": [
+        "fixed",
+        "probe",
+        "serial",
+        "fixed",
+        "serial",
+        "probe"
+      ],
+      "statistics": {
+        "serial": {
+          "valid": true,
+          "median_seconds": 0.10569764999945619,
+          "q1_seconds": 0.10496157499937908,
+          "q3_seconds": 0.1064337249995333,
+          "speedup": 1.0,
+          "conservative_speedup": 1.0
+        },
+        "probe": {
+          "workers": 1,
+          "chunks": 1,
+          "valid": true,
+          "median_seconds": 0.21820695000042178,
+          "q1_seconds": 0.21763732499994148,
+          "q3_seconds": 0.21877657500090208,
+          "speedup": 0.4843917666199536,
+          "conservative_speedup": 0.47976605813006395,
+          "task_count_median": 1.0
+        },
+        "fixed": {
+          "workers": 4,
+          "chunks": 4,
+          "valid": true,
+          "median_seconds": 0.2287494499996683,
+          "q1_seconds": 0.22057727499941393,
+          "q3_seconds": 0.23692162499992264,
+          "speedup": 0.46206734048807313,
+          "conservative_speedup": 0.4430223496880597,
+          "task_count_median": 4.0
+        }
+      },
+      "runs": [
+        {
+          "label": "fixed",
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 0.245093800000177,
+          "runtime_seconds": 0.1369393000004493,
+          "task_count": 4,
+          "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+          "error_type": null,
+          "stderr_tail": ""
+        },
+        {
+          "label": "probe",
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 0.21934620000138239,
+          "runtime_seconds": 0.11040589999902295,
+          "task_count": 1,
+          "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+          "error_type": null,
+          "stderr_tail": ""
+        },
+        {
+          "label": "serial",
+          "mode": "serial",
+          "returncode": 0,
+          "elapsed_seconds": 0.10422549999930197,
+          "runtime_seconds": 0.010624600001392537,
+          "task_count": 1,
+          "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+          "error_type": null,
+          "stderr_tail": ""
+        },
+        {
+          "label": "fixed",
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 0.21240509999915957,
+          "runtime_seconds": 0.12786770000093384,
+          "task_count": 4,
+          "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+          "error_type": null,
+          "stderr_tail": ""
+        },
+        {
+          "label": "serial",
+          "mode": "serial",
+          "returncode": 0,
+          "elapsed_seconds": 0.1071697999996104,
+          "runtime_seconds": 0.012194799999633688,
+          "task_count": 1,
+          "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+          "error_type": null,
+          "stderr_tail": ""
+        },
+        {
+          "label": "probe",
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 0.21706769999946118,
+          "runtime_seconds": 0.12013320000005479,
+          "task_count": 1,
+          "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+          "error_type": null,
+          "stderr_tail": ""
+        }
+      ],
+      "passed": false,
+      "choice": "serial"
+    }
+  },
+  "holdout": {
+    "execution_order": [
+      "serial",
+      "fixed",
+      "serial",
+      "fixed",
+      "fixed",
+      "fixed",
+      "serial",
+      "fixed",
+      "serial",
+      "serial"
+    ],
+    "statistics": {
+      "serial": {
+        "valid": true,
+        "median_seconds": 0.10472040000058769,
+        "q1_seconds": 0.10168779999912658,
+        "q3_seconds": 0.10536819999833824,
+        "speedup": 1.0,
+        "conservative_speedup": 1.0
+      },
+      "fixed": {
+        "workers": 4,
+        "chunks": 4,
+        "valid": true,
+        "median_seconds": 0.23282099999960337,
+        "q1_seconds": 0.22219910000058007,
+        "q3_seconds": 0.23967170000105398,
+        "speedup": 0.4497893231313588,
+        "conservative_speedup": 0.4242795457230845,
+        "task_count_median": 4
+      }
+    },
+    "runs": [
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.09782239999913145,
+        "runtime_seconds": 0.010678200000256766,
+        "task_count": 1,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "fixed",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.21824870000091323,
+        "runtime_seconds": 0.13768119999986084,
+        "task_count": 4,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.10536819999833824,
+        "runtime_seconds": 0.01201770000079705,
+        "task_count": 1,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "fixed",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.23974119999911636,
+        "runtime_seconds": 0.15078560000074503,
+        "task_count": 4,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "fixed",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.23282099999960337,
+        "runtime_seconds": 0.13885789999949338,
+        "task_count": 4,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "fixed",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.22219910000058007,
+        "runtime_seconds": 0.12995450000016717,
+        "task_count": 4,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.10472040000058769,
+        "runtime_seconds": 0.011507900000651716,
+        "task_count": 1,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "fixed",
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 0.23967170000105398,
+        "runtime_seconds": 0.14637230000153068,
+        "task_count": 4,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.11647510000148031,
+        "runtime_seconds": 0.012711400000625872,
+        "task_count": 1,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      },
+      {
+        "label": "serial",
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.10168779999912658,
+        "runtime_seconds": 0.011798400000770926,
+        "task_count": 1,
+        "result_fingerprint": "3464ad86ca03178f36737867be74b972999db253cef9976b05b22d450083bdc1",
+        "error_type": null,
+        "stderr_tail": ""
+      }
+    ],
+    "selected_key": "serial",
+    "selected_speedup": 1.0,
+    "fixed_speedup": 0.4497893231313588,
+    "selected_over_fixed": 2.2232630891239604
+  },
+  "amortization": {
+    "search_wall_seconds": 5.150701200000185,
+    "median_savings_vs_serial_per_run_seconds": 0.0,
+    "median_savings_vs_fixed_per_run_seconds": 0.12810059999901569,
+    "break_even_vs_serial_repetitions": null,
+    "break_even_vs_fixed_repetitions": 41
+  },
+  "warmup_records": [
+    {
+      "label": "serial",
+      "mode": "serial",
+      "returncode": 0,
+      "elapsed_seconds": 0.10710240000116755,
+      "runtime_seconds": 0.003245900001275004,
+      "task_count": 1,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w1_c1",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.2324482000003627,
+      "runtime_seconds": 0.11751130000084231,
+      "task_count": 1,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w1_c2",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.20643610000115586,
+      "runtime_seconds": 0.10792279999986931,
+      "task_count": 2,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w1_c4",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.1971185999991576,
+      "runtime_seconds": 0.10371889999987616,
+      "task_count": 4,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w2_c2",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.19727009999951406,
+      "runtime_seconds": 0.10712579999926675,
+      "task_count": 2,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w2_c4",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.20748060000005353,
+      "runtime_seconds": 0.11164040000039677,
+      "task_count": 4,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w2_c8",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.20616159999917727,
+      "runtime_seconds": 0.1112993999995524,
+      "task_count": 8,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w4_c4",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.232902900001136,
+      "runtime_seconds": 0.12902320000102918,
+      "task_count": 4,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w4_c8",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.2419796000012866,
+      "runtime_seconds": 0.13991340000029595,
+      "task_count": 8,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    },
+    {
+      "label": "w4_c16",
+      "mode": "parallel",
+      "returncode": 0,
+      "elapsed_seconds": 0.23679140000058396,
+      "runtime_seconds": 0.13305419999960577,
+      "task_count": 8,
+      "result_fingerprint": "5875b55d90d9da2e2abfe78dda15bc8c4ee8a37487acb08ff47810f72591fe7e",
+      "error_type": null,
+      "stderr_tail": ""
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "workloads": 8,
+  "runs": 24,
+  "selected_speedup_macro_mean": 1.1857733637521102,
+  "fixed_speedup_macro_mean": 0.9653203682156497,
+  "selected_regression_rate": 0.0,
+  "fixed_regression_rate": 0.625,
+  "selected_beats_fixed_rate": 0.625,
+  "selected_avoids_fixed_regression_rate": 0.625,
+  "search_wall_seconds_total": 187.3645144999955
+}
