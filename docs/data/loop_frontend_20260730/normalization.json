@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "source_path": "/mnt/d/hustagent/examples/simple_serial_loop.py",
+  "source_sha256": "3f8ebc3d1920d0db81ea943b34029316a9e8a761ecbc834556db9ace73eebb25",
+  "output_path": "/mnt/d/hustagent/work/wsl_simple_loop_normalized_v2.py",
+  "output_sha256": "cdfdf23748a21eb1c8b24ec6893563bd0aa8cdb356423959eafad3729d747086",
+  "entry_function": "run_serial",
+  "input_parameter": "items",
+  "item_variable": "interval",
+  "results_variable": "results",
+  "unit_function": "process_interval",
+  "combine_function": "aggregate_counts",
+  "input_factory": "make_input",
+  "equivalent_function": "equivalent",
+  "parallel_pattern": "independent_map_then_combine",
+  "rationale": [
+    "The loop iterates directly over the entry input.",
+    "Each iteration calls one per-item function and only appends its result.",
+    "A separate combine function consumes the collected outputs.",
+    "The per-item function contains no explicit global/nonlocal declaration."
+  ]
+}

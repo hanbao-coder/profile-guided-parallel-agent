@@ -8,6 +8,7 @@ from parallel_agent.deepseek_adapter import (
     DeepSeekAdapter,
     DeepSeekConfigurationError,
 )
+from parallel_agent.loop_frontend import normalize_serial_loop
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,9 +18,10 @@ class FakeCompletions:
     def __init__(self, contents: list[str]) -> None:
         self.contents = iter(contents)
         self.calls = 0
+        self.requests: list[dict] = []
 
     def create(self, **kwargs):
-        del kwargs
+        self.requests.append(kwargs)
         self.calls += 1
         content = next(self.contents)
         return SimpleNamespace(
@@ -142,6 +144,36 @@ def test_stage_model_router_uses_pro_for_analysis_and_flash_for_plan() -> None:
     assert adapter.traces[1]["model"] == "deepseek-v4-flash"
     assert adapter.traces[0]["thinking_enabled"] is True
     assert adapter.traces[1]["thinking_enabled"] is False
+
+
+def test_normalized_loop_analysis_uses_original_source(
+    tmp_path: Path,
+) -> None:
+    wrapper = tmp_path / "normalized.py"
+    normalize_serial_loop(
+        ROOT / "examples/simple_serial_loop.py",
+        output_path=wrapper,
+    )
+    client = fake_client(
+        [
+            json.dumps(
+                {
+                    "parallelizable": True,
+                    "hazards": [],
+                    "rationale": ["Original per-item function is pure."],
+                }
+            )
+        ]
+    )
+    adapter = DeepSeekAdapter(api_key="test-key", client=client)
+    analysis = adapter.analyze(wrapper)
+    request = client.fake_completions.requests[0]
+    user_content = request["messages"][1]["content"]
+    assert analysis.parallelizable
+    assert analysis.source_path == str(wrapper.resolve())
+    assert analysis.loops == 1
+    assert "verified_normalization" in user_content
+    assert "def run_serial" in user_content
 
 
 def test_performance_controller_can_choose_serial() -> None:

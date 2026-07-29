@@ -24,6 +24,7 @@ from .dag_scheduler import (
     run_dag_scheduling_experiment,
 )
 from .plotting import plot_suite_results
+from .loop_frontend import LoopNormalizationError, normalize_serial_loop
 from .paired_generation_experiment import (
     plot_paired_generation_experiment,
     run_paired_generation_experiment,
@@ -46,6 +47,55 @@ def _parser() -> argparse.ArgumentParser:
     analyze = commands.add_parser("analyze", help="Run static dependency analysis.")
     analyze.add_argument("source")
     analyze.add_argument("--output")
+
+    normalize = commands.add_parser(
+        "normalize-loop",
+        help=(
+            "Convert a conservative serial map-then-combine loop into the "
+            "Agent workload contract."
+        ),
+    )
+    normalize.add_argument("source")
+    normalize.add_argument("--output", required=True)
+    normalize.add_argument("--metadata")
+    normalize.add_argument("--entry")
+    normalize.add_argument("--input-factory", default="make_input")
+    normalize.add_argument("--equivalent", default="equivalent")
+
+    loop_agent = commands.add_parser(
+        "agent-loop",
+        help=(
+            "Normalize a supported ordinary serial loop, then run the "
+            "analyze-plan-generate-validate Agent pipeline."
+        ),
+    )
+    loop_agent.add_argument("source")
+    loop_agent.add_argument("--entry")
+    loop_agent.add_argument("--input-factory", default="make_input")
+    loop_agent.add_argument("--equivalent", default="equivalent")
+    loop_agent.add_argument("--output-dir", required=True)
+    loop_agent.add_argument("--size", type=int, default=4)
+    loop_agent.add_argument("--seed", type=int, default=42)
+    loop_agent.add_argument("--workers", type=int, default=4)
+    loop_agent.add_argument("--chunks", type=int, default=4)
+    loop_agent.add_argument("--timeout", type=float, default=120.0)
+    loop_agent.add_argument(
+        "--feedback-mode",
+        choices=["one_shot", "correctness", "performance"],
+        default="correctness",
+    )
+    loop_agent.add_argument("--performance-repeats", type=int, default=3)
+    loop_agent.add_argument("--minimum-speedup", type=float, default=1.05)
+    loop_agent.add_argument(
+        "--execution-backend",
+        choices=["multiprocessing", "ray"],
+        default="multiprocessing",
+    )
+    loop_agent.add_argument(
+        "--adapter",
+        choices=["offline", "deepseek"],
+        default="offline",
+    )
 
     bench = commands.add_parser("benchmark", help="Run benchmark modes.")
     bench.add_argument("workload")
@@ -308,6 +358,92 @@ def main() -> None:
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(text, encoding="utf-8")
         print(text)
+        return
+
+    if args.command == "normalize-loop":
+        try:
+            result = normalize_serial_loop(
+                args.source,
+                output_path=args.output,
+                metadata_path=args.metadata,
+                entry_function=args.entry,
+                input_factory=args.input_factory,
+                equivalent_function=args.equivalent,
+            )
+        except LoopNormalizationError as exc:
+            print(
+                json.dumps(
+                    {
+                        "status": "rejected",
+                        "reason": str(exc),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            sys.exit(2)
+        print(json.dumps(result.to_dict(), indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "agent-loop":
+        destination = Path(args.output_dir).resolve()
+        destination.mkdir(parents=True, exist_ok=True)
+        normalized_path = destination / "normalized_workload.py"
+        try:
+            normalization = normalize_serial_loop(
+                args.source,
+                output_path=normalized_path,
+                entry_function=args.entry,
+                input_factory=args.input_factory,
+                equivalent_function=args.equivalent,
+            )
+            adapter = (
+                DeepSeekAdapter.from_env()
+                if args.adapter == "deepseek"
+                else None
+            )
+            agent_report = run_agent_pipeline(
+                normalized_path,
+                output_dir=destination / "agent",
+                size=args.size,
+                seed=args.seed,
+                workers=args.workers,
+                chunks=args.chunks,
+                timeout_seconds=args.timeout,
+                feedback_mode=args.feedback_mode,
+                performance_repeats=args.performance_repeats,
+                minimum_speedup=args.minimum_speedup,
+                execution_backend=args.execution_backend,
+                adapter=adapter,
+            )
+        except LoopNormalizationError as exc:
+            print(
+                json.dumps(
+                    {"status": "rejected", "reason": str(exc)},
+                    ensure_ascii=False,
+                )
+            )
+            sys.exit(2)
+        except DeepSeekConfigurationError as exc:
+            print(
+                json.dumps(
+                    {
+                        "status": "configuration_error",
+                        "message": str(exc),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            sys.exit(2)
+        combined = {
+            "status": agent_report.get("status"),
+            "normalization": normalization.to_dict(),
+            "agent": agent_report,
+        }
+        (destination / "loop_agent_report.json").write_text(
+            json.dumps(combined, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        print(json.dumps(combined, indent=2, ensure_ascii=False))
         return
 
     if args.command == "benchmark":

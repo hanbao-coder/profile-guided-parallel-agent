@@ -6,6 +6,7 @@ from typing import Protocol
 from .analyzer import analyze_file
 from .artifacts import AnalysisArtifact, ParallelPlan
 from .controlled_codegen import canonical_parallel_impl
+from .loop_frontend import load_verified_normalization
 
 
 REQUIRED_CONTRACT = {"make_input", "unit", "combine", "equivalent"}
@@ -60,6 +61,7 @@ class OfflineHeuristicAdapter:
     def analyze(self, source_path: str | Path) -> AnalysisArtifact:
         path = Path(source_path).resolve()
         static = analyze_file(path)
+        normalization = load_verified_normalization(path)
         functions = set(static.functions)
         contract = sorted(REQUIRED_CONTRACT & functions)
         complete = REQUIRED_CONTRACT <= functions
@@ -68,7 +70,13 @@ class OfflineHeuristicAdapter:
         hard_hazard = "global_state" in static.hazards
         parallelizable = complete and not hard_hazard
         rationale: list[str] = []
-        if complete:
+        if normalization is not None:
+            rationale.extend(normalization.rationale)
+            rationale.append(
+                "Normalization metadata, wrapper hash, source hash, and "
+                "deterministic loop analysis were re-verified."
+            )
+        elif complete:
             rationale.append("Detected explicit make_input/unit/combine/equivalent contract.")
         else:
             missing = sorted(REQUIRED_CONTRACT - functions)

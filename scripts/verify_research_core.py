@@ -16,6 +16,9 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "docs" / "data"
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
 
 class VerificationError(RuntimeError):
@@ -212,6 +215,71 @@ def verify_agent_ray_contract() -> None:
     require("DeepSeek Agent" in notebook and "结果 `3491` 一致" in notebook, "缺少 Agent-Ray 验证记录")
 
 
+def verify_loop_frontend_contract() -> None:
+    from parallel_agent.loop_frontend import (
+        load_verified_normalization,
+        normalize_serial_loop,
+    )
+    from parallel_agent.runner import load_workload
+
+    with tempfile.TemporaryDirectory(prefix="parallel-agent-loop-") as temp:
+        output = Path(temp) / "normalized.py"
+        normalization = normalize_serial_loop(
+            ROOT / "examples" / "simple_serial_loop.py",
+            output_path=output,
+            entry_function="run_serial",
+        )
+        verified = load_verified_normalization(output)
+        require(verified is not None, "普通循环标准化元数据无法重新验证")
+        require(
+            verified.output_sha256 == normalization.output_sha256,
+            "普通循环包装器哈希不一致",
+        )
+        workload = load_workload(output)
+        items = workload.make_input(2, 42)
+        result = workload.combine(
+            [workload.unit(item) for item in items]
+        )
+        require(result == 1767, "普通循环标准化后语义发生变化")
+
+    evidence = DATA / "loop_frontend_20260730"
+    rejected = load_json(evidence / "first_rejection" / "run_report.json")
+    accepted = load_json(evidence / "accepted" / "run_report.json")
+    analysis = load_json(evidence / "accepted" / "analysis.json")
+    plan = load_json(evidence / "accepted" / "parallel_plan.json")
+    trace = load_json(evidence / "accepted" / "model_trace.json")
+    require(rejected["status"] == "rejected", "缺少前端语义丢失的首轮拒绝证据")
+    require(
+        accepted["status"] == "accepted" and accepted["correct"],
+        "普通循环 DeepSeek-Ray 证据未通过正确性门",
+    )
+    require(
+        analysis["parallelizable"] and analysis["loops"] == 1,
+        "修复后的模型分析没有保留原始循环语义",
+    )
+    require(
+        plan["backend"] == "ray" and plan["parallelizable"],
+        "普通循环最终计划未绑定 Ray",
+    )
+    attempt = accepted["attempts"][0]
+    require(
+        attempt["serial"]["payload"]["result"] == 3491
+        and attempt["parallel"]["payload"]["result"] == 3491
+        and attempt["parallel"]["payload"]["task_count"] == 2,
+        "普通循环串行/Ray 结果或任务数证据不一致",
+    )
+    calls = trace["calls"]
+    require(
+        [call["model"] for call in calls]
+        == ["deepseek-v4-pro", "deepseek-v4-flash"],
+        "普通循环在线证据未遵循 Pro/Flash 路由",
+    )
+    require(
+        sum(int(call["total_tokens"]) for call in calls) == 2435,
+        "普通循环在线证据 Token 汇总发生漂移",
+    )
+
+
 def verify_ray_smoke(path: Path) -> None:
     report = load_json(path.resolve())
     require(report["backend"] == "ray", "Ray 冒烟报告使用了错误后端")
@@ -300,6 +368,7 @@ def main() -> int:
     try:
         metrics = verify_variance_improvement()
         verify_agent_ray_contract()
+        verify_loop_frontend_contract()
         if arguments.ray_smoke:
             verify_ray_smoke(arguments.ray_smoke)
         if arguments.run_tests:
@@ -329,6 +398,7 @@ def main() -> int:
         "  Ray 集群冒烟："
         f"{'已验证' if arguments.ray_smoke else '未提供'}"
     )
+    print("  普通串行循环前端：已验证")
     print(f"  自动化测试：{'已运行' if arguments.run_tests else '未运行'}")
     print("  DeepSeek API：未调用，费用为 0")
     return 0

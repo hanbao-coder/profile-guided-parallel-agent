@@ -1,0 +1,13 @@
+{
+  "status": "rejected",
+  "adapter": "deepseek-online-v1",
+  "feedback_mode": "correctness",
+  "generation_mode": "template",
+  "performance_controller": "llm_feedback",
+  "correct": null,
+  "selected_mode": "serial",
+  "reason": [
+    "Analysis safety gate rejected parallel execution."
+  ],
+  "attempts": []
+}

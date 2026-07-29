@@ -1,0 +1,37 @@
+{
+  "adapter": "deepseek-online-v1",
+  "calls": [
+    {
+      "stage": "analysis",
+      "request_attempt": 1,
+      "model": "deepseek-v4-pro",
+      "base_url": "https://api.deepseek.com",
+      "thinking_enabled": true,
+      "max_output_tokens": 2000,
+      "elapsed_seconds": 10.721684152998932,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"source_path\": \"/mnt/d/hustagent/examples/simple_serial_loop.py\",\n  \"workload_name\": \"simple_serial_loop\",\n  \"functions\": [\n    \"aggregate_counts\",\n    \"equivalent\",\n    \"is_prime\",\n    \"make_input\",\n    \"process_interval\",\n    \"run_serial\"\n  ],\n  \"loops\": 1,\n  \"hazards\": [\n    \"shared_mutation:append\"\n  ],\n  \"contract_functions\": [\n    \"make_input\",\n    \"unit\",\n    \"combine\",\n    \"equivalent\"\n  ],\n  \"contract_complete\": true,\n  \"parallelizable\": true,\n  \"rationale\": [\n    \"The loop iterates directly over the entry input.\",\n    \"Each iteration calls one per-item function and only appends its result.\",\n    \"A separate combine function consumes the collected outputs.\",\n    \"The per-item function contains no explicit global/nonlocal declaration.\"\n  ]\n}",
+      "prompt_tokens": 1064,
+      "completion_tokens": 884,
+      "total_tokens": 1948,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 1064,
+      "valid_json": true
+    },
+    {
+      "stage": "planning",
+      "request_attempt": 1,
+      "model": "deepseek-v4-flash",
+      "base_url": "https://api.deepseek.com",
+      "thinking_enabled": false,
+      "max_output_tokens": 800,
+      "elapsed_seconds": 1.1788633579999441,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"source_path\": \"/mnt/d/hustagent/work/wsl_simple_loop_normalized_v2.py\",\n  \"parallelizable\": true,\n  \"backend\": \"multiprocessing\",\n  \"strategy\": \"map_reduce\",\n  \"workers\": 2,\n  \"chunks\": 2,\n  \"correctness_gate\": true,\n  \"fallback\": \"serial\",\n  \"reasons\": []\n}",
+      "prompt_tokens": 386,
+      "completion_tokens": 101,
+      "total_tokens": 487,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 386,
+      "valid_json": true
+    }
+  ]
+}

@@ -19,7 +19,8 @@ python scripts/verify_research_core.py --run-tests
 3. 方差感知优化是否改善负载不均衡案例并降低性能退化率；
 4. 并行开销、Agent–Ray 后端契约和结构化计划是否完整；
 5. 当前数据的集群节点、任务执行节点及计数不变量是否可审计；
-6. 69 项自动化测试是否通过。
+6. 普通串行循环前端能否保持语义并检测源码/包装器变化；
+7. 75 项自动化测试是否通过。
 
 如果只想快速核对数据与文档，不运行测试：
 
@@ -62,6 +63,7 @@ Ray 临时目录放在仓库 `work/ray/` 下，会使 Linux `AF_UNIX` Socket 路
 - `docs/data/wsl_ray_cluster_ready_20260730/`
 - `docs/data/wsl_ray_variance_20260730/`
 - `docs/data/wsl_ray_formal_20260729/`
+- `docs/data/loop_frontend_20260730/`
 - `docs/data/configuration_ablation_20260729/`
 - `docs/data/task_fusion_20260729/`
 - `docs/data/dag_scheduling_20260729/`

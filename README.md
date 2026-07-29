@@ -108,6 +108,20 @@ parallel-agent benchmark benchmarks/prime_count/workload.py \
 原始测量数据。Ray 结果还记录可用节点、集群资源和任务实际执行节点；只有
 至少两个不同节点真正执行过任务时，才标记为多节点执行。
 
+对普通串行循环，可使用单命令前端完成识别、规范化和 Agent 闭环：
+
+```bash
+parallel-agent agent-loop examples/simple_serial_loop.py \
+  --entry run_serial \
+  --output-dir generated/simple_loop \
+  --adapter deepseek \
+  --execution-backend ray
+```
+
+当前前端只接受边界明确的“逐项调用一个函数、收集结果、最后统一聚合”模式。
+循环归约、全局/非局部状态以及更复杂的控制流会被拒绝，不会强行生成并行代码。
+标准化产物同时绑定原始源码和包装器哈希，任一文件变化后都必须重新分析。
+
 复现当前首轮实验：
 
 ```powershell
@@ -292,7 +306,10 @@ results/           实验原始数据、表格和图片
 ## 当前限制
 
 - 目前只支持符合 `make_input/unit/combine/equivalent` 接口的基准程序；
-- 当前代码生成依赖显式函数契约，还不是任意 Python 源码重构；
+- 普通串行循环前端已支持一种保守的独立 Map-then-Combine 模式，但还不是
+  任意 Python 源码重构；
+- `agent-loop` 的 Ray 候选当前适用于单节点或共享源码目录；跨节点自动打包源码
+  尚未实现；
 - 受控 LLM 代码生成已完成 4 任务、3 次独立生成的共享计划正式配对实验；
 - 正式 Ray 结果已在 WSL2 单节点环境完成；真实多节点扩展性仍需要课题组或
   云端提供至少两台互通的 Linux 节点；

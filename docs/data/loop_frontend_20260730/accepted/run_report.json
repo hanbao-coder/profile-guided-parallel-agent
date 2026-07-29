@@ -1,0 +1,192 @@
+{
+  "status": "accepted",
+  "adapter": "deepseek-online-v1",
+  "feedback_mode": "correctness",
+  "generation_mode": "template",
+  "performance_controller": "llm_feedback",
+  "execution_backend": "ray",
+  "correct": true,
+  "selected_mode": "parallel",
+  "performance_gate_passed": null,
+  "repair_attempts_used": 0,
+  "code_repair_attempts_used": 0,
+  "performance_attempts_used": 0,
+  "final_plan": {
+    "schema_version": "1.0",
+    "source_path": "/mnt/d/hustagent/work/wsl_simple_loop_normalized_v2.py",
+    "parallelizable": true,
+    "backend": "ray",
+    "strategy": "map_reduce",
+    "workers": 2,
+    "chunks": 2,
+    "correctness_gate": true,
+    "fallback": "serial",
+    "reasons": [
+      "DeepSeek recommended a map-reduce process plan.",
+      "Bind the generated candidate to the ray backend."
+    ]
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "plan": {
+        "schema_version": "1.0",
+        "source_path": "/mnt/d/hustagent/work/wsl_simple_loop_normalized_v2.py",
+        "parallelizable": true,
+        "backend": "ray",
+        "strategy": "map_reduce",
+        "workers": 2,
+        "chunks": 2,
+        "correctness_gate": true,
+        "fallback": "serial",
+        "reasons": [
+          "DeepSeek recommended a map-reduce process plan.",
+          "Bind the generated candidate to the ray backend."
+        ]
+      },
+      "serial": {
+        "mode": "serial",
+        "returncode": 0,
+        "elapsed_seconds": 0.5141909039994061,
+        "stdout": "{\"mode\": \"serial\", \"result\": 3491, \"runtime_seconds\": 0.06698245100051281, \"task_count\": 1}\n",
+        "stderr": "",
+        "payload": {
+          "mode": "serial",
+          "result": 3491,
+          "runtime_seconds": 0.06698245100051281,
+          "task_count": 1
+        },
+        "error_type": null
+      },
+      "parallel": {
+        "mode": "parallel",
+        "returncode": 0,
+        "elapsed_seconds": 7.245686667996779,
+        "stdout": "{\"mode\": \"parallel\", \"result\": 3491, \"runtime_seconds\": 4.712025689001166, \"task_count\": 2}\n",
+        "stderr": "",
+        "payload": {
+          "mode": "parallel",
+          "result": 3491,
+          "runtime_seconds": 4.712025689001166,
+          "task_count": 2
+        },
+        "error_type": null
+      },
+      "serial_runs": [
+        {
+          "mode": "serial",
+          "returncode": 0,
+          "elapsed_seconds": 0.5141909039994061,
+          "stdout": "{\"mode\": \"serial\", \"result\": 3491, \"runtime_seconds\": 0.06698245100051281, \"task_count\": 1}\n",
+          "stderr": "",
+          "payload": {
+            "mode": "serial",
+            "result": 3491,
+            "runtime_seconds": 0.06698245100051281,
+            "task_count": 1
+          },
+          "error_type": null
+        },
+        {
+          "mode": "serial",
+          "returncode": 0,
+          "elapsed_seconds": 0.559355064000556,
+          "stdout": "{\"mode\": \"serial\", \"result\": 3491, \"runtime_seconds\": 0.06758583100236137, \"task_count\": 1}\n",
+          "stderr": "",
+          "payload": {
+            "mode": "serial",
+            "result": 3491,
+            "runtime_seconds": 0.06758583100236137,
+            "task_count": 1
+          },
+          "error_type": null
+        },
+        {
+          "mode": "serial",
+          "returncode": 0,
+          "elapsed_seconds": 0.4025257089997467,
+          "stdout": "{\"mode\": \"serial\", \"result\": 3491, \"runtime_seconds\": 0.06705788199906237, \"task_count\": 1}\n",
+          "stderr": "",
+          "payload": {
+            "mode": "serial",
+            "result": 3491,
+            "runtime_seconds": 0.06705788199906237,
+            "task_count": 1
+          },
+          "error_type": null
+        }
+      ],
+      "parallel_runs": [
+        {
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 7.245686667996779,
+          "stdout": "{\"mode\": \"parallel\", \"result\": 3491, \"runtime_seconds\": 4.712025689001166, \"task_count\": 2}\n",
+          "stderr": "",
+          "payload": {
+            "mode": "parallel",
+            "result": 3491,
+            "runtime_seconds": 4.712025689001166,
+            "task_count": 2
+          },
+          "error_type": null
+        },
+        {
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 6.2622244429985585,
+          "stdout": "{\"mode\": \"parallel\", \"result\": 3491, \"runtime_seconds\": 3.9821726829977706, \"task_count\": 2}\n",
+          "stderr": "",
+          "payload": {
+            "mode": "parallel",
+            "result": 3491,
+            "runtime_seconds": 3.9821726829977706,
+            "task_count": 2
+          },
+          "error_type": null
+        },
+        {
+          "mode": "parallel",
+          "returncode": 0,
+          "elapsed_seconds": 6.315678044000379,
+          "stdout": "{\"mode\": \"parallel\", \"result\": 3491, \"runtime_seconds\": 4.215417114999582, \"task_count\": 2}\n",
+          "stderr": "",
+          "payload": {
+            "mode": "parallel",
+            "result": 3491,
+            "runtime_seconds": 4.215417114999582,
+            "task_count": 2
+          },
+          "error_type": null
+        }
+      ],
+      "correct": true,
+      "result_correct": true,
+      "task_count_valid": true,
+      "validation_errors": [],
+      "performance": {
+        "serial_total_median_seconds": 0.5141909039994061,
+        "parallel_total_median_seconds": 6.315678044000379,
+        "serial_total_q1_seconds": 0.45835830649957643,
+        "serial_total_q3_seconds": 0.5367729839999811,
+        "parallel_total_q1_seconds": 6.2889512434994685,
+        "parallel_total_q3_seconds": 6.780682355998579,
+        "serial_compute_median_seconds": 0.06705788199906237,
+        "parallel_compute_median_seconds": 4.215417114999582,
+        "end_to_end_speedup": 0.08141499620739301,
+        "conservative_speedup": 0.0675976667885182,
+        "minimum_speedup": 1.05,
+        "beneficial": false,
+        "repeats": 3,
+        "execution_order": [
+          "parallel",
+          "serial",
+          "parallel",
+          "parallel",
+          "serial",
+          "serial"
+        ]
+      }
+    }
+  ]
+}
