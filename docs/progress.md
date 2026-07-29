@@ -321,3 +321,35 @@
   executor.
 - Added the missing contract fields and changed the contract test to load all
   eight benchmark paths directly from the authoritative suite configuration.
+
+## D22 — Formal WSL2 single-node Ray experiment
+
+- Added Ray startup and warm-task overhead calibration to the benchmark report.
+- Added first-use end-to-end speedup separately from prewarmed runtime speedup.
+- Fixed short-task CPU monitoring by using per-process CPU deltas and a final sample.
+- Ran 8 workloads × 3 modes × 3 independent runs × 5 repetitions: 360 measurements.
+- All serial, naive, and optimized outputs passed correctness validation.
+- Naive Ray achieved 1.792x warm macro speedup with a 37.5% regression rate.
+- Optimized Ray achieved 2.100x warm macro speedup with an 8.3% regression rate.
+- Optimized over naive reached 1.408x geometric mean and 1.161x median.
+- Ray startup averaged 3.077 seconds, so every first-use parallel observation regressed.
+- Load Imbalance exposed under-chunking: 4 optimized tasks lost to 64 naive tasks.
+- Added versioned raw reports, aggregate data, a formal analysis, and summary tests.
+- Expanded the automated suite to 59 passing tests.
+
+## D23 — Variance-aware task planning
+
+- Used the WSL2 Ray evidence to identify a false equal-cost assumption in the
+  optimizer: Load Imbalance was over-merged into four contiguous chunks.
+- Added stratified pilot sampling and an item-runtime coefficient of variation.
+- Added a predicted imbalance penalty that decreases as chunks per worker grow.
+- The Load Imbalance plan changed from 4 to 32 tasks; a three-repeat check
+  reached 2.880x warm speedup.
+- Re-ran the full formal protocol: 8 workloads × 3 modes × 3 independent runs
+  × 5 repetitions, again with all outputs correct.
+- The optimized Ray macro speedup reached 2.390x, regression rate 4.2%, and
+  optimized-over-naive geometric mean 1.710x.
+- Preserved both pre-fix and post-fix raw Ray datasets, added a summary tool,
+  and recorded the reasoning in the internal research notebook.
+- Expanded the automated suite to 61 passing tests; GitHub Linux verification
+  passed on both `master` and `v0.15.0-variance-aware-ray`.
