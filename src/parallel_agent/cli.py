@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from . import __version__
 from .analyzer import analyze_file
 from .agent_ablation import (
     plot_agent_ablation,
@@ -41,6 +42,11 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="parallel-agent",
         description="Profile-guided Python-to-Ray research prototype.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     commands = parser.add_subparsers(dest="command", required=True)
 

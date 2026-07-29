@@ -7,7 +7,7 @@
 每次推送或创建 Pull Request 时，GitHub 会在全新的 Linux / Python 3.12
 环境中自动运行完整项目验收。该流程不读取 DeepSeek Key，也不会产生 API 费用。
 
-当前技术发布版本：`v0.23.0-project-verification`。
+当前技术发布版本：`v0.23.1-release-metadata`。
 
 ## 项目问题
 

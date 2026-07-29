@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "profile-guided-parallel-agent"
-version = "0.1.0"
+version = "0.23.1"
 description = "A profile-guided, dependency-aware agent for Python-to-Ray parallelization."
 requires-python = ">=3.10,<3.13"
 dependencies = [
