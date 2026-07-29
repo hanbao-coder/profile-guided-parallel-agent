@@ -1,13 +1,13 @@
 # Profile-Guided Parallel Agent
 
-[![Project verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml)
+[![Project verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/project-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/project-verification.yml)
 
 基于性能剖析与依赖分析的 Python 串行代码自动并行化研究原型。
 
 每次推送或创建 Pull Request 时，GitHub 会在全新的 Linux / Python 3.12
 环境中自动运行完整项目验收。该流程不读取 DeepSeek Key，也不会产生 API 费用。
 
-当前技术发布版本：`v0.23.1-release-metadata`。
+当前技术发布版本：`v0.23.2-node24-ci`。
 
 ## 项目问题
 

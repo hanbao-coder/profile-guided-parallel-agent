@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "profile-guided-parallel-agent"
-version = "0.23.1"
+version = "0.23.2"
 description = "A profile-guided, dependency-aware agent for Python-to-Ray parallelization."
 requires-python = ">=3.10,<3.13"
 dependencies = [
@@ -32,4 +32,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--basetemp=work/pytest -o cache_dir=work/pytest-cache"
+addopts = "--basetemp=work/pytest -p no:cacheprovider"

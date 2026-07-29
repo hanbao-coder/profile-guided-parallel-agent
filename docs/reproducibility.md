@@ -31,7 +31,7 @@ python scripts/verify_project.py
 
 ## GitHub 自动验收
 
-`.github/workflows/first-stage-verification.yml` 会在以下情况自动运行：
+`.github/workflows/project-verification.yml` 会在以下情况自动运行：
 
 - 向 `master` 推送代码；
 - 推送版本标签；
