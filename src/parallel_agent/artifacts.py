@@ -48,7 +48,7 @@ class ParallelPlan:
     def validate(self) -> None:
         if self.schema_version != "1.0":
             raise ValueError("Unsupported plan schema version")
-        if self.backend not in {"multiprocessing", "serial"}:
+        if self.backend not in {"multiprocessing", "ray", "serial"}:
             raise ValueError(f"Unsupported backend: {self.backend}")
         if self.strategy not in {"map_reduce", "serial"}:
             raise ValueError(f"Unsupported strategy: {self.strategy}")
@@ -66,4 +66,3 @@ class ParallelPlan:
     def to_dict(self) -> dict[str, Any]:
         self.validate()
         return asdict(self)
-

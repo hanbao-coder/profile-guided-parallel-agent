@@ -80,7 +80,8 @@
 
 **处理。** 模板候选新增可选 `--backend ray`，Agent 管道把该选择传递到候选执行器；
 受控 LLM 代码生成继续保留 ProcessPool 沙箱，并在请求 Ray 时明确拒绝，避免绕开
-AST 安全约束。
+AST 安全约束。结构化 `parallel_plan.json` 与 JSON Schema 也同步加入 Ray 后端，
+避免计划字段仍写 multiprocessing、实际候选却执行 Ray 的语义不一致。
 
 **证据。** 在 WSL2 中以 Prime Count 运行 DeepSeek Agent：模型分析与规划、候选
 生成、串行黄金运行和真实 Ray Task 运行均完成，结果 `3491` 一致，任务数为 2。
@@ -118,7 +119,7 @@ AST 安全约束。
 ## 当前可复现证据
 
 - 代码版本：`v0.15.0-variance-aware-ray`；
-- 自动化测试：65 项通过；
+- 自动化测试：66 项通过；
 - 云端验证：Linux / Python 3.12 的两次 GitHub Actions 运行通过；
 - WSL2 正式数据：`docs/data/wsl_ray_variance_20260730/`；
 - 对照协议：8 个任务、M0/M1/M2、3 轮独立运行、每方法 5 次正式计时，共 360 次。

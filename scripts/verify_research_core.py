@@ -132,8 +132,13 @@ def verify_agent_ray_contract() -> None:
     notebook = (ROOT / "docs" / "research-notebook.md").read_text(
         encoding="utf-8"
     )
+    plan_schema = load_json(ROOT / "schemas" / "parallel_plan.schema.json")
     require("remote_run_chunk = ray.remote(run_chunk)" in generator, "候选模板未接入 Ray")
     require("execution_backend" in pipeline, "Agent 管道未传递执行后端")
+    require(
+        "ray" in plan_schema["properties"]["backend"]["enum"],
+        "结构化并行计划 Schema 未声明 Ray 后端",
+    )
     require("DeepSeek Agent" in notebook and "结果 `3491` 一致" in notebook, "缺少 Agent-Ray 验证记录")
 
 

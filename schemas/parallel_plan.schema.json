@@ -18,7 +18,7 @@
     "schema_version": {"const": "1.0"},
     "source_path": {"type": "string", "minLength": 1},
     "parallelizable": {"type": "boolean"},
-    "backend": {"enum": ["multiprocessing", "serial"]},
+    "backend": {"enum": ["multiprocessing", "ray", "serial"]},
     "strategy": {"enum": ["map_reduce", "serial"]},
     "workers": {"type": "integer", "minimum": 1},
     "chunks": {"type": "integer", "minimum": 1},
@@ -28,4 +28,3 @@
   },
   "additionalProperties": false
 }
-

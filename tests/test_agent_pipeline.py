@@ -4,7 +4,10 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-from parallel_agent.agent_pipeline import run_agent_pipeline
+from parallel_agent.agent_pipeline import (
+    _bind_execution_backend,
+    run_agent_pipeline,
+)
 from parallel_agent.agent_adapter import OfflineHeuristicAdapter
 from parallel_agent.controlled_codegen import canonical_parallel_impl
 
@@ -71,6 +74,20 @@ def test_ray_execution_rejects_controlled_llm_candidate(tmp_path: Path) -> None:
             generation_mode="llm",
             execution_backend="ray",
         )
+
+
+def test_execution_backend_is_bound_into_structured_plan() -> None:
+    adapter = OfflineHeuristicAdapter()
+    analysis = adapter.analyze(ROOT / "benchmarks/prime_count/workload.py")
+    plan = adapter.plan(analysis, workers=2, chunks=2)
+    bound = _bind_execution_backend(plan, "ray")
+    assert bound.backend == "ray"
+    assert bound.workers == plan.workers
+    assert bound.chunks == plan.chunks
+    schema = json.loads(
+        (ROOT / "schemas/parallel_plan.schema.json").read_text(encoding="utf-8")
+    )
+    jsonschema.validate(bound.to_dict(), schema)
 
 
 def test_agent_pipeline_rejects_dependency_case(tmp_path: Path) -> None:

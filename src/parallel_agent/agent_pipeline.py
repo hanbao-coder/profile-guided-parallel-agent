@@ -186,6 +186,28 @@ def _serial_fallback_plan(
     return fallback
 
 
+def _bind_execution_backend(
+    plan: ParallelPlan, execution_backend: str
+) -> ParallelPlan:
+    if not plan.parallelizable or plan.backend == execution_backend:
+        return plan
+    bound = ParallelPlan(
+        schema_version=plan.schema_version,
+        source_path=plan.source_path,
+        parallelizable=True,
+        backend=execution_backend,
+        strategy=plan.strategy,
+        workers=plan.workers,
+        chunks=plan.chunks,
+        correctness_gate=plan.correctness_gate,
+        fallback=plan.fallback,
+        reasons=plan.reasons
+        + [f"Bind the generated candidate to the {execution_backend} backend."],
+    )
+    bound.validate()
+    return bound
+
+
 def _configuration_search_summary(
     report: dict[str, Any],
 ) -> dict[str, Any]:
@@ -305,6 +327,7 @@ def run_agent_pipeline(
         plan = selected_adapter.plan(
             analysis, workers=workers, chunks=chunks
         )
+    plan = _bind_execution_backend(plan, execution_backend)
     _write_json(destination / "analysis.json", analysis.to_dict())
     _write_json(destination / "parallel_plan.json", plan.to_dict())
 
@@ -603,10 +626,13 @@ def run_agent_pipeline(
                 / f"repair_feedback_{correctness_repairs_used}.json",
                 feedback,
             )
-            current_plan = selected_adapter.repair(
-                current_plan,
-                feedback,
-                attempt=correctness_repairs_used,
+            current_plan = _bind_execution_backend(
+                selected_adapter.repair(
+                    current_plan,
+                    feedback,
+                    attempt=correctness_repairs_used,
+                ),
+                execution_backend,
             )
             continue
 
@@ -661,10 +687,13 @@ def run_agent_pipeline(
             break
 
         performance_attempts_used += 1
-        current_plan = selected_adapter.optimize_performance(
-            current_plan,
-            performance_feedback,
-            attempt=performance_attempts_used,
+        current_plan = _bind_execution_backend(
+            selected_adapter.optimize_performance(
+                current_plan,
+                performance_feedback,
+                attempt=performance_attempts_used,
+            ),
+            execution_backend,
         )
         _write_json(destination / "parallel_plan.json", current_plan.to_dict())
         if not current_plan.parallelizable:
