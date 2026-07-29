@@ -1,0 +1,12 @@
+{
+  "input_dir": "results\\raw\\wsl_ray_formal_final_20260729",
+  "run_directories": [
+    "run_01",
+    "run_02",
+    "run_03"
+  ],
+  "expected_runs": 3,
+  "expected_workloads": 8,
+  "aggregate_csv": "ray_formal_aggregate.csv",
+  "overall_json": "ray_formal_overall.json"
+}

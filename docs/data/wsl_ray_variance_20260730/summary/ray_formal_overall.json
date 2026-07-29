@@ -1,0 +1,45 @@
+{
+  "independent_runs": 3,
+  "workloads": 8,
+  "modes": 3,
+  "formal_measurements": 360,
+  "all_correct": true,
+  "ray_startup_seconds_mean": 3.126301450666991,
+  "ray_startup_seconds_stdev": 0.184849976588211,
+  "ray_task_overhead_seconds_mean": 0.00022952678123999704,
+  "ray_task_overhead_seconds_stdev": 2.420786068464354e-05,
+  "mode_summary": {
+    "serial": {
+      "observations": 24,
+      "warm_speedup_macro_mean": 1.0,
+      "warm_regression_rate": 0.0,
+      "warm_improvement_rate": 0.0,
+      "first_use_speedup_macro_mean": 1.0,
+      "first_use_regression_rate": 0.0
+    },
+    "naive": {
+      "observations": 24,
+      "warm_speedup_macro_mean": 1.7250969576526947,
+      "warm_regression_rate": 0.375,
+      "warm_improvement_rate": 0.625,
+      "first_use_speedup_macro_mean": 0.042478135036671714,
+      "first_use_regression_rate": 1.0
+    },
+    "optimized": {
+      "observations": 24,
+      "warm_speedup_macro_mean": 2.3901233148322674,
+      "warm_regression_rate": 0.041666666666666664,
+      "warm_improvement_rate": 0.7916666666666666,
+      "first_use_speedup_macro_mean": 0.04311804948506798,
+      "first_use_regression_rate": 1.0
+    }
+  },
+  "optimized_over_naive_mean": 2.585892427096918,
+  "optimized_over_naive_geometric_mean": 1.7103740600013424,
+  "optimized_over_naive_median": 1.236574666319156,
+  "optimized_over_naive_stdev": 3.3160269148572996,
+  "optimized_beats_naive_rate": 0.8333333333333334,
+  "break_even_repetitions_mean": 5532.0,
+  "break_even_repetitions_median": 33.0,
+  "cases_without_warm_savings": 2
+}

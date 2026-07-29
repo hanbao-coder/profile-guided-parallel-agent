@@ -44,3 +44,22 @@ def test_communication_cost_can_trigger_fallback() -> None:
         serialization_seconds=1.0,
     )
     assert plan.selected_mode == "serial_fallback"
+
+
+def test_high_runtime_variation_keeps_more_chunks_for_balancing() -> None:
+    calibrations = {4: BackendCalibration(4, 0.0, 0.0001)}
+    uniform = choose_execution_plan(
+        item_count=64,
+        item_runtime_seconds=0.01,
+        calibrations=calibrations,
+    )
+    imbalanced = choose_execution_plan(
+        item_count=64,
+        item_runtime_seconds=0.01,
+        item_runtime_coefficient_of_variation=1.5,
+        calibrations=calibrations,
+    )
+    assert uniform.selected_mode == "optimized"
+    assert imbalanced.selected_mode == "optimized"
+    assert imbalanced.chunks > uniform.chunks
+    assert imbalanced.predicted_imbalance_factor > 1.0

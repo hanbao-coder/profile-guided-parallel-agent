@@ -19,6 +19,7 @@ class ExecutionPlan:
     predicted_serial_seconds: float
     predicted_warm_seconds: float
     predicted_total_seconds: float
+    predicted_imbalance_factor: float = 1.0
 
 
 def worker_candidates(max_workers: int) -> list[int]:
@@ -40,6 +41,7 @@ def choose_execution_plan(
     chunks_per_worker: Sequence[int] = (1, 2, 4, 8),
     min_expected_speedup: float = 1.05,
     serialization_seconds: float = 0.0,
+    item_runtime_coefficient_of_variation: float = 0.0,
 ) -> ExecutionPlan:
     if item_count <= 0:
         return ExecutionPlan("serial_fallback", 1, 1, 0.0, 0.0, 0.0)
@@ -47,13 +49,20 @@ def choose_execution_plan(
         raise ValueError("At least one backend calibration is required")
 
     serial = item_count * max(item_runtime_seconds, 1e-9)
+    variation = max(0.0, item_runtime_coefficient_of_variation)
     best: ExecutionPlan | None = None
     for workers, calibration in calibrations.items():
         for multiplier in chunks_per_worker:
             chunks = min(item_count, max(1, workers * multiplier))
             waves = (chunks + workers - 1) // workers
             ideal_waves = chunks / workers
-            imbalance_factor = waves / ideal_waves
+            scheduling_factor = waves / ideal_waves
+            # Equal-sized input partitions are only balanced when individual
+            # items cost roughly the same. More chunks let the runtime spread
+            # expensive items over workers. This is a conservative proxy for
+            # dynamic load balancing, based on a stratified pilot sample.
+            variation_factor = 1.0 + min(variation, 4.0) / (multiplier**0.5)
+            imbalance_factor = scheduling_factor * variation_factor
             warm = (
                 serial / workers * imbalance_factor
                 + chunks * calibration.task_overhead_seconds
@@ -67,6 +76,7 @@ def choose_execution_plan(
                 predicted_serial_seconds=serial,
                 predicted_warm_seconds=warm,
                 predicted_total_seconds=total,
+                predicted_imbalance_factor=imbalance_factor,
             )
             if best is None or candidate.predicted_total_seconds < best.predicted_total_seconds:
                 best = candidate
@@ -80,5 +90,6 @@ def choose_execution_plan(
             predicted_serial_seconds=serial,
             predicted_warm_seconds=serial,
             predicted_total_seconds=serial,
+            predicted_imbalance_factor=1.0,
         )
     return best

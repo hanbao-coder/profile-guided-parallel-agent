@@ -3,6 +3,7 @@ from pathlib import Path
 import yaml
 
 from parallel_agent.runner import (
+    _pilot_item_profile,
     benchmark,
     load_workload,
     ray_temp_directory,
@@ -106,3 +107,13 @@ def test_benefit_gate_falls_back_for_large_startup_cost() -> None:
     assert metric.selected_mode == "serial_fallback"
     assert metric.task_count == 1
     assert workload.equivalent(golden, result)
+
+
+def test_stratified_pilot_detects_load_imbalance() -> None:
+    workload = load_workload(ROOT / "benchmarks/load_imbalance/workload.py")
+    mean, coefficient_of_variation, samples = _pilot_item_profile(
+        workload, workload.make_input(16, 42)
+    )
+    assert samples == 16
+    assert mean > 0
+    assert coefficient_of_variation > 0.5

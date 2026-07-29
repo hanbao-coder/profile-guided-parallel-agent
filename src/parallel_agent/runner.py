@@ -189,14 +189,39 @@ def _serialization_profile(values: Sequence[Any]) -> tuple[int, float]:
     return total_bytes, time.perf_counter() - started
 
 
+def _pilot_item_profile(
+    workload: ModuleType, items: Sequence[Any], max_samples: int = 16
+) -> tuple[float, float, int]:
+    """Estimate mean item cost and variation from stratified input samples."""
+    if not items:
+        return 0.0, 0.0, 0
+    sample_count = min(max_samples, len(items))
+    if sample_count == 1:
+        indices = [0]
+    else:
+        indices = sorted(
+            {
+                round(index * (len(items) - 1) / (sample_count - 1))
+                for index in range(sample_count)
+            }
+        )
+    durations: list[float] = []
+    for index in indices:
+        started = time.perf_counter()
+        workload.unit(items[index])
+        durations.append(time.perf_counter() - started)
+    mean = statistics.fmean(durations)
+    coefficient_of_variation = (
+        statistics.pstdev(durations) / mean
+        if len(durations) > 1 and mean > 0
+        else 0.0
+    )
+    return mean, coefficient_of_variation, len(durations)
+
+
 def _pilot_item_time(workload: ModuleType, items: Sequence[Any]) -> float:
-    sample = list(items[: min(5, len(items))])
-    if not sample:
-        return 0.0
-    started = time.perf_counter()
-    for item in sample:
-        workload.unit(item)
-    return (time.perf_counter() - started) / len(sample)
+    """Compatibility helper for callers that only need the mean pilot cost."""
+    return _pilot_item_profile(workload, items)[0]
 
 
 def _percentile(values: Sequence[float], fraction: float) -> float:
@@ -229,7 +254,7 @@ def run_once(
     notes: list[str] = []
     chunks = 1
     task_count = 1
-    item_time = _pilot_item_time(workload, items)
+    item_time, item_cv, pilot_samples = _pilot_item_profile(workload, items)
 
     if mode == "naive":
         chunks = len(items)
@@ -243,6 +268,8 @@ def run_once(
                 len(items), workers, item_time, task_overhead_seconds
             )
         notes.append(f"pilot_item_ms={item_time * 1000:.3f}")
+        notes.append(f"pilot_item_cv={item_cv:.3f}")
+        notes.append(f"pilot_samples={pilot_samples}")
         predicted_serial = (
             execution_plan.predicted_serial_seconds
             if execution_plan
@@ -296,7 +323,12 @@ def run_once(
         list(pool.map(_warm_worker, range(workers)))
         cold_start = time.perf_counter() - start
 
-    with measured(cpu_interval) as measurement:
+    uses_parallel_backend = (
+        mode != "serial" and selected_mode != "serial_fallback"
+    )
+    with measured(
+        cpu_interval, include_children=uses_parallel_backend
+    ) as measurement:
         if mode == "serial" or selected_mode == "serial_fallback":
             result = _serial(workload, items)
         elif backend == "ray":
@@ -381,7 +413,7 @@ def benchmark(
         backend_startup_seconds = ensure_ray_initialized(workers)
         calibrations[workers] = calibrate_ray_backend(workers)
     planning_seconds = time.perf_counter() - planning_started
-    item_time = _pilot_item_time(workload, items)
+    item_time, item_cv, pilot_samples = _pilot_item_profile(workload, items)
     serialized_bytes, serialization_seconds = _serialization_profile(items)
     optimized_plan = (
         choose_execution_plan(
@@ -389,6 +421,7 @@ def benchmark(
             item_runtime_seconds=item_time,
             calibrations=calibrations,
             serialization_seconds=serialization_seconds,
+            item_runtime_coefficient_of_variation=item_cv,
         )
         if calibrations and "optimized" in modes
         else None
@@ -528,6 +561,11 @@ def benchmark(
         "randomize_order": randomize_order,
         "execution_order": execution_order,
         "planning_seconds": planning_seconds,
+        "pilot_profile": {
+            "mean_item_runtime_seconds": item_time,
+            "item_runtime_coefficient_of_variation": item_cv,
+            "samples": pilot_samples,
+        },
         "backend_startup_seconds": backend_startup_seconds,
         "dataset_serialized_bytes": serialized_bytes,
         "dataset_serialization_seconds": serialization_seconds,

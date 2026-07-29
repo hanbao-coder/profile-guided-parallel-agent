@@ -1,0 +1,19 @@
+{
+  "scale": "large",
+  "workers": 4,
+  "repeats": 5,
+  "warmups": 1,
+  "backend": "ray",
+  "randomize_order": true,
+  "benchmarks": [
+    "prime_count",
+    "mandelbrot",
+    "tiny_tasks",
+    "word_count",
+    "monte_carlo_pi",
+    "pairwise_distance",
+    "load_imbalance",
+    "large_payload"
+  ],
+  "csv": "results/raw/wsl_ray_variance_20260730/run_03/suite_large.csv"
+}

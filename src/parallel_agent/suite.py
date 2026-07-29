@@ -68,6 +68,7 @@ def run_suite(
                     "total_runtime_iqr_seconds": summary[
                         "total_runtime_iqr_seconds"
                     ],
+                    "cpu_mean_percent": summary["cpu_mean_percent"],
                     "warm_speedup": summary["speedup"],
                     "total_speedup": summary["total_speedup"],
                     "first_use_total_runtime_seconds": summary[
