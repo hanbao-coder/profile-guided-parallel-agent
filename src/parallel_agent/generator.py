@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -56,7 +57,15 @@ def normalize(value: Any):
     return repr(value)
 
 
-def execute(mode: str, source_path: str, size: int, seed: int, workers: int, chunks: int):
+def execute(
+    mode: str,
+    source_path: str,
+    size: int,
+    seed: int,
+    workers: int,
+    chunks: int,
+    backend: str,
+):
     module = load_source(source_path)
     items = module.make_input(size, seed)
     started = time.perf_counter()
@@ -65,14 +74,36 @@ def execute(mode: str, source_path: str, size: int, seed: int, workers: int, chu
         task_count = 1
     else:
         task_chunks = split_evenly(items, chunks)
-        with ProcessPoolExecutor(max_workers=workers) as pool:
-            nested = list(
-                pool.map(
-                    run_chunk,
-                    [source_path] * len(task_chunks),
-                    task_chunks,
+        if backend == "multiprocessing":
+            with ProcessPoolExecutor(max_workers=workers) as pool:
+                nested = list(
+                    pool.map(
+                        run_chunk,
+                        [source_path] * len(task_chunks),
+                        task_chunks,
+                    )
                 )
+        elif backend == "ray":
+            import ray
+
+            if not ray.is_initialized():
+                ray_temp = Path(tempfile.gettempdir()) / "pa_ray"
+                ray_temp.mkdir(parents=True, exist_ok=True)
+                ray.init(
+                    num_cpus=workers,
+                    include_dashboard=False,
+                    logging_level="ERROR",
+                    _temp_dir=str(ray_temp),
+                )
+            remote_run_chunk = ray.remote(run_chunk)
+            nested = ray.get(
+                [
+                    remote_run_chunk.remote(source_path, chunk)
+                    for chunk in task_chunks
+                ]
             )
+        else:
+            raise ValueError(f"Unsupported backend: {{backend}}")
         result = module.combine([item for group in nested for item in group])
         task_count = len(task_chunks)
     return {{
@@ -86,6 +117,10 @@ def execute(mode: str, source_path: str, size: int, seed: int, workers: int, chu
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["serial", "parallel"], required=True)
+    parser.add_argument(
+        "--backend", choices=["multiprocessing", "ray"],
+        default="multiprocessing",
+    )
     parser.add_argument("--source", default=DEFAULT_SOURCE)
     parser.add_argument("--size", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
@@ -93,7 +128,8 @@ def main():
     parser.add_argument("--chunks", type=int, default=DEFAULT_CHUNKS)
     args = parser.parse_args()
     payload = execute(
-        args.mode, args.source, args.size, args.seed, args.workers, args.chunks
+        args.mode, args.source, args.size, args.seed, args.workers, args.chunks,
+        args.backend,
     )
     print(json.dumps(payload, ensure_ascii=False))
 
@@ -118,4 +154,3 @@ def generate_candidate(plan: ParallelPlan, output_path: str | Path) -> Path:
         encoding="utf-8",
     )
     return output
-

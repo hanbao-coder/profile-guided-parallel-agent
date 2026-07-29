@@ -32,6 +32,7 @@ def execute_candidate(
     timeout_seconds: float,
     workers: int | None = None,
     chunks: int | None = None,
+    backend: str = "multiprocessing",
 ) -> CandidateRun:
     command = [
         sys.executable,
@@ -43,6 +44,8 @@ def execute_candidate(
         "--seed",
         str(seed),
     ]
+    if backend != "multiprocessing":
+        command.extend(["--backend", backend])
     if workers is not None:
         command.extend(["--workers", str(workers)])
     if chunks is not None:

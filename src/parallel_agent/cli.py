@@ -279,6 +279,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     agent.add_argument("--max-code-repairs", type=int, default=2)
     agent.add_argument(
+        "--execution-backend",
+        choices=["multiprocessing", "ray"],
+        default="multiprocessing",
+        help="Backend used to execute template Agent candidates.",
+    )
+    agent.add_argument(
         "--adapter", choices=["offline", "deepseek"], default="offline"
     )
     return parser
@@ -481,6 +487,7 @@ def main() -> None:
             search_cache_dir=args.search_cache_dir,
             generation_mode=args.generation_mode,
             max_code_repair_attempts=args.max_code_repairs,
+            execution_backend=args.execution_backend,
             adapter=adapter,
         )
     except DeepSeekConfigurationError as exc:

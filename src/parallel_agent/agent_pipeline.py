@@ -62,6 +62,7 @@ def _evaluate_candidate(
     repeats: int,
     order_seed: int,
     max_parallel_tasks: int | None = None,
+    execution_backend: str = "multiprocessing",
 ) -> dict[str, Any]:
     serial_runs = []
     parallel_runs = []
@@ -78,6 +79,7 @@ def _evaluate_candidate(
             size=size,
             seed=seed,
             timeout_seconds=timeout_seconds,
+            backend=execution_backend,
         )
         if mode == "serial":
             serial_runs.append(run)
@@ -227,6 +229,7 @@ def run_agent_pipeline(
     search_warmups: int = 1,
     search_minimum_relative_improvement: float = 1.05,
     search_cache_dir: str | Path | None = None,
+    execution_backend: str = "multiprocessing",
     adapter: AgentAdapter | None = None,
     analysis_override: AnalysisArtifact | None = None,
     plan_override: ParallelPlan | None = None,
@@ -249,6 +252,13 @@ def run_agent_pipeline(
             "performance_controller must be llm_feedback or "
             "configuration_search"
         )
+    if execution_backend not in {"multiprocessing", "ray"}:
+        raise ValueError("execution_backend must be multiprocessing or ray")
+    if generation_mode == "llm" and execution_backend == "ray":
+        raise ValueError(
+            "Controlled LLM candidates currently use the ProcessPool sandbox; "
+            "use generation_mode=template for Ray execution."
+        )
     if (
         performance_controller == "configuration_search"
         and feedback_mode != "performance"
@@ -263,6 +273,14 @@ def run_agent_pipeline(
         raise ValueError(
             "configuration_search currently requires deterministic template "
             "generation so the measured and deployed candidates are identical"
+        )
+    if (
+        performance_controller == "configuration_search"
+        and execution_backend != "multiprocessing"
+    ):
+        raise ValueError(
+            "configuration_search uses isolated candidate subprocesses and "
+            "currently supports the multiprocessing backend only"
         )
     if (analysis_override is None) != (plan_override is None):
         raise ValueError(
@@ -472,6 +490,7 @@ def run_agent_pipeline(
             repeats=performance_repeats,
             order_seed=seed + attempt_number,
             max_parallel_tasks=current_plan.chunks,
+            execution_backend=execution_backend,
         )
         serial_run = evaluation["serial_runs"][0]
         parallel_run = evaluation["parallel_runs"][0]
@@ -658,6 +677,7 @@ def run_agent_pipeline(
         "feedback_mode": feedback_mode,
         "generation_mode": generation_mode,
         "performance_controller": performance_controller,
+        "execution_backend": execution_backend,
         "correct": correct,
         "selected_mode": selected_mode,
         "performance_gate_passed": performance_gate_passed,

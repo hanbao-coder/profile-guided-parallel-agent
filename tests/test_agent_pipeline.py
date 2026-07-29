@@ -42,6 +42,37 @@ def test_agent_pipeline_generates_and_validates_candidate(tmp_path: Path) -> Non
     jsonschema.validate(plan, plan_schema)
 
 
+def test_template_candidate_exposes_ray_execution_backend(tmp_path: Path) -> None:
+    report = run_agent_pipeline(
+        ROOT / "benchmarks/prime_count/workload.py",
+        output_dir=tmp_path,
+        size=2,
+        seed=42,
+        workers=2,
+        chunks=2,
+        timeout_seconds=30,
+        performance_repeats=1,
+    )
+    candidate = (tmp_path / "candidate.py").read_text(encoding="utf-8")
+    assert report["execution_backend"] == "multiprocessing"
+    assert 'choices=["multiprocessing", "ray"]' in candidate
+    assert "remote_run_chunk = ray.remote(run_chunk)" in candidate
+
+
+def test_ray_execution_rejects_controlled_llm_candidate(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="ProcessPool sandbox"):
+        run_agent_pipeline(
+            ROOT / "benchmarks/prime_count/workload.py",
+            output_dir=tmp_path,
+            size=2,
+            seed=42,
+            workers=2,
+            chunks=2,
+            generation_mode="llm",
+            execution_backend="ray",
+        )
+
+
 def test_agent_pipeline_rejects_dependency_case(tmp_path: Path) -> None:
     report = run_agent_pipeline(
         ROOT / "benchmarks/prefix_sum/serial.py",
