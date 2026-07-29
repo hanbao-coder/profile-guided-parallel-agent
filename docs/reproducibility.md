@@ -28,6 +28,18 @@ python scripts/verify_first_stage.py --run-tests
 python scripts/verify_first_stage.py
 ```
 
+## GitHub 自动验收
+
+`.github/workflows/first-stage-verification.yml` 会在以下情况自动运行：
+
+- 向 `master` 推送代码；
+- 推送版本标签；
+- 创建或更新面向 `master` 的 Pull Request；
+- 在 GitHub 页面手动触发。
+
+云端环境固定为 Ubuntu 与 Python 3.12，先安装项目，再编译源码，最后执行同一条
+第一阶段验收命令。工作流不配置 DeepSeek Key，因此不会产生模型调用费用。
+
 ## 结果来源
 
 冻结数据位于：

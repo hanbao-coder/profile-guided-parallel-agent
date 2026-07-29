@@ -289,3 +289,14 @@
   and one serial fallback in a stable 3–5 minute story.
 - Added a ready-to-read speaking paragraph and machine-readable demo record.
 - Expanded the automated suite to 56 passing tests.
+
+## D20 — GitHub Linux verification
+
+- Added an automatic GitHub Actions gate for pushes, tags, pull requests, and
+  manual runs.
+- The clean runner uses Ubuntu and Python 3.12, installs the project, compiles
+  sources, and runs the same first-stage release verifier.
+- The workflow intentionally receives no DeepSeek API key and cannot incur model
+  cost.
+- Added a regression test for the required CI invariants.
+- Expanded the local automated suite to 57 passing tests.

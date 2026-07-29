@@ -2,6 +2,9 @@
 
 基于性能剖析与依赖分析的 Python 串行代码自动并行化研究原型。
 
+每次推送或创建 Pull Request 时，GitHub 会在全新的 Linux / Python 3.12
+环境中自动运行第一阶段验收。该流程不读取 DeepSeek Key，也不会产生 API 费用。
+
 ## 项目问题
 
 LLM 很容易把循环改写为 `ray.remote`，但生成的代码不一定正确，也不一定
