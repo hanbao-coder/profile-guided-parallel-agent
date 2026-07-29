@@ -70,6 +70,10 @@ def run_suite(
                     ],
                     "warm_speedup": summary["speedup"],
                     "total_speedup": summary["total_speedup"],
+                    "first_use_total_runtime_seconds": summary[
+                        "first_use_total_runtime_seconds"
+                    ],
+                    "first_use_speedup": summary["first_use_speedup"],
                     "correct": summary["correct"],
                     "input_serialized_bytes": summary["input_serialized_bytes"],
                     "input_serialization_seconds": summary[

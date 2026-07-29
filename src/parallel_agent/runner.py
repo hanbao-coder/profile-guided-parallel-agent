@@ -31,6 +31,8 @@ from .profiler import ResourceSamples, measured
 for _thread_env in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
     os.environ.setdefault(_thread_env, "1")
 
+_RAY_STARTUP_SECONDS = 0.0
+
 
 def load_workload(path: str | Path) -> ModuleType:
     file_path = Path(path).resolve()
@@ -57,12 +59,60 @@ def ray_temp_directory() -> Path:
     return (Path(tempfile.gettempdir()) / "pa_ray").resolve()
 
 
+def ensure_ray_initialized(workers: int) -> float:
+    """Start a local Ray runtime once and return its observed startup cost."""
+    global _RAY_STARTUP_SECONDS
+    try:
+        import ray
+    except ImportError as exc:
+        raise RuntimeError(
+            "Ray is not installed. Use Python 3.11/3.12 and run "
+            "`python -m pip install -e .`."
+        ) from exc
+    if ray.is_initialized():
+        return _RAY_STARTUP_SECONDS
+    ray_temp = ray_temp_directory()
+    ray_temp.mkdir(parents=True, exist_ok=True)
+    started = time.perf_counter()
+    ray.init(
+        num_cpus=workers,
+        include_dashboard=False,
+        ignore_reinit_error=True,
+        logging_level="ERROR",
+        _temp_dir=str(ray_temp),
+    )
+    _RAY_STARTUP_SECONDS = time.perf_counter() - started
+    return _RAY_STARTUP_SECONDS
+
+
+def calibrate_ray_backend(
+    workers: int, task_samples: int = 32
+) -> BackendCalibration:
+    """Measure warm Ray submission/get overhead using identity tasks."""
+    import ray
+
+    ensure_ray_initialized(workers)
+    remote_identity = ray.remote(_identity)
+    ray.get([remote_identity.remote(value) for value in range(workers)])
+    started = time.perf_counter()
+    values = ray.get(
+        [remote_identity.remote(value) for value in range(task_samples)]
+    )
+    elapsed = time.perf_counter() - started
+    assert values == list(range(task_samples))
+    return BackendCalibration(
+        workers=workers,
+        startup_seconds=0.0,
+        task_overhead_seconds=elapsed / task_samples,
+    )
+
+
 def _ray_map(
     workload: ModuleType,
     items: Sequence[Any],
     workers: int,
     chunk_count: int,
-) -> tuple[Any, int]:
+) -> tuple[Any, int, list[list[Any]]]:
     try:
         import ray
     except ImportError as exc:
@@ -71,19 +121,7 @@ def _ray_map(
             "`python -m pip install -e .`."
         ) from exc
 
-    if not ray.is_initialized():
-        # Ray appends session and socket names below this directory. Keeping the
-        # root short is required on Linux, where AF_UNIX paths are limited to
-        # roughly 107 bytes (GitHub checkout paths are already long).
-        ray_temp = ray_temp_directory()
-        ray_temp.mkdir(parents=True, exist_ok=True)
-        ray.init(
-            num_cpus=workers,
-            include_dashboard=False,
-            ignore_reinit_error=True,
-            logging_level="ERROR",
-            _temp_dir=str(ray_temp),
-        )
+    ensure_ray_initialized(workers)
 
     @ray.remote
     def run_chunk(chunk: list[Any]) -> list[Any]:
@@ -93,7 +131,7 @@ def _ray_map(
     refs = [run_chunk.remote(chunk) for chunk in chunks]
     nested = ray.get(refs)
     flat = [value for chunk_values in nested for value in chunk_values]
-    return workload.combine(flat), len(chunks)
+    return workload.combine(flat), len(chunks), nested
 
 
 def _run_process_chunk(workload_path: str, chunk: list[Any]) -> list[Any]:
@@ -262,7 +300,9 @@ def run_once(
         if mode == "serial" or selected_mode == "serial_fallback":
             result = _serial(workload, items)
         elif backend == "ray":
-            result, task_count = _ray_map(workload, items, workers, chunks)
+            result, task_count, task_outputs = _ray_map(
+                workload, items, workers, chunks
+            )
         elif backend == "multiprocessing":
             assert pool is not None
             result, task_count, task_outputs = _process_map_with_pool(
@@ -273,7 +313,7 @@ def run_once(
     if pool is not None:
         pool.shutdown(wait=True)
     if mode != "serial" and selected_mode != "serial_fallback":
-        if backend == "multiprocessing":
+        if backend in {"multiprocessing", "ray"}:
             output_bytes, output_serialization = _serialization_profile(task_outputs)
         else:
             output_bytes, output_serialization = _serialization_profile([result])
@@ -326,6 +366,7 @@ def benchmark(
     golden = _serial(workload, items)
     raw: list[RunMetrics] = []
     calibrations: dict[int, BackendCalibration] = {}
+    backend_startup_seconds = 0.0
     planning_started = time.perf_counter()
     if backend == "multiprocessing" and any(
         mode in {"naive", "optimized"} for mode in modes
@@ -334,6 +375,11 @@ def benchmark(
             calibrations[candidate_workers] = calibrate_process_backend(
                 candidate_workers
             )
+    elif backend == "ray" and any(
+        mode in {"naive", "optimized"} for mode in modes
+    ):
+        backend_startup_seconds = ensure_ray_initialized(workers)
+        calibrations[workers] = calibrate_ray_backend(workers)
     planning_seconds = time.perf_counter() - planning_started
     item_time = _pilot_item_time(workload, items)
     serialized_bytes, serialization_seconds = _serialization_profile(items)
@@ -460,6 +506,19 @@ def benchmark(
                 {row.selected_mode or row.mode for row in rows}
             ),
         }
+        uses_parallel_backend = any(
+            row.mode != "serial"
+            and row.selected_mode != "serial_fallback"
+            for row in rows
+        )
+        first_use_total = (
+            statistics.median(total_values)
+            + (backend_startup_seconds if uses_parallel_backend else 0.0)
+        )
+        summaries[mode]["first_use_total_runtime_seconds"] = first_use_total
+        summaries[mode]["first_use_speedup"] = (
+            serial_median / first_use_total if first_use_total > 0 else 0.0
+        )
 
     report = {
         "benchmark": workload.NAME,
@@ -469,6 +528,7 @@ def benchmark(
         "randomize_order": randomize_order,
         "execution_order": execution_order,
         "planning_seconds": planning_seconds,
+        "backend_startup_seconds": backend_startup_seconds,
         "dataset_serialized_bytes": serialized_bytes,
         "dataset_serialization_seconds": serialization_seconds,
         "calibrations": {

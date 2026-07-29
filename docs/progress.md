@@ -316,3 +316,8 @@
 - Moved Ray sessions to the short system temp root and added a regression test
   that reserves room for Ray's generated session/socket suffix.
 - Expanded the local automated suite to 58 passing tests.
+- The first eight-workload WSL suite then exposed two boundary workloads that
+  lacked the common `NAME` contract because older experiments used a dedicated
+  executor.
+- Added the missing contract fields and changed the contract test to load all
+  eight benchmark paths directly from the authoritative suite configuration.

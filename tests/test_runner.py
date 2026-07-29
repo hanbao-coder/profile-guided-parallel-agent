@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 from parallel_agent.runner import (
     benchmark,
     load_workload,
@@ -18,14 +20,14 @@ def test_load_prime_workload() -> None:
 
 
 def test_all_runnable_workloads_satisfy_contract() -> None:
+    config = yaml.safe_load(
+        (ROOT / "configs/benchmarks.yaml").read_text(encoding="utf-8")
+    )
     paths = [
-        ROOT / "benchmarks/prime_count/workload.py",
-        ROOT / "benchmarks/mandelbrot/workload.py",
-        ROOT / "benchmarks/tiny_tasks/workload.py",
-        ROOT / "benchmarks/word_count/workload.py",
-        ROOT / "benchmarks/monte_carlo/workload.py",
-        ROOT / "benchmarks/pairwise_distance/workload.py",
+        ROOT / entry["path"]
+        for entry in config["benchmarks"].values()
     ]
+    assert len(paths) == 8
     for path in paths:
         workload = load_workload(path)
         items = workload.make_input(2, 42)

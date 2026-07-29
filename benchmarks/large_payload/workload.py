@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Iterable
 
 
+NAME = "large_payload"
 PAYLOAD_BYTES = 128 * 1024
 
 

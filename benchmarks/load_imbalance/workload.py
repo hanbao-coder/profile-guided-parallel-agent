@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Iterable
 
 
+NAME = "load_imbalance"
+
+
 def make_input(size: int, seed: int) -> list[tuple[int, int]]:
     del seed
     count = max(4, size)

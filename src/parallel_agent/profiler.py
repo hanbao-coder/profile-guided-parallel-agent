@@ -35,9 +35,12 @@ class ResourceMonitor:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._process = psutil.Process(os.getpid())
+        self._last_cpu_seconds = 0.0
+        self._last_sample_time = 0.0
 
     def start(self) -> None:
-        self._process.cpu_percent(None)
+        self._last_cpu_seconds, _ = self._tree_totals()
+        self._last_sample_time = time.perf_counter()
         self._thread = threading.Thread(target=self._sample, daemon=True)
         self._thread.start()
 
@@ -49,17 +52,32 @@ class ResourceMonitor:
 
     def _sample(self) -> None:
         while not self._stop.wait(self.interval):
-            children = self._process.children(recursive=True)
-            cpu = self._process.cpu_percent(None)
-            rss = self._process.memory_info().rss
-            for child in children:
-                try:
-                    cpu += child.cpu_percent(None)
-                    rss += child.memory_info().rss
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-            self.samples.cpu.append(cpu)
+            sampled_at = time.perf_counter()
+            cpu_seconds, rss = self._tree_totals()
+            elapsed = sampled_at - self._last_sample_time
+            cpu_delta = max(0.0, cpu_seconds - self._last_cpu_seconds)
+            cpu_percent = cpu_delta / elapsed * 100.0 if elapsed > 0 else 0.0
+            self.samples.cpu.append(cpu_percent)
             self.samples.rss.append(rss)
+            self._last_cpu_seconds = cpu_seconds
+            self._last_sample_time = sampled_at
+
+    def _tree_totals(self) -> tuple[float, int]:
+        processes = [self._process]
+        try:
+            processes.extend(self._process.children(recursive=True))
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+        cpu_seconds = 0.0
+        rss = 0
+        for process in processes:
+            try:
+                times = process.cpu_times()
+                cpu_seconds += times.user + times.system
+                rss += process.memory_info().rss
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        return cpu_seconds, rss
 
 
 @contextmanager
@@ -73,4 +91,3 @@ def measured(interval: float = 0.05):
     finally:
         payload["runtime_seconds"] = time.perf_counter() - started
         payload["resources"] = monitor.stop()
-
