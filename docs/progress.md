@@ -300,3 +300,5 @@
   cost.
 - Added a regression test for the required CI invariants.
 - Expanded the local automated suite to 57 passing tests.
+- Verified both the branch-push and version-tag runs on GitHub: each completed
+  successfully on the clean Linux runner.

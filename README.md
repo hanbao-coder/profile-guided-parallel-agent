@@ -1,5 +1,7 @@
 # Profile-Guided Parallel Agent
 
+[![First-stage verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml)
+
 基于性能剖析与依赖分析的 Python 串行代码自动并行化研究原型。
 
 每次推送或创建 Pull Request 时，GitHub 会在全新的 Linux / Python 3.12

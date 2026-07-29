@@ -40,6 +40,11 @@ python scripts/verify_first_stage.py
 云端环境固定为 Ubuntu 与 Python 3.12，先安装项目，再编译源码，最后执行同一条
 第一阶段验收命令。工作流不配置 DeepSeek Key，因此不会产生模型调用费用。
 
+首次分支推送和 `v0.14.0-linux-ci` 标签触发的两次云端运行均已成功完成：
+
+- `https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/runs/30461017594`
+- `https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/runs/30461020253`
+
 ## 结果来源
 
 冻结数据位于：
