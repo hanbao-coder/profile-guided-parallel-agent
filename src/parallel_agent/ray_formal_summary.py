@@ -136,6 +136,25 @@ def summarize_ray_formal_runs(
         serialization_ratios = [
             float(row["serialization_to_runtime_ratio"]) for row in rows
         ]
+        overhead_ratios = [
+            (
+                float(row["parallel_overhead_ratio"])
+                if row.get("parallel_overhead_ratio") not in {None, ""}
+                else float(row["workers"]) / float(row["warm_speedup"]) - 1.0
+            )
+            for row in rows
+        ]
+        first_use_overhead_ratios = [
+            (
+                float(row["first_use_parallel_overhead_ratio"])
+                if row.get("first_use_parallel_overhead_ratio")
+                not in {None, ""}
+                else float(row["workers"])
+                / float(row["first_use_speedup"])
+                - 1.0
+            )
+            for row in rows
+        ]
         aggregate_rows.append(
             {
                 "benchmark": benchmark,
@@ -154,6 +173,10 @@ def summarize_ray_formal_runs(
                 "task_count_mean": _mean(task_counts),
                 "cpu_mean_percent": _mean(cpu_values),
                 "serialization_ratio_mean": _mean(serialization_ratios),
+                "parallel_overhead_ratio_mean": _mean(overhead_ratios),
+                "first_use_parallel_overhead_ratio_mean": _mean(
+                    first_use_overhead_ratios
+                ),
             }
         )
 

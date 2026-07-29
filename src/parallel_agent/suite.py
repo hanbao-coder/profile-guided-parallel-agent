@@ -69,12 +69,21 @@ def run_suite(
                         "total_runtime_iqr_seconds"
                     ],
                     "cpu_mean_percent": summary["cpu_mean_percent"],
+                    "parallel_overhead_core_seconds": summary[
+                        "parallel_overhead_core_seconds"
+                    ],
+                    "parallel_overhead_ratio": summary[
+                        "parallel_overhead_ratio"
+                    ],
                     "warm_speedup": summary["speedup"],
                     "total_speedup": summary["total_speedup"],
                     "first_use_total_runtime_seconds": summary[
                         "first_use_total_runtime_seconds"
                     ],
                     "first_use_speedup": summary["first_use_speedup"],
+                    "first_use_parallel_overhead_ratio": summary[
+                        "first_use_parallel_overhead_ratio"
+                    ],
                     "correct": summary["correct"],
                     "input_serialized_bytes": summary["input_serialized_bytes"],
                     "input_serialization_seconds": summary[

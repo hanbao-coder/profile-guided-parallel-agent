@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import yaml
 
 from parallel_agent.runner import (
@@ -51,8 +52,31 @@ def test_serial_benchmark(tmp_path: Path) -> None:
     assert report["summary"]["serial"]["correct"]
     assert report["summary"]["serial"]["speedup"] == 1.0
     assert report["summary"]["serial"]["total_speedup"] == 1.0
+    assert report["summary"]["serial"]["parallel_overhead_ratio"] == 0.0
     assert report["summary"]["serial"]["runtime_iqr_seconds"] == 0.0
     assert report["environment"]["cpu_logical"] >= 1
+
+
+def test_parallel_summary_reports_standard_overhead_metrics(
+    tmp_path: Path,
+) -> None:
+    report = benchmark(
+        ROOT / "benchmarks/prime_count/workload.py",
+        size=2,
+        workers=2,
+        modes=["serial", "naive"],
+        repeats=1,
+        warmups=0,
+        seed=42,
+        output=tmp_path / "result.json",
+        backend="multiprocessing",
+    )
+    serial = report["summary"]["serial"]["runtime_median_seconds"]
+    naive = report["summary"]["naive"]
+    expected = naive["workers"] * naive["runtime_median_seconds"] - serial
+    assert naive["parallel_overhead_core_seconds"] == pytest.approx(expected)
+    assert naive["parallel_overhead_ratio"] == pytest.approx(expected / serial)
+    assert "first_use_parallel_overhead_ratio" in naive
 
 
 def test_benchmark_order_is_reproducibly_randomized(tmp_path: Path) -> None:

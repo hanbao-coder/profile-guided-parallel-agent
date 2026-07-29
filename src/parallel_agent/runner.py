@@ -507,6 +507,17 @@ def benchmark(
                 if mode != "serial"
                 else 1.0
             ),
+            "parallel_overhead_core_seconds": (
+                effective_workers * runtime - serial_median
+                if mode != "serial"
+                else 0.0
+            ),
+            "parallel_overhead_ratio": (
+                (effective_workers * runtime - serial_median)
+                / serial_median
+                if mode != "serial" and serial_median > 0
+                else 0.0
+            ),
             "correct": all(row.correct for row in rows),
             "cpu_mean_percent": statistics.fmean(
                 row.cpu_mean_percent for row in rows
@@ -551,6 +562,19 @@ def benchmark(
         summaries[mode]["first_use_total_runtime_seconds"] = first_use_total
         summaries[mode]["first_use_speedup"] = (
             serial_median / first_use_total if first_use_total > 0 else 0.0
+        )
+        summaries[mode]["first_use_parallel_overhead_core_seconds"] = (
+            effective_workers * first_use_total - serial_median
+            if mode != "serial"
+            else 0.0
+        )
+        summaries[mode]["first_use_parallel_overhead_ratio"] = (
+            (
+                effective_workers * first_use_total - serial_median
+            )
+            / serial_median
+            if mode != "serial" and serial_median > 0
+            else 0.0
         )
 
     report = {

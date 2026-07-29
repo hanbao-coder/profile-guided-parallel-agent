@@ -25,6 +25,7 @@ def _write_fixture_run(path: Path, speed: float) -> None:
                     "warm_speedup": warm_speedup,
                     "first_use_speedup": 0.2 if mode != "serial" else 1.0,
                     "task_count": task_count,
+                    "workers": 1 if mode == "serial" else 4,
                     "cpu_mean_percent": 100.0,
                     "serialization_to_runtime_ratio": 0.01,
                     "correct": True,
