@@ -26,6 +26,10 @@ from .paired_generation_experiment import (
 )
 from .runner import benchmark
 from .suite import run_suite
+from .task_fusion import (
+    plot_task_fusion_experiment,
+    run_task_fusion_experiment,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -190,6 +194,20 @@ def _parser() -> argparse.ArgumentParser:
     plot_search.add_argument("aggregate_csv")
     plot_search.add_argument("overall_json")
     plot_search.add_argument("--output-dir", required=True)
+
+    fusion = commands.add_parser(
+        "task-fusion-experiment",
+        help="Compare unfused, fixed-fusion, and communication-aware pipelines.",
+    )
+    fusion.add_argument("config")
+    fusion.add_argument("--output-dir", required=True)
+
+    plot_fusion = commands.add_parser(
+        "plot-task-fusion",
+        help="Plot task-fusion runtime and communication results.",
+    )
+    plot_fusion.add_argument("summary_csv")
+    plot_fusion.add_argument("--output-dir", required=True)
 
     agent = commands.add_parser("agent", help="Run the analyze-plan-generate loop.")
     agent.add_argument("source")
@@ -380,6 +398,20 @@ def main() -> None:
             args.aggregate_csv,
             args.overall_json,
             args.output_dir,
+        )
+        print(json.dumps({"figure": str(output)}, ensure_ascii=False))
+        return
+
+    if args.command == "task-fusion-experiment":
+        result = run_task_fusion_experiment(
+            args.config, output_dir=args.output_dir
+        )
+        print(json.dumps(result["overall"], indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "plot-task-fusion":
+        output = plot_task_fusion_experiment(
+            args.summary_csv, output_dir=args.output_dir
         )
         print(json.dumps({"figure": str(output)}, ensure_ascii=False))
         return

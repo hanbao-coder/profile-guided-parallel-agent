@@ -89,6 +89,7 @@ DeepSeek 分析与确定性性能搜索的端到端工具接入见
 `docs/agent-performance-tool.md`。
 固定配置、小样本直接决策与完整三阶段方法的正式消融见
 `docs/formal-configuration-ablation.md`。
+通信与复用感知任务融合实验见 `docs/task-fusion-experiment.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -206,6 +207,13 @@ parallel-agent agent benchmarks/load_imbalance/workload.py `
 
 正式实验不使用缓存；日常重复分析同一份代码、输入规模和机器环境时可使用缓存，
 避免重复支付完整搜索成本。
+
+运行通信感知任务融合实验：
+
+```powershell
+parallel-agent task-fusion-experiment configs/task_fusion_formal.yaml `
+  --output-dir results/raw/task_fusion_formal
+```
 
 如果第一次接触科研项目，请从以下两份文档开始：
 

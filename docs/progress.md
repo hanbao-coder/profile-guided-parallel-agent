@@ -228,3 +228,17 @@
 - Small-sample search averaged 6.12 seconds per job; scale confirmation added
   2.42 seconds per job.
 - Added a three-way report figure and versioned paired holdout data.
+
+## D15 — Communication- and reuse-aware task fusion
+
+- Added explicit single-consumer chain and shared-heavy-fanout DAG workloads.
+- Added unfused, fixed edge-fusion, and communication-aware strategies.
+- Reused one warmed process pool and randomized five repeated measurements to
+  isolate task-fusion effects from process cold start.
+- The single-consumer chain eliminated 8.0 MiB of intermediate transfer, reduced
+  task count from 16 to 8, and achieved 22.02x over unfused execution.
+- Fixed edge fusion duplicated the heavy producer in the fanout case and fell
+  to 0.545x; the aware policy preserved producer reuse and avoided that regression.
+- All strategies matched the serial golden output.
+- Added versioned raw reports, a comparison figure, and 3 automated tests.
+- Expanded the automated suite to 51 passing tests.
