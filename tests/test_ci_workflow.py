@@ -16,4 +16,6 @@ def test_ci_verifies_release_on_linux_python_312() -> None:
     assert "--modes serial naive optimized" in workflow
     assert "actions/upload-artifact@v4" in workflow
     assert "work/ray-smoke.json" in workflow
+    assert "work/ray-smoke.log" in workflow
+    assert "GITHUB_STEP_SUMMARY" in workflow
     assert "DEEPSEEK_API_KEY" not in workflow

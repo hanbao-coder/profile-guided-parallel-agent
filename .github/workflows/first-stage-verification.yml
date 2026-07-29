@@ -50,6 +50,8 @@ jobs:
 
       - name: Run real single-node Ray smoke experiment
         run: |
+          mkdir -p work
+          set +e
           parallel-agent benchmark benchmarks/prime_count/workload.py \
             --size 4 \
             --workers 2 \
@@ -57,13 +59,26 @@ jobs:
             --modes serial naive optimized \
             --repeats 1 \
             --warmups 0 \
-            --output work/ray-smoke.json
+            --output work/ray-smoke.json 2>&1 | tee work/ray-smoke.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "## Ray smoke failure"
+              echo
+              echo '```text'
+              tail -n 100 work/ray-smoke.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
 
       - name: Upload Ray smoke evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ray-smoke-${{ github.sha }}
-          path: work/ray-smoke.json
+          path: |
+            work/ray-smoke.json
+            work/ray-smoke.log
           if-no-files-found: warn
           retention-days: 30
