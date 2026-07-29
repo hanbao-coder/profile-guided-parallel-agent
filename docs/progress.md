@@ -256,3 +256,16 @@
 - Renamed the upward-rank field to avoid presenting it as a makespan lower bound.
 - Added versioned schedules, a comparison figure, and 3 automated tests.
 - Expanded the automated suite to 54 passing tests.
+
+## D17 — First-stage freeze and advisor-report package
+
+- Froze the first-stage method after configuration search, feedback ablation,
+  task fusion, and deterministic DAG scheduling.
+- Updated the written report, speaking outline, advisor-contact message, figures,
+  quantitative claims, limitations, and questions for the advisor.
+- Generated a 15-page Word report with nine exact-width tables and ten figures.
+- Exported the report through Microsoft Word and visually inspected all 15 pages.
+- Rechecked accessibility: zero high-, medium-, or low-severity findings.
+- Rechecked table geometry: all table widths, indents, grids, and cell widths match.
+- Kept the Windows/Ray hostname limitation explicit; no modeled DAG result is
+  presented as a real Ray runtime result.
