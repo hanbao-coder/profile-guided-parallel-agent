@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from parallel_agent.runner import benchmark, load_workload, run_once
+from parallel_agent.runner import (
+    benchmark,
+    load_workload,
+    ray_temp_directory,
+    run_once,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +74,18 @@ def test_benchmark_order_is_reproducibly_randomized(tmp_path: Path) -> None:
         "serial",
         "serial",
     ]
+
+
+def test_ray_temp_directory_leaves_room_for_unix_socket_suffix() -> None:
+    ray_temp = ray_temp_directory()
+    representative_socket = (
+        ray_temp
+        / "session_2026-07-29_14-43-37_420070_2377"
+        / "sockets"
+        / "plasma_store"
+    )
+    assert ray_temp.is_absolute()
+    assert len(str(representative_socket).encode("utf-8")) < 107
 
 
 def test_benefit_gate_falls_back_for_large_startup_cost() -> None:

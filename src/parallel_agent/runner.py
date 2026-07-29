@@ -7,6 +7,7 @@ import pickle
 import platform
 import random
 import statistics
+import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict
@@ -51,6 +52,11 @@ def _serial(workload: ModuleType, items: Sequence[Any]) -> Any:
     return workload.combine([workload.unit(item) for item in items])
 
 
+def ray_temp_directory() -> Path:
+    """Return a short absolute root for Ray-generated session sockets."""
+    return (Path(tempfile.gettempdir()) / "pa_ray").resolve()
+
+
 def _ray_map(
     workload: ModuleType,
     items: Sequence[Any],
@@ -66,7 +72,10 @@ def _ray_map(
         ) from exc
 
     if not ray.is_initialized():
-        ray_temp = (Path.cwd() / "work" / "ray").resolve()
+        # Ray appends session and socket names below this directory. Keeping the
+        # root short is required on Linux, where AF_UNIX paths are limited to
+        # roughly 107 bytes (GitHub checkout paths are already long).
+        ray_temp = ray_temp_directory()
         ray_temp.mkdir(parents=True, exist_ok=True)
         ray.init(
             num_cpus=workers,

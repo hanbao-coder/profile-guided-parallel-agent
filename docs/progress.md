@@ -311,3 +311,8 @@
   fail, so Ray runtime evidence is not reduced to a green badge.
 - The smoke is explicitly scoped to backend correctness and portability, not
   shared-runner performance or multi-node scalability.
+- The first run exposed Linux's 107-byte AF_UNIX socket-path limit because the
+  Ray temp directory was nested under GitHub's long checkout path.
+- Moved Ray sessions to the short system temp root and added a regression test
+  that reserves room for Ray's generated session/socket suffix.
+- Expanded the local automated suite to 58 passing tests.

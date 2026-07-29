@@ -45,6 +45,11 @@ python scripts/verify_first_stage.py
 GitHub Actions Artifact。该实验用于验证单节点 Ray 后端可执行和结果正确，不作为
 共享 CI 机器上的正式性能结论，也不代表多机集群实验。
 
+首次 Ray Gate 暴露了一个跨平台问题：GitHub 的 checkout 路径较长，原先再将
+Ray 临时目录放在仓库 `work/ray/` 下，会使 Linux `AF_UNIX` Socket 路径超过
+107 字节。当前实现改用系统短临时目录 `/tmp/pa_ray`，并加入路径
+长度回归测试。
+
 首次分支推送和 `v0.14.0-linux-ci` 标签触发的两次云端运行均已成功完成：
 
 - `https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/runs/30461017594`
