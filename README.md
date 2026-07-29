@@ -5,7 +5,9 @@
 基于性能剖析与依赖分析的 Python 串行代码自动并行化研究原型。
 
 每次推送或创建 Pull Request 时，GitHub 会在全新的 Linux / Python 3.12
-环境中自动运行第一阶段验收。该流程不读取 DeepSeek Key，也不会产生 API 费用。
+环境中自动运行完整项目验收。该流程不读取 DeepSeek Key，也不会产生 API 费用。
+
+当前技术发布版本：`v0.23.0-project-verification`。
 
 ## 项目问题
 
@@ -46,13 +48,14 @@ python scripts/verify_project.py --run-tests
 
 详细验收范围和结果边界见 `docs/reproducibility.md`。
 
-运行第一次导师汇报的离线现场演示：
+运行历史第一阶段的离线现场演示（仅用于复现早期里程碑，不是当前最终汇报）：
 
 ```powershell
 python scripts/run_advisor_demo.py
 ```
 
-演示顺序和讲解词见 `docs/advisor-demo.md`。
+历史演示顺序见 `docs/advisor-demo.md`。最终汇报材料仅在用户明确要求后，根据
+当前版本和正式数据重新生成。
 
 运行测试：
 
