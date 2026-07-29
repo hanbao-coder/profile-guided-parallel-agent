@@ -15,6 +15,10 @@ from .agent_experiment import run_agent_experiment
 from .agent_pipeline import run_agent_pipeline
 from .deepseek_adapter import DeepSeekAdapter, DeepSeekConfigurationError
 from .plotting import plot_suite_results
+from .paired_generation_experiment import (
+    plot_paired_generation_experiment,
+    run_paired_generation_experiment,
+)
 from .runner import benchmark
 from .suite import run_suite
 
@@ -105,6 +109,28 @@ def _parser() -> argparse.ArgumentParser:
         "--adapter", choices=["offline", "deepseek"], default="deepseek"
     )
     experiment.add_argument("--no-resume", action="store_true")
+
+    paired = commands.add_parser(
+        "paired-generation-experiment",
+        help=(
+            "Compare template and LLM generators under one shared analysis "
+            "and parallel plan."
+        ),
+    )
+    paired.add_argument("config")
+    paired.add_argument("--output-dir", required=True)
+    paired.add_argument(
+        "--adapter", choices=["offline", "deepseek"], default="deepseek"
+    )
+    paired.add_argument("--no-resume", action="store_true")
+
+    plot_paired = commands.add_parser(
+        "plot-paired-generation",
+        help="Plot reliability and speed results for a paired generator run.",
+    )
+    plot_paired.add_argument("summary_csv")
+    plot_paired.add_argument("aggregate_csv")
+    plot_paired.add_argument("--output-dir", required=True)
 
     agent = commands.add_parser("agent", help="Run the analyze-plan-generate loop.")
     agent.add_argument("source")
@@ -216,6 +242,25 @@ def main() -> None:
             resume=not args.no_resume,
         )
         print(json.dumps(result["manifest"], indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "paired-generation-experiment":
+        result = run_paired_generation_experiment(
+            args.config,
+            output_dir=args.output_dir,
+            adapter_name=args.adapter,
+            resume=not args.no_resume,
+        )
+        print(json.dumps(result["manifest"], indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "plot-paired-generation":
+        output = plot_paired_generation_experiment(
+            args.summary_csv,
+            args.aggregate_csv,
+            args.output_dir,
+        )
+        print(json.dumps({"figure": str(output)}, ensure_ascii=False))
         return
 
     try:

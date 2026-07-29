@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "source_path": "D:\\hustagent\\benchmarks\\pairwise_distance\\workload.py",
+  "parallelizable": true,
+  "backend": "multiprocessing",
+  "strategy": "map_reduce",
+  "workers": 4,
+  "chunks": 4,
+  "correctness_gate": true,
+  "fallback": "serial",
+  "reasons": [
+    "DeepSeek recommended a map-reduce process plan."
+  ]
+}

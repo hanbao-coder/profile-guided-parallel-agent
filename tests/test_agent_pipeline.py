@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import jsonschema
+import pytest
 
 from parallel_agent.agent_pipeline import run_agent_pipeline
 from parallel_agent.agent_adapter import OfflineHeuristicAdapter
@@ -176,3 +177,67 @@ def test_unsafe_llm_code_enters_code_repair_loop(tmp_path: Path) -> None:
         "error_type"
     ] == "generated_code_safety_error"
     assert (tmp_path / "code_feedback_1.json").exists()
+
+
+def test_pipeline_requires_both_shared_artifact_overrides(
+    tmp_path: Path,
+) -> None:
+    source = ROOT / "benchmarks/prime_count/workload.py"
+    adapter = OfflineHeuristicAdapter()
+    analysis = adapter.analyze(source)
+
+    with pytest.raises(
+        ValueError,
+        match="analysis_override and plan_override",
+    ):
+        run_agent_pipeline(
+            source,
+            output_dir=tmp_path / "invalid_override",
+            size=2,
+            seed=42,
+            workers=2,
+            chunks=2,
+            analysis_override=analysis,
+        )
+
+
+class _WrongTaskCountThenRepairAdapter(OfflineHeuristicAdapter):
+    def generate_parallel_impl(self, plan):
+        del plan
+        return canonical_parallel_impl().replace(
+            "return flattened, len(task_chunks)",
+            "return flattened, len(flattened)",
+        )
+
+    def repair_parallel_impl(
+        self, plan, code, feedback, *, attempt
+    ):
+        del plan, code, attempt
+        assert feedback["outputs_equal"] is True
+        assert feedback["task_count_valid"] is False
+        return canonical_parallel_impl()
+
+
+def test_invalid_task_count_enters_code_repair_loop(
+    tmp_path: Path,
+) -> None:
+    report = run_agent_pipeline(
+        ROOT / "benchmarks/tiny_tasks/workload.py",
+        output_dir=tmp_path,
+        size=8,
+        seed=42,
+        workers=2,
+        chunks=2,
+        timeout_seconds=30,
+        feedback_mode="correctness",
+        performance_repeats=1,
+        generation_mode="llm",
+        max_code_repair_attempts=1,
+        adapter=_WrongTaskCountThenRepairAdapter(),
+    )
+
+    assert report["status"] == "accepted"
+    assert report["code_repair_attempts_used"] == 1
+    assert report["attempts"][0]["result_correct"] is True
+    assert report["attempts"][0]["task_count_valid"] is False
+    assert report["attempts"][1]["task_count_valid"] is True

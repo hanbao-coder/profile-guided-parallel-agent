@@ -164,3 +164,22 @@
 - Disabled thinking mode for code generation and repair after calibration; the
   resumed workloads then produced valid code in one generation call.
 - Expanded the automated suite to 37 passing tests.
+
+## D11 — Shared-plan paired generator experiment
+
+- Added a paired experiment protocol where template and LLM candidates share
+  exactly the same analysis artifact and parallel plan.
+- Added randomized interleaved Serial/Template/LLM measurements with warm-ups,
+  repeated medians, quartiles, budgets, failure artifacts, and resume support.
+- Found that result equality alone was insufficient: a Tiny Tasks candidate
+  returned the item count instead of the submitted task count.
+- Added a task-count semantic gate and demonstrated a real DeepSeek repair.
+- Ran 4 workloads × 3 independent generations (12 paired jobs).
+- Template generation was correct in 12/12 jobs; controlled LLM generation was
+  correct in 11/12.
+- The LLM had a 1.021x macro runtime ratio over template among measured pairs,
+  but only 3/11 comparisons remained favorable under Q1/Q3 conservative bounds.
+- LLM code generation and repair consumed 16,978 incremental tokens and required
+  8 repairs; one Pairwise Distance candidate remained incorrect after two repairs.
+- Added a report-ready paired reliability/performance figure.
+- Expanded the automated suite to 41 passing tests.

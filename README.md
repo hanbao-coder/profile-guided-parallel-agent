@@ -81,6 +81,8 @@ DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
 四任务、三模式、三次独立运行的正式结果见
 `docs/formal-agent-experiment.md`。
 受控 LLM 代码生成、安全门与四任务预检见 `docs/controlled-llm-codegen.md`。
+共享分析/计划的模板与 LLM 正式配对实验见
+`docs/formal-paired-generation-experiment.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -159,6 +161,18 @@ parallel-agent agent-experiment configs/agent_experiment_formal.yaml `
 该实验包含调用数和 Token 双预算保护，并自动生成单次结果、分任务统计和
 跨任务总体统计。
 
+运行共享计划的模板/LLM 生成器配对实验：
+
+```powershell
+parallel-agent paired-generation-experiment `
+  configs/paired_generation_formal.yaml `
+  --output-dir results/raw/paired_generation_formal_20260729 `
+  --adapter deepseek
+```
+
+该实验让两个生成器共享同一份分析和并行计划，并随机交错重复测量，避免把
+分析差异或运行顺序误认为代码生成器差异。
+
 如果第一次接触科研项目，请从以下两份文档开始：
 
 - `docs/project-control.md`：当前阶段、下一节点和汇报时间；
@@ -186,6 +200,6 @@ results/           实验原始数据、表格和图片
 
 - 目前只支持符合 `make_input/unit/combine/equivalent` 接口的基准程序；
 - 当前代码生成依赖显式函数契约，还不是任意 Python 源码重构；
-- 受控 LLM 代码生成已完成四任务功能预检，尚未完成多次独立生成的正式性能实验；
+- 受控 LLM 代码生成已完成 4 任务、3 次独立生成的共享计划正式配对实验；
 - 本机 Ray 受中文主机名兼容问题影响，正式 Ray 结果仍需 Linux 环境；
 - AST 分析器只提供保守提示，不能替代实际正确性验证。

@@ -1,0 +1,16 @@
+{
+  "workloads": 4,
+  "runs": 12,
+  "template_correct_rate": 1.0,
+  "llm_correct_rate": 0.9166666666666666,
+  "llm_over_template_macro_mean": 1.0206309726218035,
+  "generation_failure_rate": 0.08333333333333333,
+  "llm_win_rate": 0.8181818181818182,
+  "model_calls_total": 44,
+  "tokens_total": 40573,
+  "llm_generation_calls_total": 20,
+  "llm_generation_tokens_total": 16978,
+  "llm_generation_cost_upper_usd_total": 0.009488655,
+  "estimated_cost_upper_usd_total": 0.02324634,
+  "pricing_snapshot_date": "2026-07-29"
+}

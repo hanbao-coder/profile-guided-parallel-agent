@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .agent_adapter import AgentAdapter, OfflineHeuristicAdapter
+from .artifacts import AnalysisArtifact, ParallelPlan
 from .candidate_executor import execute_candidate
 from .controlled_codegen import (
     GeneratedCodeSafetyError,
@@ -59,6 +60,7 @@ def _evaluate_candidate(
     timeout_seconds: float,
     repeats: int,
     order_seed: int,
+    max_parallel_tasks: int | None = None,
 ) -> dict[str, Any]:
     serial_runs = []
     parallel_runs = []
@@ -92,7 +94,7 @@ def _evaluate_candidate(
         if run.payload and run.error_type is None
     ]
     all_runs = serial_runs + parallel_runs
-    correct = (
+    result_correct = (
         bool(serial_results)
         and len(serial_results) == len(serial_runs)
         and len(parallel_results) == len(parallel_runs)
@@ -100,6 +102,35 @@ def _evaluate_candidate(
         and all(result == serial_results[0] for result in serial_results)
         and all(result == serial_results[0] for result in parallel_results)
     )
+    task_count_values = [
+        run.payload.get("task_count")
+        for run in parallel_runs
+        if run.payload is not None
+    ]
+    task_count_valid = (
+        len(task_count_values) == len(parallel_runs)
+        and all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and value >= 1
+            and (
+                max_parallel_tasks is None
+                or value <= max_parallel_tasks
+            )
+            for value in task_count_values
+        )
+    )
+    validation_errors: list[str] = []
+    if not result_correct:
+        validation_errors.append(
+            "serial and parallel results are missing, failed, or unequal"
+        )
+    if not task_count_valid:
+        validation_errors.append(
+            "parallel task_count must be an integer between 1 and the "
+            f"configured chunk count ({max_parallel_tasks})"
+        )
+    correct = result_correct and task_count_valid
     serial_values = [run.elapsed_seconds for run in serial_runs]
     parallel_values = [run.elapsed_seconds for run in parallel_runs]
     serial_total = statistics.median(serial_values)
@@ -110,6 +141,9 @@ def _evaluate_candidate(
         "serial_runs": serial_runs,
         "parallel_runs": parallel_runs,
         "correct": correct,
+        "result_correct": result_correct,
+        "task_count_valid": task_count_valid,
+        "validation_errors": validation_errors,
         "serial_total_median_seconds": serial_total,
         "parallel_total_median_seconds": parallel_total,
         "serial_total_q1_seconds": serial_q1,
@@ -166,6 +200,8 @@ def run_agent_pipeline(
     generation_mode: str = "template",
     max_code_repair_attempts: int = 2,
     adapter: AgentAdapter | None = None,
+    analysis_override: AnalysisArtifact | None = None,
+    plan_override: ParallelPlan | None = None,
 ) -> dict[str, Any]:
     if feedback_mode not in {"one_shot", "correctness", "performance"}:
         raise ValueError(
@@ -177,12 +213,29 @@ def run_agent_pipeline(
         raise ValueError("minimum_speedup must be positive")
     if generation_mode not in {"template", "llm"}:
         raise ValueError("generation_mode must be template or llm")
+    if (analysis_override is None) != (plan_override is None):
+        raise ValueError(
+            "analysis_override and plan_override must be provided together"
+        )
     selected_adapter = adapter or OfflineHeuristicAdapter()
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
 
-    analysis = selected_adapter.analyze(source_path)
-    plan = selected_adapter.plan(analysis, workers=workers, chunks=chunks)
+    if analysis_override is not None and plan_override is not None:
+        analysis_override.validate()
+        plan_override.validate()
+        expected_source = Path(source_path).resolve()
+        if Path(analysis_override.source_path).resolve() != expected_source:
+            raise ValueError("analysis_override source does not match source_path")
+        if Path(plan_override.source_path).resolve() != expected_source:
+            raise ValueError("plan_override source does not match source_path")
+        analysis = analysis_override
+        plan = plan_override
+    else:
+        analysis = selected_adapter.analyze(source_path)
+        plan = selected_adapter.plan(
+            analysis, workers=workers, chunks=chunks
+        )
     _write_json(destination / "analysis.json", analysis.to_dict())
     _write_json(destination / "parallel_plan.json", plan.to_dict())
 
@@ -287,6 +340,7 @@ def run_agent_pipeline(
             # groups differ in which feedback they are allowed to consume.
             repeats=performance_repeats,
             order_seed=seed + attempt_number,
+            max_parallel_tasks=current_plan.chunks,
         )
         serial_run = evaluation["serial_runs"][0]
         parallel_run = evaluation["parallel_runs"][0]
@@ -339,6 +393,9 @@ def run_agent_pipeline(
                 run.to_dict() for run in evaluation["parallel_runs"]
             ],
             "correct": correct,
+            "result_correct": evaluation["result_correct"],
+            "task_count_valid": evaluation["task_count_valid"],
+            "validation_errors": evaluation["validation_errors"],
             "performance": performance,
         }
         attempts.append(attempt_record)
@@ -355,7 +412,13 @@ def run_agent_pipeline(
                     "serial_stderr": serial_run.stderr[-4000:],
                     "parallel_error": parallel_run.error_type,
                     "parallel_stderr": parallel_run.stderr[-4000:],
-                    "outputs_equal": False,
+                    "outputs_equal": evaluation["result_correct"],
+                    "task_count_valid": evaluation[
+                        "task_count_valid"
+                    ],
+                    "validation_errors": evaluation[
+                        "validation_errors"
+                    ],
                 }
                 _write_json(
                     destination

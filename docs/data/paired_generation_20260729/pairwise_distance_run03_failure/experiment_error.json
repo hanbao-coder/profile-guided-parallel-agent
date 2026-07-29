@@ -1,0 +1,9 @@
+{
+  "workload": "pairwise_distance",
+  "source": "D:\\hustagent\\benchmarks\\pairwise_distance\\workload.py",
+  "size": 16,
+  "replicate": 3,
+  "error_type": "RuntimeError",
+  "message": "Both generated candidates must pass correctness before paired timing",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\hustagent\\src\\parallel_agent\\paired_generation_experiment.py\", line 493, in run_paired_generation_experiment\n    raise RuntimeError(\n    ...<2 lines>...\n    )\nRuntimeError: Both generated candidates must pass correctness before paired timing\n"
+}

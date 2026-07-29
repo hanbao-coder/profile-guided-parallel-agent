@@ -1,0 +1,26 @@
+independent_runs: 1
+order_seed: 20260729
+
+workloads:
+  prime_count:
+    path: benchmarks/prime_count/workload.py
+    size: 8
+  tiny_tasks:
+    path: benchmarks/tiny_tasks/workload.py
+    size: 200
+
+execution:
+  workers: 4
+  chunks: 4
+  seed: 42
+  timeout_seconds: 180
+  max_code_repair_attempts: 2
+
+measurement:
+  warmups: 1
+  repeats: 3
+
+budget:
+  max_model_calls: 20
+  max_total_tokens: 60000
+
