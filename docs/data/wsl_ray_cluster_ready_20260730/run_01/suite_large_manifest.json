@@ -1,0 +1,20 @@
+{
+  "scale": "large",
+  "workers": 4,
+  "repeats": 5,
+  "warmups": 1,
+  "backend": "ray",
+  "ray_address": null,
+  "randomize_order": true,
+  "benchmarks": [
+    "prime_count",
+    "mandelbrot",
+    "tiny_tasks",
+    "word_count",
+    "monte_carlo_pi",
+    "pairwise_distance",
+    "load_imbalance",
+    "large_payload"
+  ],
+  "csv": "/mnt/d/hustagent/work/wsl_ray_v021_formal_20260730/run_01/suite_large.csv"
+}

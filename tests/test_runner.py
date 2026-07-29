@@ -7,6 +7,7 @@ import yaml
 
 from parallel_agent.runner import (
     _pilot_item_profile,
+    _run_ray_chunk,
     benchmark,
     load_workload,
     ray_cluster_metadata,
@@ -59,7 +60,7 @@ def test_serial_benchmark(tmp_path: Path) -> None:
     assert report["summary"]["serial"]["runtime_iqr_seconds"] == 0.0
     assert report["environment"]["cpu_logical"] >= 1
     assert report["ray_cluster"] is None
-    assert report["runs"][0]["execution_node_ids"] == []
+    assert report["runs"][0]["execution_node_counts"] == {}
 
 
 def test_parallel_summary_reports_standard_overhead_metrics(
@@ -169,6 +170,17 @@ def test_ray_cluster_metadata_distinguishes_multiple_nodes(
     assert metadata["multi_node"] is True
     assert metadata["total_cpu"] == 12.0
     assert metadata["total_gpu"] == 1.0
+
+
+def test_ray_chunk_records_execution_node(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_context = SimpleNamespace(get_node_id=lambda: "node-123")
+    fake_ray = SimpleNamespace(get_runtime_context=lambda: fake_context)
+    monkeypatch.setitem(sys.modules, "ray", fake_ray)
+    values, node_id = _run_ray_chunk(lambda value: value * 2, [1, 2, 3])
+    assert values == [2, 4, 6]
+    assert node_id == "node-123"
 
 
 def test_benefit_gate_falls_back_for_large_startup_cost() -> None:

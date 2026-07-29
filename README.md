@@ -21,6 +21,10 @@ LLM 很容易把循环改写为 `ray.remote`，但生成的代码不一定正确
 AST 静态分析、Worker/Chunk 搜索、收益 Gate、性能回退，以及受控的
 DeepSeek 在线代码生成与代码级修复。
 
+当前版本在 WSL2 单节点 Ray 上完成 3 轮正式复测：8 类任务、M0/M1/M2、
+每方法 5 次计时，共 360 次且全部正确。M2 预热宏平均加速为 2.406x，
+性能退化率为 0%，相对 M1 的几何平均提升为 1.734x。
+
 ## 环境
 
 推荐 Python 3.11 或 3.12。当前项目暂不支持 Python 3.13，主要是为了避免
@@ -34,10 +38,10 @@ python -m pip install -e ".[dev]"
 
 ## 快速验证
 
-验收第一阶段正式数据、汇报声明和完整测试（不调用 DeepSeek API）：
+验收当前正式 Ray 数据、Agent–Ray 契约和完整测试（不调用 DeepSeek API）：
 
 ```powershell
-python scripts/verify_first_stage.py --run-tests
+python scripts/verify_research_core.py --run-tests
 ```
 
 详细验收范围和结果边界见 `docs/reproducibility.md`。

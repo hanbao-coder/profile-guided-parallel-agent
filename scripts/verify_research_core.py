@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import csv
 import json
 import os
@@ -37,7 +38,9 @@ def load_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def verify_ray_dataset(name: str) -> tuple[dict, list[dict[str, str]]]:
+def verify_ray_dataset(
+    name: str, *, require_cluster_evidence: bool = False
+) -> tuple[dict, list[dict[str, str]]]:
     base = DATA / name
     overall = load_json(base / "summary" / "ray_formal_overall.json")
     aggregate = load_csv(base / "summary" / "ray_formal_aggregate.csv")
@@ -67,6 +70,46 @@ def verify_ray_dataset(name: str) -> tuple[dict, list[dict[str, str]]]:
                 ),
                 f"{report_path.name} 存在错误方法结果",
             )
+            if require_cluster_evidence:
+                cluster = report.get("ray_cluster")
+                require(
+                    isinstance(cluster, dict),
+                    f"{report_path.name} 缺少 Ray 集群证据",
+                )
+                require(
+                    cluster["physical_node_count"] == 1
+                    and not cluster["multi_node"],
+                    f"{report_path.name} 不是声明的 WSL2 单节点实验",
+                )
+                require(
+                    cluster["executed_node_count"] == 1
+                    and not cluster["executed_on_multiple_nodes"],
+                    f"{report_path.name} 的任务执行节点声明不一致",
+                )
+                expected_counts: Counter[str] = Counter()
+                for run in report["runs"]:
+                    counts = run.get("execution_node_counts")
+                    require(
+                        isinstance(counts, dict),
+                        f"{report_path.name} 缺少逐次节点任务计数",
+                    )
+                    expected_counts.update(
+                        {
+                            str(node_id): int(count)
+                            for node_id, count in counts.items()
+                        }
+                    )
+                    if counts:
+                        require(
+                            sum(int(count) for count in counts.values())
+                            == int(run["task_count"]),
+                            f"{report_path.name} 的任务数与节点计数不一致",
+                        )
+                require(
+                    dict(expected_counts)
+                    == cluster["task_executions_by_node"],
+                    f"{report_path.name} 的聚合节点计数无法由原始运行恢复",
+                )
     return overall, aggregate
 
 
@@ -76,7 +119,13 @@ def indexed(rows: list[dict[str, str]]) -> dict[tuple[str, str], dict[str, str]]
 
 def verify_variance_improvement() -> dict[str, float]:
     before, before_rows = verify_ray_dataset("wsl_ray_formal_20260729")
-    after, after_rows = verify_ray_dataset("wsl_ray_variance_20260730")
+    variance, _variance_rows = verify_ray_dataset(
+        "wsl_ray_variance_20260730"
+    )
+    after, after_rows = verify_ray_dataset(
+        "wsl_ray_cluster_ready_20260730",
+        require_cluster_evidence=True,
+    )
     before_optimized = before["mode_summary"]["optimized"]
     after_optimized = after["mode_summary"]["optimized"]
     require(
@@ -99,6 +148,23 @@ def verify_variance_improvement() -> dict[str, float]:
         new_index[("load_imbalance", "optimized")]["warm_speedup_mean"]
     )
     require(new_load > old_load * 2.0, "负载不均衡案例未获得预期修复")
+    variance_speedup = float(
+        variance["mode_summary"]["optimized"]["warm_speedup_macro_mean"]
+    )
+    require(
+        abs(
+            float(after_optimized["warm_speedup_macro_mean"])
+            - variance_speedup
+        )
+        / variance_speedup
+        < 0.2,
+        "当前实现与上一轮方差感知正式结果偏差超过 20%",
+    )
+    require(
+        after_optimized["warm_regression_rate"]
+        <= variance["mode_summary"]["optimized"]["warm_regression_rate"],
+        "当前实现的性能退化率高于上一轮正式结果",
+    )
 
     for row in after_rows:
         require(
@@ -119,6 +185,10 @@ def verify_variance_improvement() -> dict[str, float]:
         "optimized_over_naive_geomean": float(
             after["optimized_over_naive_geometric_mean"]
         ),
+        "optimized_beats_naive_rate": float(
+            after["optimized_beats_naive_rate"]
+        ),
+        "variance_speedup": variance_speedup,
     }
 
 
@@ -170,6 +240,26 @@ def verify_ray_smoke(path: Path) -> None:
         == (cluster["executed_node_count"] >= 2),
         "实际多节点执行标志与节点计数不一致",
     )
+    expected_counts: Counter[str] = Counter()
+    for run in report["runs"]:
+        counts = run.get("execution_node_counts")
+        require(isinstance(counts, dict), "Ray 冒烟缺少逐次节点任务计数")
+        expected_counts.update(
+            {
+                str(node_id): int(count)
+                for node_id, count in counts.items()
+            }
+        )
+        if counts:
+            require(
+                sum(int(count) for count in counts.values())
+                == int(run["task_count"]),
+                "Ray 冒烟的任务数与节点计数不一致",
+            )
+    require(
+        dict(expected_counts) == cluster["task_executions_by_node"],
+        "Ray 冒烟的聚合节点计数无法由原始运行恢复",
+    )
 
 
 def run_tests() -> None:
@@ -220,7 +310,7 @@ def main() -> int:
 
     print("[通过] 当前研究核心验收完成")
     print(
-        "  方差感知 M2："
+        "  当前 M2："
         f"{metrics['before_speedup']:.3f}x → {metrics['after_speedup']:.3f}x，"
         f"退化率 {metrics['before_regression']:.1%} → "
         f"{metrics['after_regression']:.1%}"
@@ -232,7 +322,8 @@ def main() -> int:
     )
     print(
         "  M2/M1 几何平均："
-        f"{metrics['optimized_over_naive_geomean']:.3f}x"
+        f"{metrics['optimized_over_naive_geomean']:.3f}x，"
+        f"胜率 {metrics['optimized_beats_naive_rate']:.1%}"
     )
     print(
         "  Ray 集群冒烟："

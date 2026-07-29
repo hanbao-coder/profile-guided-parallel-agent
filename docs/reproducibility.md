@@ -1,7 +1,7 @@
-# 第一阶段复现与验收说明
+# 当前研究核心复现与验收说明
 
-本页用于让本人、导师或代码审阅者快速确认第一阶段提交是否完整。验收工具只读取
-仓库内已经版本化的配置、正式实验数据和汇报文档，不会连接 DeepSeek，也不会产生
+本页用于让本人、导师或代码审阅者快速确认当前研究核心是否完整。验收工具只读取
+仓库内已经版本化的配置、正式实验数据和代码契约，不会连接 DeepSeek，也不会产生
 API 费用。
 
 ## 一条命令完成验收
@@ -9,23 +9,22 @@ API 费用。
 安装项目依赖后，在仓库根目录运行：
 
 ```powershell
-python scripts/verify_first_stage.py --run-tests
+python scripts/verify_research_core.py --run-tests
 ```
 
 该命令会检查：
 
-1. 第一阶段配置、数据、报告、口头提纲和论文笔记是否齐全；
-2. 配置搜索是否确实包含 8 个任务、24 个作业且无失败；
-3. 固定配置与完整三阶段方法的宏平均加速和性能退化率；
-4. 任务融合的正确性、任务数、传输量及复用反例；
-5. 两类 DAG 中关键路径策略是否降低建模 makespan 和 Worker 空闲比例；
-6. 导师报告中的核心数字是否仍与正式数据一致；
-7. 55 项自动化测试是否通过。
+1. 三组正式 Ray 数据是否包含约定的 3×8×3 方法矩阵；
+2. 当前正式数据是否包含 360 次计时且全部正确；
+3. 方差感知优化是否改善负载不均衡案例并降低性能退化率；
+4. 并行开销、Agent–Ray 后端契约和结构化计划是否完整；
+5. 当前数据的集群节点、任务执行节点及计数不变量是否可审计；
+6. 69 项自动化测试是否通过。
 
 如果只想快速核对数据与文档，不运行测试：
 
 ```powershell
-python scripts/verify_first_stage.py
+python scripts/verify_research_core.py
 ```
 
 ## GitHub 自动验收
@@ -43,7 +42,8 @@ python scripts/verify_first_stage.py
 在常规验收之后，工作流还会使用实际 `--backend ray` 运行 Prime Count 的
 串行、朴素并行和优化并行小规模冒烟实验，并将原始 JSON 保存为 30 天可下载的
 GitHub Actions Artifact。该实验用于验证单节点 Ray 后端可执行和结果正确，不作为
-共享 CI 机器上的正式性能结论，也不代表多机集群实验。
+共享 CI 机器上的正式性能结论，也不代表多机集群实验。工作流还会验证报告中的
+存活节点、任务实际执行节点和节点任务计数可以相互还原。
 
 首次 Ray Gate 暴露了一个跨平台问题：GitHub 的 checkout 路径较长，原先再将
 Ray 临时目录放在仓库 `work/ray/` 下，会使 Linux `AF_UNIX` Socket 路径超过
@@ -59,6 +59,9 @@ Ray 临时目录放在仓库 `work/ray/` 下，会使 Linux `AF_UNIX` Socket 路
 
 冻结数据位于：
 
+- `docs/data/wsl_ray_cluster_ready_20260730/`
+- `docs/data/wsl_ray_variance_20260730/`
+- `docs/data/wsl_ray_formal_20260729/`
 - `docs/data/configuration_ablation_20260729/`
 - `docs/data/task_fusion_20260729/`
 - `docs/data/dag_scheduling_20260729/`
@@ -70,10 +73,22 @@ Ray 临时目录放在仓库 `work/ray/` 下，会使 Linux `AF_UNIX` Socket 路
 
 - 配置搜索和任务融合是本机 `multiprocessing` 实测结果；
 - DAG 调度是确定性同构 Worker 列表调度模型，不是真实 Ray 运行加速；
-- 当前 Windows 中文主机名触发 Ray 2.56.1 兼容错误，正式 Ray 复现等待 Linux
-  或英文主机名环境；
+- 当前正式 Ray 性能结果来自 WSL2 Ubuntu 单节点，不代表真实多节点扩展性；
+- `--ray-address` 已可连接外部集群，但多节点结论必须同时满足至少两个物理节点
+  和至少两个实际任务执行节点；
 - 验收脚本证明冻结数据、代码测试和文档声明一致，不代替在新机器上重新执行全部
   长时间实验。
+
+## 重新运行当前正式 Ray 协议
+
+在 WSL2 或 Linux 中激活包含项目依赖的环境，然后运行：
+
+```bash
+bash scripts/run_wsl_ray_formal.sh results/raw/wsl_ray_current
+```
+
+脚本拒绝覆盖已有目录，依次启动三轮独立 Ray 运行，最后自动生成聚合 CSV 和
+总体 JSON。正式协议固定为 8 类任务、M0/M1/M2、每方法 1 次预热和 5 次计时。
 
 ## 导师现场演示建议
 

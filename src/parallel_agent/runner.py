@@ -374,7 +374,7 @@ def run_once(
     input_serialization = 0.0
     output_bytes = 0
     output_serialization = 0.0
-    execution_node_ids: list[str] = []
+    execution_node_counts: dict[str, int] = {}
     parallel_chunks = (
         split_evenly(items, chunks)
         if mode != "serial" and selected_mode != "serial_fallback"
@@ -404,6 +404,7 @@ def run_once(
             result, task_count, task_outputs, execution_node_ids = _ray_map(
                 workload, items, workers, chunks
             )
+            execution_node_counts = dict(Counter(execution_node_ids))
         elif backend == "multiprocessing":
             assert pool is not None
             result, task_count, task_outputs = _process_map_with_pool(
@@ -445,7 +446,7 @@ def run_once(
         input_serialization_seconds=input_serialization,
         output_serialized_bytes=output_bytes,
         output_serialization_seconds=output_serialization,
-        execution_node_ids=execution_node_ids,
+        execution_node_counts=execution_node_counts,
         notes=notes,
     )
     return metric, result
@@ -656,11 +657,9 @@ def benchmark(
     ray_cluster: dict[str, Any] | None = None
     if backend == "ray" and uses_parallel_mode:
         ray_cluster = ray_cluster_metadata(ray_address)
-        execution_counts = Counter(
-            node_id
-            for metric in raw
-            for node_id in metric.execution_node_ids
-        )
+        execution_counts = Counter()
+        for metric in raw:
+            execution_counts.update(metric.execution_node_counts)
         ray_cluster.update(
             {
                 "executed_node_ids": sorted(execution_counts),
