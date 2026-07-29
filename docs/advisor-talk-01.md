@@ -2,6 +2,12 @@
 
 建议总时长：8～10 分钟。
 
+## 汇报前现场准备
+
+先运行 `python scripts/verify_first_stage.py --run-tests`。如果老师希望看 Demo，
+只运行 `python scripts/run_advisor_demo.py`，按屏幕上的四步讲解；不要现场
+重新跑长时间实验或调用 DeepSeek。
+
 ## 0:00–1:00：一句话说明项目
 
 老师好，我把题目缩小为“基于性能剖析与依赖分析的 Python 自动并行化

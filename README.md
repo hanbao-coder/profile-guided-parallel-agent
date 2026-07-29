@@ -37,6 +37,14 @@ python scripts/verify_first_stage.py --run-tests
 
 详细验收范围和结果边界见 `docs/reproducibility.md`。
 
+运行第一次导师汇报的离线现场演示：
+
+```powershell
+python scripts/run_advisor_demo.py
+```
+
+演示顺序和讲解词见 `docs/advisor-demo.md`。
+
 运行测试：
 
 ```powershell

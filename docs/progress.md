@@ -279,3 +279,13 @@
 - Added a `--run-tests` mode that never calls DeepSeek or incurs API cost.
 - Added a beginner-oriented reproducibility and five-minute demo guide.
 - Expanded the automated suite to 55 passing tests.
+
+## D19 — Offline advisor demo
+
+- Added a one-command, zero-API-cost advisor demo.
+- The demo performs live AST analysis for Prefix Sum and clearly labels the
+  performance evidence as frozen formal holdout data.
+- It presents one dependency rejection, one profitable adaptive configuration,
+  and one serial fallback in a stable 3–5 minute story.
+- Added a ready-to-read speaking paragraph and machine-readable demo record.
+- Expanded the automated suite to 56 passing tests.

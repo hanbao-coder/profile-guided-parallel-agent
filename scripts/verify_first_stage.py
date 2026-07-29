@@ -49,6 +49,7 @@ def verify_required_files() -> None:
         ROOT / "docs" / "advisor-report-01.md",
         ROOT / "docs" / "advisor-talk-01.md",
         ROOT / "docs" / "advisor-message-01.md",
+        ROOT / "docs" / "advisor-demo.md",
         ROOT / "docs" / "literature-notes.md",
     ]
     missing = [str(path.relative_to(ROOT)) for path in required if not path.is_file()]
