@@ -9,7 +9,7 @@ API 费用。
 安装项目依赖后，在仓库根目录运行：
 
 ```powershell
-python scripts/verify_research_core.py --run-tests
+python scripts/verify_project.py --run-tests
 ```
 
 该命令会检查：
@@ -20,12 +20,12 @@ python scripts/verify_research_core.py --run-tests
 4. 并行开销、Agent–Ray 后端契约和结构化计划是否完整；
 5. 当前数据的集群节点、任务执行节点及计数不变量是否可审计；
 6. 普通串行循环前端能否保持语义并检测源码/包装器变化；
-7. 75 项自动化测试是否通过。
+7. 76 项自动化测试是否通过。
 
 如果只想快速核对数据与文档，不运行测试：
 
 ```powershell
-python scripts/verify_research_core.py
+python scripts/verify_project.py
 ```
 
 ## GitHub 自动验收

@@ -1,6 +1,6 @@
 # Profile-Guided Parallel Agent
 
-[![First-stage verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml)
+[![Project verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/first-stage-verification.yml)
 
 基于性能剖析与依赖分析的 Python 串行代码自动并行化研究原型。
 
@@ -41,7 +41,7 @@ python -m pip install -e ".[dev]"
 验收当前正式 Ray 数据、Agent–Ray 契约和完整测试（不调用 DeepSeek API）：
 
 ```powershell
-python scripts/verify_research_core.py --run-tests
+python scripts/verify_project.py --run-tests
 ```
 
 详细验收范围和结果边界见 `docs/reproducibility.md`。

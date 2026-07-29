@@ -1,4 +1,4 @@
-name: First-stage verification
+name: Project verification
 
 on:
   push:
@@ -45,11 +45,8 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q src tests scripts
 
-      - name: Verify frozen research package and run tests
-        run: python scripts/verify_first_stage.py --run-tests
-
-      - name: Verify current Ray research core
-        run: python scripts/verify_research_core.py
+      - name: Verify complete research project and run tests
+        run: python scripts/verify_project.py --run-tests
 
       - name: Run real single-node Ray smoke experiment
         run: |
@@ -82,7 +79,7 @@ jobs:
 
       - name: Verify Ray cluster execution evidence
         run: |
-          python scripts/verify_research_core.py \
+          python scripts/verify_project.py \
             --ray-smoke work/ray-smoke.json
 
       - name: Upload Ray smoke evidence

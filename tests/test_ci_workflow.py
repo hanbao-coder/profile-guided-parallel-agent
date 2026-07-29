@@ -11,8 +11,9 @@ def test_ci_verifies_release_on_linux_python_312() -> None:
     assert "runs-on: ubuntu-latest" in workflow
     assert 'python-version: "3.12"' in workflow
     assert 'python -m pip install -e ".[dev]"' in workflow
-    assert "python scripts/verify_first_stage.py --run-tests" in workflow
-    assert "python scripts/verify_research_core.py" in workflow
+    assert "python scripts/verify_project.py --run-tests" in workflow
+    assert "python scripts/verify_project.py" in workflow
+    assert "--ray-smoke work/ray-smoke.json" in workflow
     assert "--backend ray" in workflow
     assert "--modes serial naive optimized" in workflow
     assert "actions/upload-artifact@v4" in workflow
