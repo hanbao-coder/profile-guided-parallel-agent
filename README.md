@@ -78,6 +78,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_first_experiment.ps1
 五次重复的正式本机基线见 `docs/formal-multiprocessing-baseline.md`。
 DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
 性能反馈 Agent 与首轮消融见 `docs/performance-feedback-agent.md`。
+四任务、三模式、三次独立运行的正式结果见
+`docs/formal-agent-experiment.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -131,6 +133,17 @@ parallel-agent agent benchmarks/tiny_tasks/workload.py `
 当前模型路由为：分析、修复和性能决策使用 `deepseek-v4-pro`，结构化计划
 使用关闭思考模式的 `deepseek-v4-flash`。这样把较高成本模型集中在真正影响
 正确性与效率的环节。
+
+运行可断点续跑的正式在线实验：
+
+```powershell
+parallel-agent agent-experiment configs/agent_experiment_formal.yaml `
+  --output-dir results/raw/agent_formal_20260729 `
+  --adapter deepseek
+```
+
+该实验包含调用数和 Token 双预算保护，并自动生成单次结果、分任务统计和
+跨任务总体统计。
 
 如果第一次接触科研项目，请从以下两份文档开始：
 

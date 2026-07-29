@@ -1,0 +1,4 @@
+﻿feedback_mode,workloads,runs,correct_rate,serial_fallback_rate,performance_regression_rate,measured_speedup_macro_mean,effective_speedup_macro_mean,model_calls_total,tokens_total,estimated_cost_upper_usd_total,pricing_snapshot_date
+correctness,4,12,1.0,0.0,0.5,1.0786335731982966,1.0786335731982966,24,22863,0.013085204999999999,2026-07-29
+one_shot,4,12,1.0,0.0,0.5,1.0820082820727304,1.0820082820727304,24,23272,0.013541515,2026-07-29
+performance,4,12,1.0,0.5833333333333334,0.0,1.0864377959520992,1.2702426621457588,33,33524,0.020348559999999998,2026-07-29

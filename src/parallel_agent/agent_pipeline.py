@@ -38,6 +38,15 @@ def _median_payload_runtime(runs: list[Any]) -> float | None:
     return statistics.median(values) if values else None
 
 
+def _quartiles(values: list[float]) -> tuple[float, float]:
+    if len(values) == 1:
+        return values[0], values[0]
+    q1, _, q3 = statistics.quantiles(
+        values, n=4, method="inclusive"
+    )
+    return q1, q3
+
+
 def _evaluate_candidate(
     candidate: Path,
     *,
@@ -87,22 +96,29 @@ def _evaluate_candidate(
         and all(result == serial_results[0] for result in serial_results)
         and all(result == serial_results[0] for result in parallel_results)
     )
-    serial_total = statistics.median(
-        run.elapsed_seconds for run in serial_runs
-    )
-    parallel_total = statistics.median(
-        run.elapsed_seconds for run in parallel_runs
-    )
+    serial_values = [run.elapsed_seconds for run in serial_runs]
+    parallel_values = [run.elapsed_seconds for run in parallel_runs]
+    serial_total = statistics.median(serial_values)
+    parallel_total = statistics.median(parallel_values)
+    serial_q1, serial_q3 = _quartiles(serial_values)
+    parallel_q1, parallel_q3 = _quartiles(parallel_values)
     return {
         "serial_runs": serial_runs,
         "parallel_runs": parallel_runs,
         "correct": correct,
         "serial_total_median_seconds": serial_total,
         "parallel_total_median_seconds": parallel_total,
+        "serial_total_q1_seconds": serial_q1,
+        "serial_total_q3_seconds": serial_q3,
+        "parallel_total_q1_seconds": parallel_q1,
+        "parallel_total_q3_seconds": parallel_q3,
         "serial_compute_median_seconds": _median_payload_runtime(serial_runs),
         "parallel_compute_median_seconds": _median_payload_runtime(parallel_runs),
         "end_to_end_speedup": (
             serial_total / parallel_total if parallel_total > 0 else 0.0
+        ),
+        "conservative_speedup": (
+            serial_q1 / parallel_q3 if parallel_q3 > 0 else 0.0
         ),
         "execution_order": schedule,
     }
@@ -195,11 +211,9 @@ def run_agent_pipeline(
             size=size,
             seed=seed,
             timeout_seconds=timeout_seconds,
-            repeats=(
-                performance_repeats
-                if feedback_mode == "performance"
-                else 1
-            ),
+            # Measurement count is identical across ablation groups. The
+            # groups differ in which feedback they are allowed to consume.
+            repeats=performance_repeats,
             order_seed=seed + attempt_number,
         )
         serial_run = evaluation["serial_runs"][0]
@@ -212,6 +226,18 @@ def run_agent_pipeline(
             "parallel_total_median_seconds": evaluation[
                 "parallel_total_median_seconds"
             ],
+            "serial_total_q1_seconds": evaluation[
+                "serial_total_q1_seconds"
+            ],
+            "serial_total_q3_seconds": evaluation[
+                "serial_total_q3_seconds"
+            ],
+            "parallel_total_q1_seconds": evaluation[
+                "parallel_total_q1_seconds"
+            ],
+            "parallel_total_q3_seconds": evaluation[
+                "parallel_total_q3_seconds"
+            ],
             "serial_compute_median_seconds": evaluation[
                 "serial_compute_median_seconds"
             ],
@@ -219,16 +245,14 @@ def run_agent_pipeline(
                 "parallel_compute_median_seconds"
             ],
             "end_to_end_speedup": evaluation["end_to_end_speedup"],
+            "conservative_speedup": evaluation["conservative_speedup"],
             "minimum_speedup": minimum_speedup,
             "beneficial": (
                 correct
                 and evaluation["end_to_end_speedup"] >= minimum_speedup
+                and evaluation["conservative_speedup"] >= 1.0
             ),
-            "repeats": (
-                performance_repeats
-                if feedback_mode == "performance"
-                else 1
-            ),
+            "repeats": performance_repeats,
             "execution_order": evaluation["execution_order"],
         }
         attempt_record = {

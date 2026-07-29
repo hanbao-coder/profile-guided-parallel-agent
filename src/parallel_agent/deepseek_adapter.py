@@ -136,6 +136,12 @@ class DeepSeekAdapter:
                 "prompt_tokens": getattr(usage, "prompt_tokens", None),
                 "completion_tokens": getattr(usage, "completion_tokens", None),
                 "total_tokens": getattr(usage, "total_tokens", None),
+                "prompt_cache_hit_tokens": getattr(
+                    usage, "prompt_cache_hit_tokens", None
+                ),
+                "prompt_cache_miss_tokens": getattr(
+                    usage, "prompt_cache_miss_tokens", None
+                ),
             }
             try:
                 parsed = json.loads(content)
@@ -355,7 +361,8 @@ class DeepSeekAdapter:
                 "with this exact shape: "
                 '{"action":"parallel|serial","workers":2,"chunks":4,'
                 '"reasons":[]}. Choose serial when measured speedup is below the '
-                "required minimum and there is no strong evidence that changing "
+                "required minimum, or the conservative speedup is below 1.0, "
+                "and there is no strong evidence that changing "
                 "worker/chunk counts will recover the loss. Never claim a "
                 "speedup that is absent from the measurements."
             ),

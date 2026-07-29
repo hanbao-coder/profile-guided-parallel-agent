@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 from .analyzer import analyze_file
-from .agent_ablation import plot_agent_ablation, summarize_agent_runs
+from .agent_ablation import (
+    plot_agent_ablation,
+    plot_agent_experiment,
+    summarize_agent_runs,
+)
+from .agent_experiment import run_agent_experiment
 from .agent_pipeline import run_agent_pipeline
 from .deepseek_adapter import DeepSeekAdapter, DeepSeekConfigurationError
 from .plotting import plot_suite_results
@@ -83,6 +88,24 @@ def _parser() -> argparse.ArgumentParser:
     plot_ablation.add_argument("summary_csv")
     plot_ablation.add_argument("--output", required=True)
 
+    plot_experiment = commands.add_parser(
+        "plot-agent-experiment",
+        help="Create formal figures from an Agent aggregate CSV.",
+    )
+    plot_experiment.add_argument("aggregate_csv")
+    plot_experiment.add_argument("--output-dir", required=True)
+
+    experiment = commands.add_parser(
+        "agent-experiment",
+        help="Run a resumable multi-workload Agent ablation experiment.",
+    )
+    experiment.add_argument("config")
+    experiment.add_argument("--output-dir", required=True)
+    experiment.add_argument(
+        "--adapter", choices=["offline", "deepseek"], default="deepseek"
+    )
+    experiment.add_argument("--no-resume", action="store_true")
+
     agent = commands.add_parser("agent", help="Run the analyze-plan-generate loop.")
     agent.add_argument("source")
     agent.add_argument("--output-dir", default="generated/latest")
@@ -98,7 +121,14 @@ def _parser() -> argparse.ArgumentParser:
         default="correctness",
         help="Select the ablation group for Agent feedback.",
     )
-    agent.add_argument("--performance-repeats", type=int, default=3)
+    agent.add_argument(
+        "--performance-repeats",
+        "--evaluation-repeats",
+        dest="performance_repeats",
+        type=int,
+        default=3,
+        help="Repeated serial/parallel measurements for every ablation group.",
+    )
     agent.add_argument("--minimum-speedup", type=float, default=1.05)
     agent.add_argument("--max-performance-attempts", type=int, default=1)
     agent.add_argument(
@@ -163,6 +193,23 @@ def main() -> None:
     if args.command == "plot-agent-ablation":
         output = plot_agent_ablation(args.summary_csv, args.output)
         print(json.dumps({"figure": str(output)}, ensure_ascii=False))
+        return
+
+    if args.command == "plot-agent-experiment":
+        result = plot_agent_experiment(
+            args.aggregate_csv, args.output_dir
+        )
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "agent-experiment":
+        result = run_agent_experiment(
+            args.config,
+            output_dir=args.output_dir,
+            adapter_name=args.adapter,
+            resume=not args.no_resume,
+        )
+        print(json.dumps(result["manifest"], indent=2, ensure_ascii=False))
         return
 
     try:

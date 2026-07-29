@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 
 from parallel_agent.agent_ablation import (
+    aggregate_agent_rows,
+    overall_agent_metrics,
     plot_agent_ablation,
+    plot_agent_experiment,
     summarize_agent_runs,
 )
 
@@ -63,8 +66,26 @@ def test_summarize_agent_runs_accounts_for_serial_fallback(
     assert rows[0]["pro_calls"] == 1
     assert rows[0]["flash_calls"] == 1
     assert rows[0]["total_tokens"] == 210
+    assert rows[0]["estimated_cost_upper_usd"] > 0
+
+    aggregate = aggregate_agent_rows(
+        rows, tmp_path / "aggregate.csv"
+    )
+    assert aggregate[0]["correct_rate"] == 1.0
+    assert aggregate[0]["performance_regression_rate"] == 0.0
+    assert aggregate[0]["effective_speedup_mean"] == 1.0
+    overall = overall_agent_metrics(
+        aggregate, tmp_path / "overall.csv"
+    )
+    assert overall[0]["runs"] == 1
+    assert overall[0]["performance_regression_rate"] == 0.0
 
     figure = plot_agent_ablation(
         tmp_path / "summary.csv", tmp_path / "ablation.png"
     )
     assert figure.stat().st_size > 1_000
+
+    figures = plot_agent_experiment(
+        tmp_path / "aggregate.csv", tmp_path / "formal_figures"
+    )
+    assert all(Path(path).stat().st_size > 1_000 for path in figures.values())

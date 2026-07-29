@@ -129,3 +129,19 @@
 - Prime Count Large: performance feedback retained parallel execution at 1.78x.
 - Added automatic ablation CSV aggregation and a report figure.
 - Expanded the automated suite to 28 passing tests.
+
+## D9 — Formal online Agent ablation
+
+- Added a resumable multi-workload experiment runner with call/token budgets.
+- Added equal three-repeat measurements to every feedback group.
+- Added uncertainty-aware benefit gating using median and Q1/Q3 runtimes.
+- Ran 4 workloads × 3 modes × 3 independent model runs (36 jobs).
+- All 36 jobs were correct; no model, execution, or budget failures.
+- One-shot and correctness feedback each had 50% performance regression.
+- Performance feedback reduced regression to 0% and increased macro effective
+  speedup from about 1.08x to 1.27x.
+- Logged 81 model calls and 79,659 tokens; conservative API cost upper bound was
+  about USD 0.047.
+- Added per-run, per-workload, and overall CSV statistics plus three verified
+  report figures.
+- Expanded the automated suite to 29 passing tests.

@@ -18,6 +18,7 @@ def test_agent_pipeline_generates_and_validates_candidate(tmp_path: Path) -> Non
         workers=2,
         chunks=2,
         timeout_seconds=30,
+        performance_repeats=1,
     )
     assert report["status"] == "accepted"
     assert report["correct"] is True
@@ -61,6 +62,7 @@ def test_agent_pipeline_records_repair_feedback(tmp_path: Path) -> None:
         chunks=2,
         timeout_seconds=30,
         max_repair_attempts=1,
+        performance_repeats=1,
     )
     assert report["status"] == "failed"
     assert report["repair_attempts_used"] == 1
@@ -80,10 +82,13 @@ def test_one_shot_group_does_not_repair(tmp_path: Path) -> None:
         timeout_seconds=30,
         max_repair_attempts=2,
         feedback_mode="one_shot",
+        performance_repeats=2,
     )
     assert report["status"] == "failed"
     assert report["repair_attempts_used"] == 0
     assert len(report["attempts"]) == 1
+    assert len(report["attempts"][0]["serial_runs"]) == 2
+    assert len(report["attempts"][0]["parallel_runs"]) == 2
     assert not (tmp_path / "repair_feedback_1.json").exists()
 
 
@@ -110,3 +115,6 @@ def test_performance_feedback_falls_back_for_tiny_tasks(
     assert report["performance_attempts_used"] == 1
     assert report["final_plan"]["strategy"] == "serial"
     assert (tmp_path / "performance_feedback_1.json").exists()
+    performance = report["attempts"][0]["performance"]
+    assert "conservative_speedup" in performance
+    assert "serial_total_q1_seconds" in performance

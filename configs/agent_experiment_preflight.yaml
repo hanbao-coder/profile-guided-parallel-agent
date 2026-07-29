@@ -1,0 +1,35 @@
+feedback_modes:
+  - one_shot
+  - correctness
+  - performance
+
+independent_runs: 1
+order_seed: 20260729
+
+workloads:
+  prime_count:
+    path: benchmarks/prime_count/workload.py
+    size: 32
+  tiny_tasks:
+    path: benchmarks/tiny_tasks/workload.py
+    size: 2000
+  word_count:
+    path: benchmarks/word_count/workload.py
+    size: 32
+  pairwise_distance:
+    path: benchmarks/pairwise_distance/workload.py
+    size: 16
+
+execution:
+  workers: 4
+  chunks: 4
+  seed: 42
+  timeout_seconds: 180
+  max_repair_attempts: 1
+  performance_repeats: 3
+  minimum_speedup: 1.05
+  max_performance_attempts: 1
+
+budget:
+  max_model_calls: 40
+  max_total_tokens: 120000
