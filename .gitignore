@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+work/
+work-pip-install*.log
+.conda-pkgs/
+generated/
+results/raw/
+results/tables/
+results/figures/
+*.egg-info/

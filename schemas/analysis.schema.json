@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnalysisArtifact",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_path",
+    "workload_name",
+    "functions",
+    "loops",
+    "hazards",
+    "contract_functions",
+    "contract_complete",
+    "parallelizable",
+    "rationale"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "source_path": {"type": "string", "minLength": 1},
+    "workload_name": {"type": "string"},
+    "functions": {"type": "array", "items": {"type": "string"}},
+    "loops": {"type": "integer", "minimum": 0},
+    "hazards": {"type": "array", "items": {"type": "string"}},
+    "contract_functions": {"type": "array", "items": {"type": "string"}},
+    "contract_complete": {"type": "boolean"},
+    "parallelizable": {"type": "boolean"},
+    "rationale": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
+

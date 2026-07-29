@@ -1,0 +1,19 @@
+benchmark:
+  warmups: 1
+  repeats: 3
+  timeout_seconds: 120
+  seed: 42
+  sizes:
+    small: 24
+    large: 96
+
+parallel:
+  workers: [2, 4]
+  chunks_per_worker: [1, 2, 4]
+  min_expected_speedup: 1.05
+  target_task_ms: 50
+  regression_tolerance: 0.05
+
+profiling:
+  cpu_sample_interval_seconds: 0.05
+
