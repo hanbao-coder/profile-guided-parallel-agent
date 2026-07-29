@@ -87,6 +87,8 @@ DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
 `docs/formal-configuration-search.md`。
 DeepSeek 分析与确定性性能搜索的端到端工具接入见
 `docs/agent-performance-tool.md`。
+固定配置、小样本直接决策与完整三阶段方法的正式消融见
+`docs/formal-configuration-ablation.md`。
 
 从正式实验 CSV 生成汇报图：
 

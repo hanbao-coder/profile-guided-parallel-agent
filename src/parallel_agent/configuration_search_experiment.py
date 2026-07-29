@@ -51,6 +51,7 @@ def _summarize(
         holdout = report["holdout"]
         amortization = report["amortization"]
         selected_speedup = float(holdout["selected_speedup"])
+        no_scale_speedup = float(holdout["no_scale_speedup"])
         fixed_speedup = float(holdout["fixed_speedup"])
         rows.append(
             {
@@ -69,14 +70,25 @@ def _summarize(
                 ),
                 "selected_label": selection["selected_label"],
                 "selected_speedup": selected_speedup,
+                "no_scale_speedup": no_scale_speedup,
                 "fixed_speedup": fixed_speedup,
+                "selected_over_no_scale": float(
+                    holdout["selected_over_no_scale"]
+                ),
                 "selected_over_fixed": float(
                     holdout["selected_over_fixed"]
                 ),
                 "selected_regression": selected_speedup < 0.95,
+                "no_scale_regression": no_scale_speedup < 0.95,
                 "fixed_regression": fixed_speedup < 0.95,
                 "search_wall_seconds": amortization[
                     "search_wall_seconds"
+                ],
+                "small_sample_search_wall_seconds": amortization[
+                    "small_sample_search_wall_seconds"
+                ],
+                "scale_confirmation_wall_seconds": amortization[
+                    "scale_confirmation_wall_seconds"
                 ],
                 "break_even_vs_serial_repetitions": amortization[
                     "break_even_vs_serial_repetitions"
@@ -102,6 +114,7 @@ def _summarize(
     aggregate: list[dict[str, Any]] = []
     for workload, group in sorted(groups.items()):
         selected = [float(row["selected_speedup"]) for row in group]
+        no_scale = [float(row["no_scale_speedup"]) for row in group]
         fixed = [float(row["fixed_speedup"]) for row in group]
         relative = [
             float(row["selected_over_fixed"]) for row in group
@@ -114,6 +127,12 @@ def _summarize(
                 "selected_speedup_stdev": (
                     statistics.stdev(selected)
                     if len(selected) > 1
+                    else 0.0
+                ),
+                "no_scale_speedup_mean": statistics.fmean(no_scale),
+                "no_scale_speedup_stdev": (
+                    statistics.stdev(no_scale)
+                    if len(no_scale) > 1
                     else 0.0
                 ),
                 "fixed_speedup_mean": statistics.fmean(fixed),
@@ -130,6 +149,10 @@ def _summarize(
                 ),
                 "selected_regression_rate": sum(
                     bool(row["selected_regression"]) for row in group
+                )
+                / len(group),
+                "no_scale_regression_rate": sum(
+                    bool(row["no_scale_regression"]) for row in group
                 )
                 / len(group),
                 "fixed_regression_rate": sum(
@@ -182,6 +205,14 @@ def _summarize(
             if aggregate
             else None
         ),
+        "no_scale_speedup_macro_mean": (
+            statistics.fmean(
+                float(row["no_scale_speedup_mean"])
+                for row in aggregate
+            )
+            if aggregate
+            else None
+        ),
         "selected_regression_rate": (
             sum(bool(row["selected_regression"]) for row in rows)
             / total
@@ -190,6 +221,11 @@ def _summarize(
         ),
         "fixed_regression_rate": (
             sum(bool(row["fixed_regression"]) for row in rows) / total
+            if total
+            else None
+        ),
+        "no_scale_regression_rate": (
+            sum(bool(row["no_scale_regression"]) for row in rows) / total
             if total
             else None
         ),
@@ -368,19 +404,25 @@ def plot_configuration_search_experiment(
     selected = [
         float(row["selected_speedup_mean"]) for row in aggregate
     ]
+    no_scale = [
+        float(row["no_scale_speedup_mean"]) for row in aggregate
+    ]
     fixed_error = [
         float(row["fixed_speedup_stdev"]) for row in aggregate
     ]
     selected_error = [
         float(row["selected_speedup_stdev"]) for row in aggregate
     ]
+    no_scale_error = [
+        float(row["no_scale_speedup_stdev"]) for row in aggregate
+    ]
     x = np.arange(len(workloads))
-    width = 0.36
+    width = 0.26
     fig, axes = plt.subplots(
         1, 2, figsize=(13.8, 5.8), constrained_layout=True
     )
     fixed_bars = axes[0].bar(
-        x - width / 2,
+        x - width,
         fixed,
         width,
         yerr=fixed_error,
@@ -388,14 +430,23 @@ def plot_configuration_search_experiment(
         color="#9CA3AF",
         label="Fixed 4 workers / 4 chunks",
     )
+    no_scale_bars = axes[0].bar(
+        x,
+        no_scale,
+        width,
+        yerr=no_scale_error,
+        capsize=3,
+        color="#F59E0B",
+        label="Small-sample decision",
+    )
     selected_bars = axes[0].bar(
-        x + width / 2,
+        x + width,
         selected,
         width,
         yerr=selected_error,
         capsize=3,
         color="#2563EB",
-        label="Adaptive selection",
+        label="Full three-stage method",
     )
     axes[0].axhline(
         1.0, color="#DC2626", linestyle="--", linewidth=1.2
@@ -412,17 +463,21 @@ def plot_configuration_search_experiment(
     axes[0].legend(frameon=False, fontsize=9)
     axes[0].bar_label(fixed_bars, fmt="%.2f", padding=2, fontsize=7)
     axes[0].bar_label(
+        no_scale_bars, fmt="%.2f", padding=2, fontsize=7
+    )
+    axes[0].bar_label(
         selected_bars, fmt="%.2f", padding=2, fontsize=7
     )
 
     regression = [
         float(overall["fixed_regression_rate"]),
+        float(overall["no_scale_regression_rate"]),
         float(overall["selected_regression_rate"]),
     ]
     regression_bars = axes[1].bar(
-        ["Fixed configuration", "Adaptive selection"],
+        ["Fixed", "Small-sample", "Full method"],
         regression,
-        color=["#F59E0B", "#2563EB"],
+        color=["#9CA3AF", "#F59E0B", "#2563EB"],
     )
     axes[1].bar_label(
         regression_bars,
@@ -439,6 +494,8 @@ def plot_configuration_search_experiment(
         (
             f"Adaptive macro speedup: "
             f"{overall['selected_speedup_macro_mean']:.3f}x\n"
+            f"Small-sample macro speedup: "
+            f"{overall['no_scale_speedup_macro_mean']:.3f}x\n"
             f"Fixed macro speedup: "
             f"{overall['fixed_speedup_macro_mean']:.3f}x\n"
             f"Search wall time: "

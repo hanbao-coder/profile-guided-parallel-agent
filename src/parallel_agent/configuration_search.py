@@ -429,6 +429,8 @@ def run_configuration_search(
         order_seed=order_seed,
     )
     tuning_seconds = time.perf_counter() - tuning_started
+    small_sample_search_seconds = tuning_seconds
+    confirmation_seconds = 0.0
     tuning_statistics = _configuration_statistics(
         tuning_runs, configurations
     )
@@ -485,9 +487,10 @@ def run_configuration_search(
                 repeats=confirmation_repeats,
                 order_seed=order_seed + 17,
             )
-            tuning_seconds += (
+            confirmation_seconds = (
                 time.perf_counter() - confirmation_started
             )
+            tuning_seconds += confirmation_seconds
             confirmation_statistics = _configuration_statistics(
                 confirmation_runs, confirmation_configurations
             )
@@ -542,6 +545,9 @@ def run_configuration_search(
                 "choice": confirmation_choice,
             }
     selected_configuration = configurations[selected_label]
+    preliminary_configuration = configurations[
+        preliminary_selected_label
+    ]
     holdout_configurations: dict[
         str, ParallelConfiguration | None
     ] = {
@@ -550,6 +556,12 @@ def run_configuration_search(
     }
     if selected_label != "serial" and selected_label != fixed_label:
         holdout_configurations["selected"] = selected_configuration
+    if (
+        preliminary_selected_label != "serial"
+        and preliminary_selected_label != fixed_label
+        and preliminary_selected_label != selected_label
+    ):
+        holdout_configurations["no_scale"] = preliminary_configuration
 
     holdout_runs, holdout_order, compact_holdout = _measure_schedule(
         candidate,
@@ -570,7 +582,17 @@ def run_configuration_search(
         if selected_label == fixed_label
         else "selected"
     )
+    no_scale_holdout_key = (
+        "serial"
+        if preliminary_selected_label == "serial"
+        else "fixed"
+        if preliminary_selected_label == fixed_label
+        else "selected"
+        if preliminary_selected_label == selected_label
+        else "no_scale"
+    )
     selected_holdout = holdout_statistics[selected_holdout_key]
+    no_scale_holdout = holdout_statistics[no_scale_holdout_key]
     fixed_holdout = holdout_statistics["fixed"]
     serial_holdout = holdout_statistics["serial"]
     per_run_savings = (
@@ -614,6 +636,11 @@ def run_configuration_search(
         },
         "selection": {
             "preliminary_selected_label": preliminary_selected_label,
+            "preliminary_selected_configuration": (
+                asdict(preliminary_configuration)
+                if preliminary_configuration is not None
+                else None
+            ),
             "selected_label": selected_label,
             "selected_configuration": (
                 asdict(selected_configuration)
@@ -628,8 +655,16 @@ def run_configuration_search(
             "statistics": holdout_statistics,
             "runs": compact_holdout,
             "selected_key": selected_holdout_key,
+            "no_scale_key": no_scale_holdout_key,
             "selected_speedup": selected_holdout["speedup"],
+            "no_scale_speedup": no_scale_holdout["speedup"],
             "fixed_speedup": fixed_holdout["speedup"],
+            "selected_over_no_scale": (
+                float(no_scale_holdout["median_seconds"])
+                / float(selected_holdout["median_seconds"])
+                if float(selected_holdout["median_seconds"]) > 0
+                else 0.0
+            ),
             "selected_over_fixed": (
                 float(fixed_holdout["median_seconds"])
                 / float(selected_holdout["median_seconds"])
@@ -639,6 +674,10 @@ def run_configuration_search(
         },
         "amortization": {
             "search_wall_seconds": tuning_seconds,
+            "small_sample_search_wall_seconds": (
+                small_sample_search_seconds
+            ),
+            "scale_confirmation_wall_seconds": confirmation_seconds,
             "median_savings_vs_serial_per_run_seconds": per_run_savings,
             "median_savings_vs_fixed_per_run_seconds": savings_over_fixed,
             "break_even_vs_serial_repetitions": break_even_vs_serial,

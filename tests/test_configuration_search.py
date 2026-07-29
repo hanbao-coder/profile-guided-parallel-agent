@@ -91,6 +91,12 @@ def test_configuration_search_separates_tuning_and_holdout(
     assert report["tuning"]["runs"]
     assert report["holdout"]["runs"]
     assert report["tuning"]["runs"] != report["holdout"]["runs"]
+    assert "no_scale_speedup" in report["holdout"]
+    assert "selected_over_no_scale" in report["holdout"]
+    assert (
+        report["amortization"]["search_wall_seconds"]
+        >= report["amortization"]["small_sample_search_wall_seconds"]
+    )
     assert report["selection"]["selected_label"] in {
         "serial",
         "w1_c1",

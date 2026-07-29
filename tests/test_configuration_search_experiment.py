@@ -62,6 +62,9 @@ def test_configuration_search_experiment_runs_and_resumes(
     assert first["manifest"]["tuning_and_holdout_separated"] is True
     assert first["manifest"]["small_sample_scale_confirmation"] is True
     assert len(first["rows"]) == 1
+    assert "no_scale_speedup" in first["rows"][0]
+    assert "no_scale_speedup_macro_mean" in first["overall"]
+    assert "no_scale_regression_rate" in first["overall"]
     assert second["manifest"]["executed_this_invocation"] == 0
     assert second["manifest"]["resumed_jobs"] == 1
     assert (output / "configuration_search_summary.csv").exists()

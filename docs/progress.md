@@ -214,3 +214,17 @@
   - adaptive-over-fixed ratio: 1.286x;
   - final independent validation: 1.117x with correct output.
 - The model made two text-only calls and consumed 2,115 tokens.
+
+## D14 — Formal configuration-search ablation
+
+- Extended every holdout schedule to evaluate fixed, small-sample-only, and
+  full three-stage decisions on the same measurements.
+- Ran 8 workloads × 3 independent runs with no failed jobs.
+- Fixed 4/4 achieved 0.926x macro speedup and regressed in 70.8% of runs.
+- Small-sample-only selection achieved 1.000x with no regressions, but selected
+  serial in all 24 runs and missed useful parallelism.
+- Full-scale confirmation recovered profitable parallelism in 7/24 runs,
+  reached 1.149x macro speedup, and kept the regression rate at 0%.
+- Small-sample search averaged 6.12 seconds per job; scale confirmation added
+  2.42 seconds per job.
+- Added a three-way report figure and versioned paired holdout data.
