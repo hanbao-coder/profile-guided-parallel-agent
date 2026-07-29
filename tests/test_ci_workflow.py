@@ -18,4 +18,5 @@ def test_ci_verifies_release_on_linux_python_312() -> None:
     assert "work/ray-smoke.json" in workflow
     assert "work/ray-smoke.log" in workflow
     assert "GITHUB_STEP_SUMMARY" in workflow
+    assert "::error title=Ray smoke failure::" in workflow
     assert "DEEPSEEK_API_KEY" not in workflow

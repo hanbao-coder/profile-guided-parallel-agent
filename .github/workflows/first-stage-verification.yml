@@ -69,6 +69,11 @@ jobs:
               tail -n 100 work/ray-smoke.log
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            error_tail=$(tail -n 80 work/ray-smoke.log)
+            error_tail=${error_tail//'%'/'%25'}
+            error_tail=${error_tail//$'\n'/'%0A'}
+            error_tail=${error_tail//$'\r'/'%0D'}
+            echo "::error title=Ray smoke failure::$error_tail"
           fi
           exit "$status"
 
