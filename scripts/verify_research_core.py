@@ -142,6 +142,36 @@ def verify_agent_ray_contract() -> None:
     require("DeepSeek Agent" in notebook and "结果 `3491` 一致" in notebook, "缺少 Agent-Ray 验证记录")
 
 
+def verify_ray_smoke(path: Path) -> None:
+    report = load_json(path.resolve())
+    require(report["backend"] == "ray", "Ray 冒烟报告使用了错误后端")
+    require(
+        all(summary["correct"] for summary in report["summary"].values()),
+        "Ray 冒烟报告存在错误结果",
+    )
+    cluster = report.get("ray_cluster")
+    require(isinstance(cluster, dict), "Ray 冒烟报告缺少集群证据")
+    require(cluster["alive_nodes"] >= 1, "Ray 冒烟未发现存活节点")
+    require(
+        cluster["physical_node_count"] >= 1,
+        "Ray 冒烟未记录物理节点地址",
+    )
+    require(
+        cluster["executed_node_count"] >= 1,
+        "Ray 冒烟未记录任务实际执行节点",
+    )
+    require(
+        set(cluster["executed_node_ids"])
+        <= {node["node_id"] for node in cluster["nodes"]},
+        "任务执行节点不属于报告中的存活集群节点",
+    )
+    require(
+        cluster["executed_on_multiple_nodes"]
+        == (cluster["executed_node_count"] >= 2),
+        "实际多节点执行标志与节点计数不一致",
+    )
+
+
 def run_tests() -> None:
     with tempfile.TemporaryDirectory(prefix="parallel-agent-core-") as base_temp:
         environment = os.environ.copy()
@@ -171,10 +201,17 @@ def main() -> int:
         description="验证当前研究核心、正式 Ray 数据与可选自动化测试。"
     )
     parser.add_argument("--run-tests", action="store_true")
+    parser.add_argument(
+        "--ray-smoke",
+        type=Path,
+        help="可选：验证一次当前版本生成的真实 Ray 冒烟报告。",
+    )
     arguments = parser.parse_args()
     try:
         metrics = verify_variance_improvement()
         verify_agent_ray_contract()
+        if arguments.ray_smoke:
+            verify_ray_smoke(arguments.ray_smoke)
         if arguments.run_tests:
             run_tests()
     except (VerificationError, KeyError, ValueError, csv.Error, json.JSONDecodeError) as exc:
@@ -196,6 +233,10 @@ def main() -> int:
     print(
         "  M2/M1 几何平均："
         f"{metrics['optimized_over_naive_geomean']:.3f}x"
+    )
+    print(
+        "  Ray 集群冒烟："
+        f"{'已验证' if arguments.ray_smoke else '未提供'}"
     )
     print(f"  自动化测试：{'已运行' if arguments.run_tests else '未运行'}")
     print("  DeepSeek API：未调用，费用为 0")

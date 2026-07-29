@@ -58,6 +58,10 @@ def _parser() -> argparse.ArgumentParser:
         help="Use multiprocessing locally; use Ray on a compatible host.",
     )
     bench.add_argument(
+        "--ray-address",
+        help="Connect to an existing Ray cluster, for example 'auto'.",
+    )
+    bench.add_argument(
         "--modes", nargs="+", default=["serial", "naive", "optimized"]
     )
     bench.add_argument("--repeats", type=int, default=3)
@@ -78,6 +82,10 @@ def _parser() -> argparse.ArgumentParser:
         "--backend",
         choices=["multiprocessing", "ray"],
         default="multiprocessing",
+    )
+    suite.add_argument(
+        "--ray-address",
+        help="Connect to an existing Ray cluster, for example 'auto'.",
     )
     suite.add_argument("--repeats", type=int, default=3)
     suite.add_argument("--warmups", type=int, default=1)
@@ -314,6 +322,7 @@ def main() -> None:
             args.output,
             args.backend,
             not args.fixed_order,
+            args.ray_address,
         )
         print(json.dumps(report["summary"], indent=2, ensure_ascii=False))
         return
@@ -329,6 +338,7 @@ def main() -> None:
             backend=args.backend,
             output_dir=args.output_dir,
             randomize_order=not args.fixed_order,
+            ray_address=args.ray_address,
         )
         print(json.dumps(result["manifest"], indent=2, ensure_ascii=False))
         return

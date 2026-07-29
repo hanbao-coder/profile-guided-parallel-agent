@@ -1,4 +1,6 @@
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -7,6 +9,7 @@ from parallel_agent.runner import (
     _pilot_item_profile,
     benchmark,
     load_workload,
+    ray_cluster_metadata,
     ray_temp_directory,
     run_once,
 )
@@ -55,6 +58,8 @@ def test_serial_benchmark(tmp_path: Path) -> None:
     assert report["summary"]["serial"]["parallel_overhead_ratio"] == 0.0
     assert report["summary"]["serial"]["runtime_iqr_seconds"] == 0.0
     assert report["environment"]["cpu_logical"] >= 1
+    assert report["ray_cluster"] is None
+    assert report["runs"][0]["execution_node_ids"] == []
 
 
 def test_parallel_summary_reports_standard_overhead_metrics(
@@ -113,6 +118,57 @@ def test_ray_temp_directory_leaves_room_for_unix_socket_suffix() -> None:
     )
     assert ray_temp.is_absolute()
     assert len(str(representative_socket).encode("utf-8")) < 107
+
+
+def test_ray_address_requires_ray_backend(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="requires backend='ray'"):
+        benchmark(
+            ROOT / "benchmarks/prime_count/workload.py",
+            size=1,
+            workers=1,
+            modes=["serial"],
+            repeats=1,
+            warmups=0,
+            seed=42,
+            output=tmp_path / "result.json",
+            backend="multiprocessing",
+            ray_address="auto",
+        )
+
+
+def test_ray_cluster_metadata_distinguishes_multiple_nodes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_ray = SimpleNamespace(
+        nodes=lambda: [
+            {
+                "Alive": True,
+                "NodeID": "head",
+                "NodeManagerAddress": "10.0.0.1",
+                "Resources": {"CPU": 4.0},
+            },
+            {
+                "Alive": True,
+                "NodeID": "worker",
+                "NodeManagerAddress": "10.0.0.2",
+                "Resources": {"CPU": 8.0},
+            },
+            {
+                "Alive": False,
+                "NodeID": "dead-worker",
+                "NodeManagerAddress": "10.0.0.3",
+                "Resources": {"CPU": 8.0},
+            },
+        ],
+        cluster_resources=lambda: {"CPU": 12.0, "GPU": 1.0},
+    )
+    monkeypatch.setitem(sys.modules, "ray", fake_ray)
+    metadata = ray_cluster_metadata("ray://10.0.0.1:10001")
+    assert metadata["alive_nodes"] == 2
+    assert metadata["physical_node_count"] == 2
+    assert metadata["multi_node"] is True
+    assert metadata["total_cpu"] == 12.0
+    assert metadata["total_gpu"] == 1.0
 
 
 def test_benefit_gate_falls_back_for_large_startup_cost() -> None:

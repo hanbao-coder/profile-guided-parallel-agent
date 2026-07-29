@@ -33,5 +33,6 @@ def test_suite_writes_csv_and_manifest(tmp_path: Path) -> None:
         randomize_order=True,
     )
     assert result["manifest"]["benchmarks"] == ["prime_count"]
+    assert result["manifest"]["ray_address"] is None
     assert (tmp_path / "suite_small.csv").exists()
     assert (tmp_path / "suite_small_manifest.json").exists()

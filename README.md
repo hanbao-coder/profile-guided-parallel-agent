@@ -80,12 +80,29 @@ parallel-agent benchmark benchmarks/prime_count/workload.py `
   --output results/raw/prime_count.json
 ```
 
-本机主机名含中文，而当前 Ray Windows 运行时无法处理该主机名，所以开发期
-默认使用与 Ray Task 语义一致的 `multiprocessing` 后端完成正确性和性能实验。
-在英文主机名的 Windows 或 Linux 环境中，将参数改为 `--backend ray` 即可。
+本机 Windows 主机名含中文，因此日常快速测试默认使用
+`multiprocessing` 后端；正式 Ray 实验已转移到 WSL2 Ubuntu。Linux 或 WSL2
+中可直接运行真实 Ray Task：
+
+```bash
+parallel-agent benchmark benchmarks/prime_count/workload.py \
+  --size 24 --workers 4 --backend ray \
+  --modes serial naive optimized \
+  --output results/raw/prime_count_ray.json
+```
+
+连接已经启动的 Ray 集群时增加 `--ray-address`：
+
+```bash
+parallel-agent benchmark benchmarks/prime_count/workload.py \
+  --size 24 --workers 8 --backend ray --ray-address auto \
+  --modes serial naive optimized \
+  --output results/raw/prime_count_cluster.json
+```
 
 结果文件包含中位运行时间、加速比、并行效率、CPU 利用率、任务数以及每次
-原始测量数据。
+原始测量数据。Ray 结果还记录可用节点、集群资源和任务实际执行节点；只有
+至少两个不同节点真正执行过任务时，才标记为多节点执行。
 
 复现当前首轮实验：
 
@@ -273,5 +290,6 @@ results/           实验原始数据、表格和图片
 - 目前只支持符合 `make_input/unit/combine/equivalent` 接口的基准程序；
 - 当前代码生成依赖显式函数契约，还不是任意 Python 源码重构；
 - 受控 LLM 代码生成已完成 4 任务、3 次独立生成的共享计划正式配对实验；
-- 本机 Ray 受中文主机名兼容问题影响，正式 Ray 结果仍需 Linux 环境；
+- 正式 Ray 结果已在 WSL2 单节点环境完成；真实多节点扩展性仍需要课题组或
+  云端提供至少两台互通的 Linux 节点；
 - AST 分析器只提供保守提示，不能替代实际正确性验证。

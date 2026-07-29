@@ -21,6 +21,7 @@ def run_suite(
     backend: str,
     output_dir: str | Path,
     randomize_order: bool = True,
+    ray_address: str | None = None,
 ) -> dict[str, Any]:
     if scale not in {"small", "large"}:
         raise ValueError("scale must be 'small' or 'large'")
@@ -49,6 +50,7 @@ def run_suite(
             output=destination / f"{name}_{scale}.json",
             backend=backend,
             randomize_order=randomize_order,
+            ray_address=ray_address,
         )
         reports[name] = report
         for mode, summary in report["summary"].items():
@@ -111,6 +113,7 @@ def run_suite(
         "repeats": repeats,
         "warmups": warmups,
         "backend": backend,
+        "ray_address": ray_address,
         "randomize_order": randomize_order,
         "benchmarks": list(reports),
         "csv": str(csv_path),

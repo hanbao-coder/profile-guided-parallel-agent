@@ -41,6 +41,7 @@ class RunMetrics:
     input_serialization_seconds: float = 0.0
     output_serialized_bytes: int = 0
     output_serialization_seconds: float = 0.0
+    execution_node_ids: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:

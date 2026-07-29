@@ -9,6 +9,7 @@ import random
 import statistics
 import tempfile
 import time
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
@@ -59,8 +60,10 @@ def ray_temp_directory() -> Path:
     return (Path(tempfile.gettempdir()) / "pa_ray").resolve()
 
 
-def ensure_ray_initialized(workers: int) -> float:
-    """Start a local Ray runtime once and return its observed startup cost."""
+def ensure_ray_initialized(
+    workers: int, address: str | None = None
+) -> float:
+    """Connect to Ray or start it locally, returning observed startup cost."""
     global _RAY_STARTUP_SECONDS
     try:
         import ray
@@ -71,27 +74,37 @@ def ensure_ray_initialized(workers: int) -> float:
         ) from exc
     if ray.is_initialized():
         return _RAY_STARTUP_SECONDS
-    ray_temp = ray_temp_directory()
-    ray_temp.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
-    ray.init(
-        num_cpus=workers,
-        include_dashboard=False,
-        ignore_reinit_error=True,
-        logging_level="ERROR",
-        _temp_dir=str(ray_temp),
-    )
+    if address:
+        ray.init(
+            address=address,
+            include_dashboard=False,
+            ignore_reinit_error=True,
+            logging_level="ERROR",
+        )
+    else:
+        ray_temp = ray_temp_directory()
+        ray_temp.mkdir(parents=True, exist_ok=True)
+        ray.init(
+            num_cpus=workers,
+            include_dashboard=False,
+            ignore_reinit_error=True,
+            logging_level="ERROR",
+            _temp_dir=str(ray_temp),
+        )
     _RAY_STARTUP_SECONDS = time.perf_counter() - started
     return _RAY_STARTUP_SECONDS
 
 
 def calibrate_ray_backend(
-    workers: int, task_samples: int = 32
+    workers: int,
+    task_samples: int = 32,
+    address: str | None = None,
 ) -> BackendCalibration:
     """Measure warm Ray submission/get overhead using identity tasks."""
     import ray
 
-    ensure_ray_initialized(workers)
+    ensure_ray_initialized(workers, address)
     remote_identity = ray.remote(_identity)
     ray.get([remote_identity.remote(value) for value in range(workers)])
     started = time.perf_counter()
@@ -112,7 +125,7 @@ def _ray_map(
     items: Sequence[Any],
     workers: int,
     chunk_count: int,
-) -> tuple[Any, int, list[list[Any]]]:
+) -> tuple[Any, int, list[list[Any]], list[str]]:
     try:
         import ray
     except ImportError as exc:
@@ -122,16 +135,35 @@ def _ray_map(
         ) from exc
 
     ensure_ray_initialized(workers)
-
-    @ray.remote
-    def run_chunk(chunk: list[Any]) -> list[Any]:
-        return [workload.unit(item) for item in chunk]
-
+    run_chunk = ray.remote(_run_ray_chunk)
     chunks = split_evenly(items, chunk_count)
-    refs = [run_chunk.remote(chunk) for chunk in chunks]
-    nested = ray.get(refs)
+    refs = [
+        run_chunk.remote(workload.unit, chunk)
+        for chunk in chunks
+    ]
+    task_results = ray.get(refs)
+    nested = [values for values, _node_id in task_results]
+    execution_node_ids = [
+        node_id for _values, node_id in task_results
+    ]
     flat = [value for chunk_values in nested for value in chunk_values]
-    return workload.combine(flat), len(chunks), nested
+    return (
+        workload.combine(flat),
+        len(chunks),
+        nested,
+        execution_node_ids,
+    )
+
+
+def _run_ray_chunk(
+    unit_function: Any, chunk: list[Any]
+) -> tuple[list[Any], str]:
+    """Execute a chunk without requiring workload files on worker nodes."""
+    import ray
+
+    values = [unit_function(item) for item in chunk]
+    node_id = str(ray.get_runtime_context().get_node_id())
+    return values, node_id
 
 
 def _run_process_chunk(workload_path: str, chunk: list[Any]) -> list[Any]:
@@ -158,6 +190,42 @@ def calibrate_process_backend(workers: int, task_samples: int = 32) -> BackendCa
         assert values == list(range(task_samples))
         overhead = (time.perf_counter() - overhead_started) / task_samples
     return BackendCalibration(workers, startup, overhead)
+
+
+def ray_cluster_metadata(
+    requested_address: str | None,
+) -> dict[str, Any]:
+    """Return auditable cluster evidence without claiming single-node scaling."""
+    import ray
+
+    alive_nodes = [node for node in ray.nodes() if node.get("Alive")]
+    addresses = sorted(
+        {
+            str(node.get("NodeManagerAddress"))
+            for node in alive_nodes
+            if node.get("NodeManagerAddress")
+        }
+    )
+    resources = ray.cluster_resources()
+    return {
+        "requested_address": requested_address or "local",
+        "alive_nodes": len(alive_nodes),
+        "physical_node_count": len(addresses),
+        "multi_node": len(addresses) >= 2,
+        "cluster_resources": resources,
+        "total_cpu": float(resources.get("CPU", 0.0)),
+        "total_gpu": float(resources.get("GPU", 0.0)),
+        "nodes": [
+            {
+                "node_id": node.get("NodeID"),
+                "node_manager_address": node.get(
+                    "NodeManagerAddress"
+                ),
+                "resources": node.get("Resources", {}),
+            }
+            for node in alive_nodes
+        ],
+    }
 
 
 def _process_map_with_pool(
@@ -306,6 +374,7 @@ def run_once(
     input_serialization = 0.0
     output_bytes = 0
     output_serialization = 0.0
+    execution_node_ids: list[str] = []
     parallel_chunks = (
         split_evenly(items, chunks)
         if mode != "serial" and selected_mode != "serial_fallback"
@@ -332,7 +401,7 @@ def run_once(
         if mode == "serial" or selected_mode == "serial_fallback":
             result = _serial(workload, items)
         elif backend == "ray":
-            result, task_count, task_outputs = _ray_map(
+            result, task_count, task_outputs, execution_node_ids = _ray_map(
                 workload, items, workers, chunks
             )
         elif backend == "multiprocessing":
@@ -376,6 +445,7 @@ def run_once(
         input_serialization_seconds=input_serialization,
         output_serialized_bytes=output_bytes,
         output_serialization_seconds=output_serialization,
+        execution_node_ids=execution_node_ids,
         notes=notes,
     )
     return metric, result
@@ -392,26 +462,32 @@ def benchmark(
     output: str | Path | None = None,
     backend: str = "multiprocessing",
     randomize_order: bool = True,
+    ray_address: str | None = None,
 ) -> dict[str, Any]:
+    if ray_address and backend != "ray":
+        raise ValueError("ray_address requires backend='ray'")
     workload = load_workload(workload_path)
     items = workload.make_input(size, seed)
     golden = _serial(workload, items)
+    uses_parallel_mode = any(
+        mode in {"naive", "optimized"} for mode in modes
+    )
     raw: list[RunMetrics] = []
     calibrations: dict[int, BackendCalibration] = {}
     backend_startup_seconds = 0.0
     planning_started = time.perf_counter()
-    if backend == "multiprocessing" and any(
-        mode in {"naive", "optimized"} for mode in modes
-    ):
+    if backend == "multiprocessing" and uses_parallel_mode:
         for candidate_workers in worker_candidates(workers):
             calibrations[candidate_workers] = calibrate_process_backend(
                 candidate_workers
             )
-    elif backend == "ray" and any(
-        mode in {"naive", "optimized"} for mode in modes
-    ):
-        backend_startup_seconds = ensure_ray_initialized(workers)
-        calibrations[workers] = calibrate_ray_backend(workers)
+    elif backend == "ray" and uses_parallel_mode:
+        backend_startup_seconds = ensure_ray_initialized(
+            workers, ray_address
+        )
+        calibrations[workers] = calibrate_ray_backend(
+            workers, address=ray_address
+        )
     planning_seconds = time.perf_counter() - planning_started
     item_time, item_cv, pilot_samples = _pilot_item_profile(workload, items)
     serialized_bytes, serialization_seconds = _serialization_profile(items)
@@ -577,6 +653,22 @@ def benchmark(
             else 0.0
         )
 
+    ray_cluster: dict[str, Any] | None = None
+    if backend == "ray" and uses_parallel_mode:
+        ray_cluster = ray_cluster_metadata(ray_address)
+        execution_counts = Counter(
+            node_id
+            for metric in raw
+            for node_id in metric.execution_node_ids
+        )
+        ray_cluster.update(
+            {
+                "executed_node_ids": sorted(execution_counts),
+                "executed_node_count": len(execution_counts),
+                "executed_on_multiple_nodes": len(execution_counts) >= 2,
+                "task_executions_by_node": dict(execution_counts),
+            }
+        )
     report = {
         "benchmark": workload.NAME,
         "size": len(items),
@@ -591,6 +683,7 @@ def benchmark(
             "samples": pilot_samples,
         },
         "backend_startup_seconds": backend_startup_seconds,
+        "ray_cluster": ray_cluster,
         "dataset_serialized_bytes": serialized_bytes,
         "dataset_serialization_seconds": serialization_seconds,
         "calibrations": {
