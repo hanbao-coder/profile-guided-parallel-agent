@@ -269,3 +269,13 @@
 - Rechecked table geometry: all table widths, indents, grids, and cell widths match.
 - Kept the Windows/Ray hostname limitation explicit; no modeled DAG result is
   presented as a real Ray runtime result.
+
+## D18 — Self-contained release verification
+
+- Added a standard-library-only verifier for required artifacts, frozen metrics,
+  experiment boundaries, and advisor-report consistency.
+- The verifier checks 8 workloads / 24 configuration jobs, task-fusion reuse
+  behavior, and both deterministic DAG scheduling cases.
+- Added a `--run-tests` mode that never calls DeepSeek or incurs API cost.
+- Added a beginner-oriented reproducibility and five-minute demo guide.
+- Expanded the automated suite to 55 passing tests.

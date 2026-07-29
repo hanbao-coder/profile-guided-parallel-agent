@@ -29,6 +29,14 @@ python -m pip install -e ".[dev]"
 
 ## 快速验证
 
+验收第一阶段正式数据、汇报声明和完整测试（不调用 DeepSeek API）：
+
+```powershell
+python scripts/verify_first_stage.py --run-tests
+```
+
+详细验收范围和结果边界见 `docs/reproducibility.md`。
+
 运行测试：
 
 ```powershell
