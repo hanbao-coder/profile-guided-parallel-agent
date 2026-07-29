@@ -120,3 +120,62 @@ def test_contract_boundary_allows_loop_local_state() -> None:
     analysis = adapter.analyze(ROOT / "benchmarks/tiny_tasks/workload.py")
     assert analysis.parallelizable
     assert any("unit contract" in reason for reason in analysis.rationale)
+
+
+def test_stage_model_router_uses_pro_for_analysis_and_flash_for_plan() -> None:
+    client = fake_client(
+        [
+            json.dumps(
+                {
+                    "parallelizable": True,
+                    "hazards": [],
+                    "rationale": ["Independent."],
+                }
+            ),
+            json.dumps({"workers": 2, "chunks": 2, "reasons": ["Plan."]}),
+        ]
+    )
+    adapter = DeepSeekAdapter(api_key="test-key", client=client)
+    analysis = adapter.analyze(ROOT / "benchmarks/prime_count/workload.py")
+    adapter.plan(analysis, workers=2, chunks=2)
+    assert adapter.traces[0]["model"] == "deepseek-v4-pro"
+    assert adapter.traces[1]["model"] == "deepseek-v4-flash"
+    assert adapter.traces[0]["thinking_enabled"] is True
+    assert adapter.traces[1]["thinking_enabled"] is False
+
+
+def test_performance_controller_can_choose_serial() -> None:
+    client = fake_client(
+        [
+            json.dumps(
+                {
+                    "parallelizable": True,
+                    "hazards": [],
+                    "rationale": ["Independent."],
+                }
+            ),
+            json.dumps({"workers": 2, "chunks": 2, "reasons": ["Plan."]}),
+            json.dumps(
+                {
+                    "action": "serial",
+                    "workers": 1,
+                    "chunks": 1,
+                    "reasons": ["Measured parallel runtime is slower."],
+                }
+            ),
+        ]
+    )
+    adapter = DeepSeekAdapter(api_key="test-key", client=client)
+    analysis = adapter.analyze(ROOT / "benchmarks/prime_count/workload.py")
+    plan = adapter.plan(analysis, workers=2, chunks=2)
+    optimized = adapter.optimize_performance(
+        plan,
+        {
+            "end_to_end_speedup": 0.5,
+            "minimum_speedup": 1.05,
+        },
+        attempt=1,
+    )
+    assert not optimized.parallelizable
+    assert optimized.strategy == "serial"
+    assert adapter.traces[-1]["model"] == "deepseek-v4-pro"

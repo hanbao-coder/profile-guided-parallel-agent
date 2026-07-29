@@ -77,6 +77,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_first_experiment.ps1
 六类任务覆盖和通信代理结果见 `docs/benchmark-suite-smoke.md`。
 五次重复的正式本机基线见 `docs/formal-multiprocessing-baseline.md`。
 DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
+性能反馈 Agent 与首轮消融见 `docs/performance-feedback-agent.md`。
 
 从正式实验 CSV 生成汇报图：
 
@@ -116,6 +117,20 @@ parallel-agent agent benchmarks/prime_count/workload.py `
   --adapter deepseek --output-dir generated/deepseek_prime `
   --size 2 --workers 2 --chunks 2
 ```
+
+运行性能反馈组：
+
+```powershell
+parallel-agent agent benchmarks/tiny_tasks/workload.py `
+  --adapter deepseek --feedback-mode performance `
+  --output-dir generated/tiny_performance `
+  --size 8 --workers 2 --chunks 2 `
+  --performance-repeats 3 --minimum-speedup 1.05
+```
+
+当前模型路由为：分析、修复和性能决策使用 `deepseek-v4-pro`，结构化计划
+使用关闭思考模式的 `deepseek-v4-flash`。这样把较高成本模型集中在真正影响
+正确性与效率的环节。
 
 如果第一次接触科研项目，请从以下两份文档开始：
 

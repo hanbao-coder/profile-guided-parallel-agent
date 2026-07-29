@@ -31,6 +31,14 @@ class AgentAdapter(Protocol):
         attempt: int,
     ) -> ParallelPlan: ...
 
+    def optimize_performance(
+        self,
+        plan: ParallelPlan,
+        feedback: dict[str, object],
+        *,
+        attempt: int,
+    ) -> ParallelPlan: ...
+
 
 class OfflineHeuristicAdapter:
     """Deterministic adapter used before an online LLM credential is configured."""
@@ -43,12 +51,9 @@ class OfflineHeuristicAdapter:
         functions = set(static.functions)
         contract = sorted(REQUIRED_CONTRACT & functions)
         complete = REQUIRED_CONTRACT <= functions
-        hard_hazard = any(
-            hazard.startswith("indexed_loop_carried_dependency")
-            or hazard.startswith("possible_loop_carried_dependency")
-            or hazard in {"global_state", "while_loop_requires_review"}
-            for hazard in static.hazards
-        )
+        # Under the explicit contract, local sequential state inside unit(item)
+        # is not shared between separate item calls. Global state remains unsafe.
+        hard_hazard = "global_state" in static.hazards
         parallelizable = complete and not hard_hazard
         rationale: list[str] = []
         if complete:
@@ -57,7 +62,7 @@ class OfflineHeuristicAdapter:
             missing = sorted(REQUIRED_CONTRACT - functions)
             rationale.append("Missing supported contract functions: " + ", ".join(missing))
         if hard_hazard:
-            rationale.append("Static analysis found a loop-carried or state hazard.")
+            rationale.append("Static analysis found global shared state.")
         elif complete:
             rationale.append("Each item can be mapped independently and combined afterward.")
         artifact = AnalysisArtifact(
@@ -143,3 +148,36 @@ class OfflineHeuristicAdapter:
         )
         repaired.validate()
         return repaired
+
+    def optimize_performance(
+        self,
+        plan: ParallelPlan,
+        feedback: dict[str, object],
+        *,
+        attempt: int,
+    ) -> ParallelPlan:
+        """Use measured performance to avoid retaining harmful parallelism."""
+        speedup = float(feedback.get("end_to_end_speedup", 0.0))
+        minimum = float(feedback.get("minimum_speedup", 1.05))
+        if speedup < minimum:
+            optimized = ParallelPlan(
+                schema_version=plan.schema_version,
+                source_path=plan.source_path,
+                parallelizable=False,
+                backend="serial",
+                strategy="serial",
+                workers=1,
+                chunks=1,
+                correctness_gate=True,
+                fallback="serial",
+                reasons=plan.reasons
+                + [
+                    f"Performance attempt {attempt}: measured speedup "
+                    f"{speedup:.3f}x is below the required {minimum:.3f}x; "
+                    "fall back to serial."
+                ],
+            )
+        else:
+            optimized = plan
+        optimized.validate()
+        return optimized

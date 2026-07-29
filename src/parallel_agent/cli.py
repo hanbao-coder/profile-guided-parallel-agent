@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .analyzer import analyze_file
+from .agent_ablation import plot_agent_ablation, summarize_agent_runs
 from .agent_pipeline import run_agent_pipeline
 from .deepseek_adapter import DeepSeekAdapter, DeepSeekConfigurationError
 from .plotting import plot_suite_results
@@ -68,6 +69,20 @@ def _parser() -> argparse.ArgumentParser:
     plot.add_argument("suite_csv")
     plot.add_argument("--output-dir", default="results/figures/latest")
 
+    summarize = commands.add_parser(
+        "summarize-agent",
+        help="Aggregate Agent run directories into an ablation CSV.",
+    )
+    summarize.add_argument("run_dirs", nargs="+")
+    summarize.add_argument("--output", required=True)
+
+    plot_ablation = commands.add_parser(
+        "plot-agent-ablation",
+        help="Create a report figure from an Agent ablation CSV.",
+    )
+    plot_ablation.add_argument("summary_csv")
+    plot_ablation.add_argument("--output", required=True)
+
     agent = commands.add_parser("agent", help="Run the analyze-plan-generate loop.")
     agent.add_argument("source")
     agent.add_argument("--output-dir", default="generated/latest")
@@ -77,6 +92,15 @@ def _parser() -> argparse.ArgumentParser:
     agent.add_argument("--chunks", type=int, default=4)
     agent.add_argument("--timeout", type=float, default=120.0)
     agent.add_argument("--max-repairs", type=int, default=2)
+    agent.add_argument(
+        "--feedback-mode",
+        choices=["one_shot", "correctness", "performance"],
+        default="correctness",
+        help="Select the ablation group for Agent feedback.",
+    )
+    agent.add_argument("--performance-repeats", type=int, default=3)
+    agent.add_argument("--minimum-speedup", type=float, default=1.05)
+    agent.add_argument("--max-performance-attempts", type=int, default=1)
     agent.add_argument(
         "--adapter", choices=["offline", "deepseek"], default="offline"
     )
@@ -131,6 +155,16 @@ def main() -> None:
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return
 
+    if args.command == "summarize-agent":
+        rows = summarize_agent_runs(args.run_dirs, args.output)
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "plot-agent-ablation":
+        output = plot_agent_ablation(args.summary_csv, args.output)
+        print(json.dumps({"figure": str(output)}, ensure_ascii=False))
+        return
+
     try:
         adapter = (
             DeepSeekAdapter.from_env()
@@ -146,6 +180,10 @@ def main() -> None:
             chunks=args.chunks,
             timeout_seconds=args.timeout,
             max_repair_attempts=args.max_repairs,
+            feedback_mode=args.feedback_mode,
+            performance_repeats=args.performance_repeats,
+            minimum_speedup=args.minimum_speedup,
+            max_performance_attempts=args.max_performance_attempts,
             adapter=adapter,
         )
     except DeepSeekConfigurationError as exc:

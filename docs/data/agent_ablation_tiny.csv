@@ -1,0 +1,4 @@
+﻿run,workload,feedback_mode,status,correct,selected_mode,initial_end_to_end_speedup,final_measured_speedup,effective_speedup_after_fallback,repair_attempts,performance_attempts,model_calls,pro_calls,flash_calls,prompt_tokens,completion_tokens,total_tokens
+ablation_tiny_one_shot,tiny_tasks,one_shot,accepted,True,parallel,0.44648491366293824,0.44648491366293824,0.44648491366293824,0,0,2,1,1,867,2568,3435
+ablation_tiny_correctness,tiny_tasks,correctness,accepted,True,parallel,0.45644624412016466,0.45644624412016466,0.45644624412016466,0,0,2,1,1,847,1614,2461
+deepseek_tiny_performance,tiny_tasks,performance,accepted,True,serial,0.4667430377004708,0.4667430377004708,1.0,0,1,3,2,1,1289,2555,3844

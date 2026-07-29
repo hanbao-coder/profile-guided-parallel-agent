@@ -29,7 +29,9 @@ class DeepSeekAdapter:
         self,
         *,
         api_key: str,
-        model: str = "deepseek-v4-flash",
+        model: str | None = None,
+        pro_model: str = "deepseek-v4-pro",
+        flash_model: str = "deepseek-v4-flash",
         base_url: str = "https://api.deepseek.com",
         client: Any | None = None,
         max_output_retries: int = 2,
@@ -39,7 +41,9 @@ class DeepSeekAdapter:
                 "DEEPSEEK_API_KEY is missing. Copy .env.example to .env and "
                 "fill the key locally; never paste it into chat."
             )
-        self.model = model
+        # ``model`` is retained as a backwards-compatible test/config override.
+        self.pro_model = model or pro_model
+        self.flash_model = model or flash_model
         self.base_url = base_url
         self.client = client or OpenAI(api_key=api_key, base_url=base_url)
         self.max_output_retries = max_output_retries
@@ -51,8 +55,42 @@ class DeepSeekAdapter:
         return cls(
             api_key=os.getenv("DEEPSEEK_API_KEY", ""),
             base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
-            model=os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash"),
+            pro_model=os.getenv("DEEPSEEK_PRO_MODEL", "deepseek-v4-pro"),
+            flash_model=os.getenv(
+                "DEEPSEEK_FLASH_MODEL",
+                os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash"),
+            ),
         )
+
+    def _model_for_stage(self, stage: str) -> str:
+        if stage in {"analysis", "repair", "performance_optimization"}:
+            return self.pro_model
+        return self.flash_model
+
+    def _request_profile(self, stage: str) -> dict[str, Any]:
+        reasoning_stage = stage in {
+            "analysis",
+            "repair",
+            "performance_optimization",
+        }
+        max_tokens = {
+            "analysis": 2000,
+            "planning": 800,
+            "repair": 1500,
+            "performance_optimization": 1000,
+        }.get(stage, 1000)
+        extra_body: dict[str, Any] = {
+            "thinking": {
+                "type": "enabled" if reasoning_stage else "disabled"
+            }
+        }
+        if reasoning_stage:
+            extra_body["reasoning_effort"] = "high"
+        return {
+            "thinking_enabled": reasoning_stage,
+            "max_tokens": max_tokens,
+            "extra_body": extra_body,
+        }
 
     def _request_json(
         self,
@@ -70,15 +108,18 @@ class DeepSeekAdapter:
             },
         ]
         last_error = "unknown"
+        model = self._model_for_stage(stage)
+        profile = self._request_profile(stage)
         for request_attempt in range(1, self.max_output_retries + 2):
             started = time.perf_counter()
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=model,
                 messages=messages,
                 response_format={"type": "json_object"},
-                max_tokens=3000,
+                max_tokens=profile["max_tokens"],
                 temperature=0,
                 stream=False,
+                extra_body=profile["extra_body"],
             )
             elapsed = time.perf_counter() - started
             content = response.choices[0].message.content or ""
@@ -86,8 +127,10 @@ class DeepSeekAdapter:
             trace = {
                 "stage": stage,
                 "request_attempt": request_attempt,
-                "model": self.model,
+                "model": model,
                 "base_url": self.base_url,
+                "thinking_enabled": profile["thinking_enabled"],
+                "max_output_tokens": profile["max_tokens"],
                 "elapsed_seconds": elapsed,
                 "response_content": content,
                 "prompt_tokens": getattr(usage, "prompt_tokens", None),
@@ -296,3 +339,69 @@ class DeepSeekAdapter:
         )
         repaired.validate()
         return repaired
+
+    def optimize_performance(
+        self,
+        plan: ParallelPlan,
+        feedback: dict[str, object],
+        *,
+        attempt: int,
+    ) -> ParallelPlan:
+        data = self._request_json(
+            stage="performance_optimization",
+            system_prompt=(
+                "You are a conservative performance optimization controller. "
+                "Measured end-to-end runtime is authoritative. Return JSON only "
+                "with this exact shape: "
+                '{"action":"parallel|serial","workers":2,"chunks":4,'
+                '"reasons":[]}. Choose serial when measured speedup is below the '
+                "required minimum and there is no strong evidence that changing "
+                "worker/chunk counts will recover the loss. Never claim a "
+                "speedup that is absent from the measurements."
+            ),
+            user_payload={
+                "current_plan": plan.to_dict(),
+                "performance_feedback": feedback,
+                "optimization_attempt": attempt,
+            },
+        )
+        action = str(data.get("action", "serial")).strip().lower()
+        reasons = [
+            str(item) for item in data.get("reasons", []) if str(item).strip()
+        ]
+        if action != "parallel":
+            optimized = ParallelPlan(
+                schema_version="1.0",
+                source_path=plan.source_path,
+                parallelizable=False,
+                backend="serial",
+                strategy="serial",
+                workers=1,
+                chunks=1,
+                correctness_gate=True,
+                fallback="serial",
+                reasons=reasons
+                or [
+                    "DeepSeek performance controller selected serial fallback "
+                    "from measured end-to-end runtime."
+                ],
+            )
+        else:
+            optimized = ParallelPlan(
+                schema_version="1.0",
+                source_path=plan.source_path,
+                parallelizable=True,
+                backend="multiprocessing",
+                strategy="map_reduce",
+                workers=max(1, int(data.get("workers", plan.workers))),
+                chunks=max(1, int(data.get("chunks", plan.chunks))),
+                correctness_gate=True,
+                fallback="serial",
+                reasons=reasons
+                or [
+                    "DeepSeek performance controller requested another measured "
+                    "parallel configuration."
+                ],
+            )
+        optimized.validate()
+        return optimized

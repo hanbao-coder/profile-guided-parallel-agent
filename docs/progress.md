@@ -112,3 +112,20 @@
 2. Define one-shot LLM and feedback-Agent experiment groups.
 3. Add Agent-call/token/repair metrics to the aggregate experiment table.
 4. Refresh the August 2 advisor report immediately before sending.
+
+## D8 — Performance-feedback Agent prototype
+
+- Added one-shot, correctness-feedback, and performance-feedback modes.
+- Added randomized repeated end-to-end candidate measurements.
+- Added a 1.05x minimum-benefit gate and measured serial fallback.
+- Routed analysis/repair/performance decisions to DeepSeek V4 Pro and routine
+  plan formatting to V4 Flash.
+- Disabled thinking mode and reduced output budget for Flash planning.
+- Routing smoke test: Flash planning used 98 completion tokens versus 884 in
+  an earlier default-thinking planning call; inputs were similar but not
+  identical, so this is a configuration check rather than a formal cost result.
+- Tiny Tasks: one-shot 0.45x, correctness feedback 0.46x, performance feedback
+  candidate 0.47x followed by serial fallback (effective 1.00x).
+- Prime Count Large: performance feedback retained parallel execution at 1.78x.
+- Added automatic ablation CSV aggregation and a report figure.
+- Expanded the automated suite to 28 passing tests.
