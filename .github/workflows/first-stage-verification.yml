@@ -47,3 +47,23 @@ jobs:
 
       - name: Verify frozen research package and run tests
         run: python scripts/verify_first_stage.py --run-tests
+
+      - name: Run real single-node Ray smoke experiment
+        run: |
+          parallel-agent benchmark benchmarks/prime_count/workload.py \
+            --size 4 \
+            --workers 2 \
+            --backend ray \
+            --modes serial naive optimized \
+            --repeats 1 \
+            --warmups 0 \
+            --output work/ray-smoke.json
+
+      - name: Upload Ray smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ray-smoke-${{ github.sha }}
+          path: work/ray-smoke.json
+          if-no-files-found: warn
+          retention-days: 30

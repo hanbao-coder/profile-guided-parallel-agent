@@ -302,3 +302,12 @@
 - Expanded the local automated suite to 57 passing tests.
 - Verified both the branch-push and version-tag runs on GitHub: each completed
   successfully on the clean Linux runner.
+
+## D21 — Real Ray Linux smoke gate
+
+- Extended the Linux workflow with a real single-node Ray backend execution.
+- The smoke covers serial, naive parallel, and optimized modes on Prime Count.
+- The raw JSON is uploaded as a 30-day workflow artifact even when later steps
+  fail, so Ray runtime evidence is not reduced to a green badge.
+- The smoke is explicitly scoped to backend correctness and portability, not
+  shared-runner performance or multi-node scalability.

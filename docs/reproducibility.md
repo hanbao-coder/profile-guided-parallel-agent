@@ -40,6 +40,11 @@ python scripts/verify_first_stage.py
 云端环境固定为 Ubuntu 与 Python 3.12，先安装项目，再编译源码，最后执行同一条
 第一阶段验收命令。工作流不配置 DeepSeek Key，因此不会产生模型调用费用。
 
+在常规验收之后，工作流还会使用实际 `--backend ray` 运行 Prime Count 的
+串行、朴素并行和优化并行小规模冒烟实验，并将原始 JSON 保存为 30 天可下载的
+GitHub Actions Artifact。该实验用于验证单节点 Ray 后端可执行和结果正确，不作为
+共享 CI 机器上的正式性能结论，也不代表多机集群实验。
+
 首次分支推送和 `v0.14.0-linux-ci` 标签触发的两次云端运行均已成功完成：
 
 - `https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/runs/30461017594`
