@@ -5,12 +5,23 @@ study:
   final_hypothesis_selected: false
 
 agent:
+  baseline_protocol_version: 2
   provider: deepseek
   model: deepseek-v4-pro
   independent_runs_per_project: 3
   maximum_repair_rounds: 3
   same_prompt_for_all_projects: true
   same_tool_access_for_all_projects: true
+  maximum_turns: 12
+  maximum_exploration_actions: 6
+  maximum_edit_actions: 4
+  model_routing:
+    orientation_and_edit: deepseek-v4-pro
+    routine_navigation: deepseek-v4-flash
+  patch_application:
+    exact_match_first: true
+    unique_context_fallback: true
+    minimum_context_similarity: 0.80
 
 execution:
   performance_warmups: 1
