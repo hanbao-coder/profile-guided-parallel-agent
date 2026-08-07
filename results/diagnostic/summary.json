@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "included_runs": 9,
+  "excluded_runs": 14,
+  "outcome_counts": {
+    "end_to_end_performance_regression": 1,
+    "correctness_failure": 2,
+    "patch_application_failure": 6
+  },
+  "runs": [
+    {
+      "project": "chardet",
+      "run": "run-01",
+      "primary_outcome": "end_to_end_performance_regression",
+      "speedup": 0.8127536040369043,
+      "turns": 10,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 10,
+      "model_tokens": 180491
+    },
+    {
+      "project": "chardet",
+      "run": "run-02",
+      "primary_outcome": "correctness_failure",
+      "speedup": 2.9864808939246976,
+      "turns": 12,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 236647
+    },
+    {
+      "project": "chardet",
+      "run": "run-03",
+      "primary_outcome": "patch_application_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 0,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 235954
+    },
+    {
+      "project": "radon",
+      "run": "run-01",
+      "primary_outcome": "patch_application_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 0,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 133266
+    },
+    {
+      "project": "radon",
+      "run": "run-02",
+      "primary_outcome": "correctness_failure",
+      "speedup": 11.344519051953412,
+      "turns": 12,
+      "edit_rounds": 3,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 166905
+    },
+    {
+      "project": "radon",
+      "run": "run-03",
+      "primary_outcome": "patch_application_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 0,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 140154
+    },
+    {
+      "project": "vulture",
+      "run": "run-01",
+      "primary_outcome": "patch_application_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 0,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 144356
+    },
+    {
+      "project": "vulture",
+      "run": "run-02",
+      "primary_outcome": "patch_application_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 0,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 150695
+    },
+    {
+      "project": "vulture",
+      "run": "run-03",
+      "primary_outcome": "patch_application_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 0,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 124947
+    }
+  ],
+  "excluded": [
+    {
+      "path": "chardet/excluded-bypassed-entrypoint-run-01",
+      "status": "excluded_workload_adapter_error",
+      "reason": "The registered workload called chardet.detect directly and bypassed the public chardet.cli.main path that the Agent was asked to parallelize. The run cannot test whether the patch improves the selected end-to-end scenario."
+    },
+    {
+      "path": "chardet/excluded-bypassed-entrypoint-run-02",
+      "status": "excluded_workload_adapter_error",
+      "reason": "The registered workload called chardet.detect directly and bypassed the public chardet.cli.main path that the Agent was asked to parallelize. The run cannot test whether the patch improves the selected end-to-end scenario."
+    },
+    {
+      "path": "chardet/excluded-bypassed-entrypoint-run-03",
+      "status": "excluded_workload_adapter_error",
+      "reason": "The registered workload called chardet.detect directly and bypassed the public chardet.cli.main path modified by the Agent. Its output mismatch and apparent speedup therefore cannot be attributed to the patch. The adapter was corrected and the serial CLI baseline was rebuilt before restarting formal runs."
+    },
+    {
+      "path": "radon/excluded-api-latency",
+      "status": "excluded_external_service",
+      "reason": "The first Pro call took 104.19 seconds and the following Flash call still had no response after roughly two minutes. The run was stopped before any edit and is excluded because API service latency is not a repository parallelization outcome."
+    },
+    {
+      "path": "radon/pilot-invalid-context",
+      "status": "excluded_pilot",
+      "reason": "The repository Agent was given an excessively large second-turn file payload. The Pro model spent 22485 tokens but returned an empty response instead of a JSON action."
+    },
+    {
+      "path": "radon/pilot-missing-line-read",
+      "status": "excluded_pilot",
+      "reason": "The Agent located radon/cli/tools.py:244 but the baseline tool could only return truncated whole files, not a requested line range. It repeated search/read actions and exhausted the turn limit without editing."
+    },
+    {
+      "path": "radon/pilot-multi-edit-recorder",
+      "status": "excluded_pilot",
+      "reason": "The Agent produced a three-replacement patch for one file. The executor validated each replacement against the original file and wrote each independently, so later writes overwrote earlier ones. The evidence recorder then crashed because it assumed modified-file entries were objects rather than strings."
+    },
+    {
+      "path": "radon/pilot-read-budget-rejection",
+      "status": "excluded_pilot",
+      "reason": "The Flash navigator requested several valid files whose combined size exceeded the read budget. The tool rejected the whole request and incorrectly consumed exploration budget, causing repeated identical requests."
+    },
+    {
+      "path": "radon/pilot-unbounded-context",
+      "status": "excluded_protocol_calibration",
+      "reason": "The first complete run repeatedly carried all prior source payloads. It used 475868 model tokens in 20 exploration turns and produced no patch. This violates the intended token-efficient Pro/Flash routing and is not comparable to the frozen protocol."
+    },
+    {
+      "path": "radon/preliminary-strict-run-01",
+      "status": "excluded_preliminary_protocol_v1",
+      "reason": "The run used the exact-only edit protocol. It found the parallelization location but could not apply its patch. Protocol v2 adds conservative context matching so generic patch formatting does not dominate the parallelization study."
+    },
+    {
+      "path": "radon/preliminary-strict-run-02",
+      "status": "excluded_preliminary_protocol_v1",
+      "reason": "The run used the exact-only edit protocol. It found the parallelization location but could not apply its patch. Protocol v2 adds conservative context matching so generic patch formatting does not dominate the parallelization study."
+    },
+    {
+      "path": "radon/preliminary-strict-run-03",
+      "status": "excluded_preliminary_protocol_v1",
+      "reason": "This exact-only preliminary run produced a real patch and an important failure example: apparent 9.874x speedup, two failing tests, and an output hash different from the serial baseline because the project configuration object could not be deserialized in child processes. It remains qualitative evidence but is excluded from the protocol-v2 frequency table."
+    },
+    {
+      "path": "vulture/excluded-temp-permission",
+      "status": "excluded_environment_failure",
+      "reason": "The repository remained unchanged, but five pytest fixtures failed because the shared Windows directory C:\\Users\\20477\\AppData\\Local\\Temp\\pytest-of-20477 was not accessible. This is unrelated to the Agent patch or project parallelization. The protocol was updated to use a trial-local pytest base directory before restarting the formal run."
+    },
+    {
+      "path": "vulture/pilot-strict-patch",
+      "status": "excluded_protocol_calibration",
+      "reason": "The exact whole-block replacement tool dominated the run: the Agent identified the shared scan method and proposed a patch, but harmless context differences made every edit fail before project tests could run."
+    }
+  ]
+}

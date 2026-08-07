@@ -3,8 +3,8 @@
   "commit": "ac49ec6e91c3e247b83ef78bbef0c78574b018a0",
   "public_entrypoint": "chardet.cli.main",
   "registered_workload": "Detect the encoding of the first 500 sorted files from the official test-data repository and return per-file records in input order.",
-  "serial_median_seconds": 3.2324222000024747,
-  "baseline_output_hash": "4381c3b71a21e8728af820aab1b62d6b42d437a5d14a7ab841e128759d797fc6",
+  "serial_median_seconds": 3.326015400001779,
+  "baseline_output_hash": "7e128d012a9f8699e740eef08aa77bdc42f9f356f0d737ad3b94fbf3a14a791c",
   "correctness_requirements": [
     "The original project tests must pass except the documented Windows symlink privilege test.",
     "Every per-file detection record must equal the serial result.",

@@ -47,7 +47,8 @@ def _primary_outcome(
     edit_attempts = [
         event
         for event in events
-        if event.get("action", {}).get("action") == "apply_edits"
+        if isinstance(event.get("action"), dict)
+        and event["action"].get("action") == "apply_edits"
     ]
     if not outcome.get("patch_nonempty"):
         if edit_attempts:
@@ -132,6 +133,13 @@ def main() -> int:
             )
             agent = outcome.get("agent", {})
             traces = agent.get("traces", [])
+            model_events = [
+                event
+                for event in (
+                    traces if isinstance(traces, list) else agent.get("events", [])
+                )
+                if isinstance(event, dict) and event.get("model")
+            ]
             rows.append(
                 {
                     "project": project,
@@ -141,9 +149,10 @@ def main() -> int:
                     "turns": agent.get("turns"),
                     "edit_rounds": agent.get("edit_rounds"),
                     "patch_nonempty": outcome.get("patch_nonempty"),
-                    "model_calls": len(traces),
+                    "model_calls": len(model_events),
                     "model_tokens": sum(
-                        int(trace.get("total_tokens") or 0) for trace in traces
+                        int(event.get("total_tokens") or 0)
+                        for event in model_events
                     ),
                 }
             )

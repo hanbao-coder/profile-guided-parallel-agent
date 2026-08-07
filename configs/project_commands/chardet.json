@@ -1,0 +1,44 @@
+{
+  "test": [
+    "D:\\hustagent\\work\\candidate-envs\\chardet\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-k",
+    "not test_symlink_used_as_is",
+    "--basetemp",
+    ".diagnostic-pytest"
+  ],
+  "benchmark": [
+    "D:\\hustagent\\work\\candidate-envs\\chardet\\Scripts\\python.exe",
+    "D:\\hustagent\\scripts\\run_candidate_baseline.py",
+    "--project",
+    "chardet",
+    "--input-root",
+    "D:\\hustagent\\work\\candidate-sources\\test-data-main",
+    "--output",
+    ".diagnostic-quick.json",
+    "--warmups",
+    "0",
+    "--repeats",
+    "1",
+    "--limit",
+    "500"
+  ],
+  "final_benchmark": [
+    "D:\\hustagent\\work\\candidate-envs\\chardet\\Scripts\\python.exe",
+    "D:\\hustagent\\scripts\\run_candidate_baseline.py",
+    "--project",
+    "chardet",
+    "--input-root",
+    "D:\\hustagent\\work\\candidate-sources\\test-data-main",
+    "--output",
+    ".diagnostic-formal.json",
+    "--warmups",
+    "1",
+    "--repeats",
+    "5",
+    "--limit",
+    "500"
+  ]
+}

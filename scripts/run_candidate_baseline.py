@@ -83,22 +83,16 @@ def _vulture_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
 
 
 def _chardet_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
-    import chardet
-    from chardet._utils import DEFAULT_MAX_BYTES
+    from chardet.cli import main as chardet_main
 
     files = _all_data_files(input_root, limit)
+    argv = [str(path) for path in files]
 
     def run() -> Any:
-        results = []
-        for path in files:
-            data = path.read_bytes()[:DEFAULT_MAX_BYTES]
-            results.append(
-                {
-                    "path": path.relative_to(input_root).as_posix(),
-                    "result": chardet.detect(data),
-                }
-            )
-        return results
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            chardet_main(argv)
+        return stream.getvalue().splitlines()
 
     return run
 

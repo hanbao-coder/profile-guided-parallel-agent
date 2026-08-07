@@ -104,11 +104,11 @@ projects:
       adapter: scripts/run_candidate_baseline.py
       input: first 500 sorted files from the official chardet test-data repository
       input_limit: 500
-      baseline_median_seconds: 3.2324222000024747
+      baseline_median_seconds: 3.326015400001779
       output_items: 500
       stable_output: true
     correctness_oracle:
       project_tests: 9325 passed, 21 expected failures
       excluded_environment_test: Windows symlink privilege test
-      output_check: per-file detection records in input order
+      output_check: public CLI output records in input order
     status: accepted
