@@ -25,7 +25,11 @@ def _command(tmp_path: Path) -> ControlledCommand:
     )
 
 
-def _session(tmp_path: Path) -> RepositoryAgentSession:
+def _session(
+    tmp_path: Path,
+    *,
+    edit_mode: str = "legacy",
+) -> RepositoryAgentSession:
     command = _command(tmp_path)
     return RepositoryAgentSession(
         RepositoryAgentConfig(
@@ -38,6 +42,7 @@ def _session(tmp_path: Path) -> RepositoryAgentSession:
             api_key="local-test-key",
             test_command=command,
             benchmark_command=command,
+            edit_mode=edit_mode,
         )
     )
 
@@ -115,6 +120,125 @@ def test_read_lines_returns_requested_numbered_range(tmp_path: Path) -> None:
     )
     assert result["content"] == "line two\nline three"
     assert result["numbered_content"] == "2: line two\n3: line three"
+    assert len(result["anchor_sha256"]) == 64
+
+
+def test_anchored_edit_requires_a_previously_read_current_range(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("first = 1\nsecond = 2\n", encoding="utf-8")
+    session = _session(tmp_path, edit_mode="anchored")
+    observed = session._read_lines(
+        {"path": "main.py", "start": 1, "end": 1}
+    )
+
+    result = session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "start": 1,
+                    "end": 1,
+                    "anchor_sha256": observed["anchor_sha256"],
+                    "new": "first = 10",
+                }
+            ]
+        }
+    )
+
+    assert result["matches"][0]["mode"] == "anchored"
+    assert source.read_text(encoding="utf-8") == "first = 10\nsecond = 2\n"
+    with pytest.raises(RepositoryAgentError, match="anchor was not returned"):
+        session._apply_edits(
+            {
+                "edits": [
+                    {
+                        "path": "main.py",
+                        "start": 1,
+                        "end": 1,
+                        "anchor_sha256": observed["anchor_sha256"],
+                        "new": "first = 20",
+                    }
+                ]
+            }
+        )
+
+
+def test_anchored_edit_rejects_source_changed_since_read(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, edit_mode="anchored")
+    observed = session._read_lines(
+        {"path": "main.py", "start": 1, "end": 1}
+    )
+    source.write_text("value = 2\n", encoding="utf-8")
+
+    with pytest.raises(RepositoryAgentError, match="source changed"):
+        session._apply_edits(
+            {
+                "edits": [
+                    {
+                        "path": "main.py",
+                        "start": 1,
+                        "end": 1,
+                        "anchor_sha256": observed["anchor_sha256"],
+                        "new": "value = 3",
+                    }
+                ]
+            }
+        )
+
+
+def test_read_line_anchor_is_retained_in_working_memory(tmp_path: Path) -> None:
+    (tmp_path / "main.py").write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, edit_mode="anchored")
+    action = {
+        "action": "read_lines",
+        "path": "main.py",
+        "start": 1,
+        "end": 1,
+    }
+    observation = session._read_lines(action)
+
+    session._update_working_memory(action, observation)
+
+    evidence = next(iter(session.working_files.values()))
+    assert observation["anchor_sha256"] in evidence
+    assert '"start": 1' in evidence
+
+
+def test_anchored_mode_reserves_one_exploration_for_read_lines(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "main.py").write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, edit_mode="anchored")
+    object.__setattr__(
+        session,
+        "exploration_actions",
+        session.config.max_exploration_actions - 1,
+    )
+
+    with pytest.raises(RepositoryAgentError, match="reserved for read_lines"):
+        session._execute_action(
+            {
+                "action": "read_files",
+                "paths": ["main.py"],
+            }
+        )
+
+    observation, finished = session._execute_action(
+        {
+            "action": "read_lines",
+            "path": "main.py",
+            "start": 1,
+            "end": 1,
+        }
+    )
+    assert observation["ok"] is True
+    assert finished is False
 
 
 def test_read_files_returns_subset_that_fits_budget(tmp_path: Path) -> None:

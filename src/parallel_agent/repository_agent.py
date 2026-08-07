@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -72,6 +73,7 @@ class RepositoryAgentConfig:
     max_files_per_read: int = 8
     max_file_characters: int = 16_000
     max_total_read_characters: int = 40_000
+    edit_mode: str = "legacy"
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -266,9 +268,38 @@ class RepositoryAgentSession:
         self.working_files: dict[str, str] = {}
         self.recent_searches: list[dict[str, Any]] = []
         self.action_summaries: list[dict[str, Any]] = []
+        self.read_anchors: set[tuple[str, int, int, str]] = set()
 
     def _system_prompt(self) -> str:
-        return """
+        if self.config.edit_mode == "anchored":
+            edit_action = (
+                '{"action":"apply_edits","edits":[{"path":"relative/path.py",'
+                '"start":10,"end":20,"anchor_sha256":"hash from read_lines",'
+                '"new":"replacement text"}],"reason":"..."}'
+            )
+            edit_rule = (
+                "- Every edit must use path, start, end and anchor_sha256 "
+                "returned by a prior read_lines action in this run.\n"
+                "- One of the six exploration actions is reserved for "
+                "read_lines; use at most five read_files/search actions.\n"
+                "- Re-read the current range after an earlier edit before "
+                "editing that file again."
+            )
+        elif self.config.edit_mode == "legacy":
+            edit_action = (
+                '{"action":"apply_edits","edits":[{"path":"relative/path.py",'
+                '"old":"exact existing text","new":"replacement text"}],'
+                '"reason":"..."}'
+            )
+            edit_rule = (
+                "- Each `old` string must be an exact, unique block in the "
+                "current file."
+            )
+        else:
+            raise RepositoryAgentError(
+                f"unknown edit mode: {self.config.edit_mode!r}"
+            )
+        return f"""
 You are a general repository-level coding Agent. Your task is to modify a real
 multi-file serial Python project so its registered end-to-end workload uses
 safe CPU parallelism and becomes faster while preserving the project's public
@@ -285,19 +316,19 @@ comments, strings, docs or test data.
 
 Every reply must be one JSON object with exactly one action:
 
-{"action":"read_files","paths":["relative/path.py"],"reason":"..."}
-{"action":"read_lines","path":"relative/path.py","start":1,"end":200,"reason":"..."}
-{"action":"search","query":"literal text","reason":"..."}
-{"action":"apply_edits","edits":[{"path":"relative/path.py","old":"exact existing text","new":"replacement text"}],"reason":"..."}
-{"action":"run_validation","kind":"test|benchmark","reason":"..."}
-{"action":"finish","reason":"..."}
+{{"action":"read_files","paths":["relative/path.py"],"reason":"..."}}
+{{"action":"read_lines","path":"relative/path.py","start":1,"end":200,"reason":"..."}}
+{{"action":"search","query":"literal text","reason":"..."}}
+{edit_action}
+{{"action":"run_validation","kind":"test|benchmark","reason":"..."}}
+{{"action":"finish","reason":"..."}}
 
 Rules:
 - Read relevant implementation and caller files before changing them.
 - `read_files` accepts at most eight paths and may return only the leading
   subset that fits a 40000-character observation. Use `read_lines` for a
   precise block in a large file.
-- Each `old` string must be an exact, unique block in the current file.
+{edit_rule}
 - Return complete JSON, with no Markdown fences.
 - Do not create shell commands, access secrets, use the network, or edit files
   outside the repository.
@@ -454,6 +485,8 @@ Rules:
         }
 
     def _apply_edits(self, data: dict[str, Any]) -> dict[str, Any]:
+        if self.config.edit_mode == "anchored":
+            return self._apply_anchored_edits(data)
         if self.edit_rounds >= self.config.max_edit_rounds:
             raise RepositoryAgentError("maximum edit rounds reached")
         edits = data.get("edits")
@@ -504,6 +537,100 @@ Rules:
             "matches": matches,
         }
 
+    def _apply_anchored_edits(self, data: dict[str, Any]) -> dict[str, Any]:
+        if self.edit_rounds >= self.config.max_edit_rounds:
+            raise RepositoryAgentError("maximum edit rounds reached")
+        edits = data.get("edits")
+        if not isinstance(edits, list) or not edits:
+            raise RepositoryAgentError("apply_edits requires non-empty edits")
+
+        grouped: dict[Path, list[tuple[int, int, str, str, str]]] = {}
+        for edit in edits:
+            if not isinstance(edit, dict):
+                raise RepositoryAgentError("each edit must be an object")
+            relative = str(edit.get("path", ""))
+            path = _safe_path(self.root, relative)
+            try:
+                start = int(edit["start"])
+                end = int(edit["end"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RepositoryAgentError(
+                    "anchored edit start/end must be integers"
+                ) from exc
+            anchor = str(edit.get("anchor_sha256", ""))
+            new = str(edit.get("new", ""))
+            if (relative, start, end, anchor) not in self.read_anchors:
+                raise RepositoryAgentError(
+                    f"{relative}:{start}-{end}: anchor was not returned by read_lines"
+                )
+            grouped.setdefault(path, []).append(
+                (start, end, anchor, new, relative)
+            )
+
+        updated_contents: dict[Path, str] = {}
+        matches: list[dict[str, Any]] = []
+        for path, path_edits in grouped.items():
+            content = path.read_text(encoding="utf-8")
+            lines = content.splitlines(keepends=True)
+            occupied: list[tuple[int, int]] = []
+            for start, end, anchor, _, relative in path_edits:
+                if start < 1 or end < start or end > len(lines):
+                    raise RepositoryAgentError(
+                        f"{relative}:{start}-{end}: line range is outside current file"
+                    )
+                if any(
+                    not (end < other_start or start > other_end)
+                    for other_start, other_end in occupied
+                ):
+                    raise RepositoryAgentError(
+                        f"{relative}:{start}-{end}: anchored edits overlap"
+                    )
+                occupied.append((start, end))
+                block = "".join(lines[start - 1 : end])
+                actual = hashlib.sha256(block.encode("utf-8")).hexdigest()
+                if actual != anchor:
+                    raise RepositoryAgentError(
+                        f"{relative}:{start}-{end}: source changed; re-read lines"
+                    )
+
+            for start, end, anchor, new, relative in sorted(
+                path_edits,
+                key=lambda item: item[0],
+                reverse=True,
+            ):
+                old_block = "".join(lines[start - 1 : end])
+                replacement = new
+                if old_block.endswith(("\n", "\r")) and not replacement.endswith("\n"):
+                    replacement += "\n"
+                lines[start - 1 : end] = [replacement]
+                matches.append(
+                    {
+                        "path": relative,
+                        "mode": "anchored",
+                        "start": start,
+                        "end": end,
+                        "anchor_sha256": anchor,
+                    }
+                )
+            updated_contents[path] = "".join(lines)
+
+        for path, content in updated_contents.items():
+            path.write_text(content, encoding="utf-8")
+            relative = path.relative_to(self.root).as_posix()
+            self.read_anchors = {
+                item for item in self.read_anchors if item[0] != relative
+            }
+        self.edit_rounds += 1
+        return {
+            "ok": True,
+            "edit_round": self.edit_rounds,
+            "files": [
+                path.relative_to(self.root).as_posix()
+                for path in updated_contents
+            ],
+            "matches": matches,
+        }
+
     def _read_lines(self, data: dict[str, Any]) -> dict[str, Any]:
         path = _safe_path(self.root, str(data.get("path", "")))
         try:
@@ -515,15 +642,25 @@ Rules:
             raise RepositoryAgentError(
                 "read_lines requires 1 <= start <= end and at most 400 lines"
             )
-        lines = path.read_text(encoding="utf-8").splitlines()
+        content = path.read_text(encoding="utf-8")
+        lines_with_endings = content.splitlines(keepends=True)
+        lines = content.splitlines()
         selected = lines[start - 1 : end]
+        actual_end = min(end, len(lines))
+        anchored_block = "".join(lines_with_endings[start - 1 : actual_end])
+        anchor_sha256 = hashlib.sha256(
+            anchored_block.encode("utf-8")
+        ).hexdigest()
+        relative = path.relative_to(self.root).as_posix()
+        self.read_anchors.add((relative, start, actual_end, anchor_sha256))
         return {
             "ok": True,
-            "path": path.relative_to(self.root).as_posix(),
+            "path": relative,
             "start": start,
-            "end": min(end, len(lines)),
+            "end": actual_end,
             "total_lines": len(lines),
             "content": "\n".join(selected),
+            "anchor_sha256": anchor_sha256,
             "numbered_content": "\n".join(
                 f"{line_number}: {line}"
                 for line_number, line in enumerate(selected, start=start)
@@ -551,6 +688,16 @@ Rules:
 
     def _execute_action(self, data: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         action = str(data.get("action", "")).strip()
+        if (
+            self.config.edit_mode == "anchored"
+            and action in {"read_files", "search"}
+            and self.exploration_actions
+            >= self.config.max_exploration_actions - 1
+        ):
+            raise RepositoryAgentError(
+                "one exploration action is reserved for read_lines; "
+                "read the exact edit range now"
+            )
         if (
             action in {"read_files", "read_lines", "search"}
             and self.exploration_actions >= self.config.max_exploration_actions
@@ -595,7 +742,16 @@ Rules:
                 f"{observation['path']}:{observation['start']}-"
                 f"{observation['end']}"
             )
-            self.working_files[key] = str(observation["content"])
+            self.working_files[key] = json.dumps(
+                {
+                    "path": observation["path"],
+                    "start": observation["start"],
+                    "end": observation["end"],
+                    "anchor_sha256": observation["anchor_sha256"],
+                    "content": observation["content"],
+                },
+                ensure_ascii=False,
+            )
         elif observation.get("ok") and action_name == "search":
             self.recent_searches.append(
                 {
