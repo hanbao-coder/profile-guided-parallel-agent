@@ -1,4 +1,29 @@
-# Profile-Guided Parallel Agent
+# Project-Level Parallelization Agent
+
+> 当前研究阶段：先诊断通用代码 Agent 并行化多文件串行项目时的真实失败，再根据
+> 实验证据确定一个主要研究问题并提出方法。
+
+本仓库最初实现了面向规范化 Python 工作负载的 Ray 代码生成、正确性验证、性能
+测量和配置优化。这些能力现在作为实验基础设施保留，不再把功能数量本身当作研究
+贡献。
+
+新的研究主线是：
+
+1. 准备 4～6 个可复现的多文件串行项目；
+2. 使用统一的普通 Agent 协议进行直接并行化；
+3. 保存提示、补丁、测试、端到端性能和失败日志；
+4. 统计主要失败模式；
+5. 由实验确定研究假设、insight 和针对性方法；
+6. 通过普通 Agent、改进 Agent 和人工参考版本进行对照。
+
+当前研究规范：
+
+- `docs/research-log.md`：事实、假设、证据和方向变化；
+- `docs/diagnostic-study.md`：项目选择、运行流程、失败分类和指标；
+- `docs/related-work.md`：相关工作与当前研究空白；
+- `configs/project_diagnostic.yaml`：机器可读的诊断实验约束。
+
+在首轮诊断实验完成前，本项目没有预先确定的最终 insight。
 
 [![Project verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/project-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/project-verification.yml)
 

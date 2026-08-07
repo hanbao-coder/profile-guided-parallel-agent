@@ -46,10 +46,6 @@ def verify_required_files() -> None:
         ROOT / "configs" / "configuration_search_formal.yaml",
         ROOT / "configs" / "task_fusion_formal.yaml",
         ROOT / "configs" / "dag_scheduling_formal.yaml",
-        ROOT / "docs" / "advisor-report-01.md",
-        ROOT / "docs" / "advisor-talk-01.md",
-        ROOT / "docs" / "advisor-message-01.md",
-        ROOT / "docs" / "advisor-demo.md",
         ROOT / "docs" / "literature-notes.md",
     ]
     missing = [str(path.relative_to(ROOT)) for path in required if not path.is_file()]
@@ -135,28 +131,6 @@ def verify_dag_scheduling() -> dict[str, float]:
     return speedups
 
 
-def verify_report_claims(
-    ablation: dict[str, float],
-    fusion: dict[str, float],
-    dag: dict[str, float],
-) -> None:
-    report_path = ROOT / "docs" / "advisor-report-01.md"
-    report = report_path.read_text(encoding="utf-8")
-    normalized_report = " ".join(report.split())
-    expected_fragments = [
-        f"{ablation['selected_speedup']:.3f}x",
-        f"{ablation['fixed_regression']:.1%}",
-        f"{fusion['chain_aware_speedup']:.2f}x",
-        f"{fusion['fanout_fixed_speedup']:.3f}x",
-        f"{dag['compute_critical']:.3f}x",
-        f"{dag['communication_critical']:.3f}x",
-        "确定性同构 Worker 列表调度模型",
-        "不表述为真实 Ray 运行加速",
-    ]
-    missing = [fragment for fragment in expected_fragments if fragment not in normalized_report]
-    require(not missing, f"导师报告缺少或未同步声明：{', '.join(missing)}")
-
-
 def run_tests() -> None:
     with tempfile.TemporaryDirectory(prefix="parallel-agent-pytest-") as base_temp:
         env = os.environ.copy()
@@ -191,7 +165,6 @@ def main() -> int:
         ablation = verify_configuration_ablation()
         fusion = verify_task_fusion()
         dag = verify_dag_scheduling()
-        verify_report_claims(ablation, fusion, dag)
         if args.run_tests:
             run_tests()
     except (VerificationError, KeyError, ValueError, csv.Error, json.JSONDecodeError) as exc:

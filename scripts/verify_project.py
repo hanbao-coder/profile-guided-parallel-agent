@@ -61,6 +61,10 @@ def main() -> int:
         sys.executable,
         str(ROOT / "scripts" / "verify_research_core.py"),
     ]
+    diagnostic = [
+        sys.executable,
+        str(ROOT / "scripts" / "verify_diagnostic_setup.py"),
+    ]
     if arguments.run_tests:
         current.append("--run-tests")
     if arguments.ray_smoke:
@@ -72,9 +76,14 @@ def main() -> int:
         return 1
     if not _run("当前 Ray、Agent、普通循环前端与自动化测试", current):
         return 1
+    if not _run("项目级诊断研究设置", diagnostic):
+        return 1
 
     print("[通过] 完整项目验收完成")
-    print("  覆盖：历史消融 + 调度/融合 + 当前 Ray + Agent + 普通循环前端")
+    print(
+        "  覆盖：历史证据 + 当前 Ray/Agent 基础设施 + "
+        "项目级诊断研究设置"
+    )
     print(f"  自动化测试：{'已运行' if arguments.run_tests else '未运行'}")
     print(
         "  Ray 集群冒烟："

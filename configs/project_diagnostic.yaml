@@ -1,0 +1,103 @@
+study:
+  name: project_level_parallelization_diagnostic
+  phase: diagnostic
+  research_question_status: open
+  final_hypothesis_selected: false
+
+agent:
+  provider: deepseek
+  model: deepseek-v4-pro
+  independent_runs_per_project: 3
+  maximum_repair_rounds: 3
+  same_prompt_for_all_projects: true
+  same_tool_access_for_all_projects: true
+
+execution:
+  performance_warmups: 1
+  performance_repeats: 5
+  random_seed: 42
+  regression_threshold: 1.05
+  effective_speedup_threshold: 1.05
+  numerical_threads: 1
+  preserve_failed_runs: true
+  preserve_raw_model_responses: true
+  preserve_patches: true
+
+required_project_properties:
+  minimum_source_files: 3
+  fixed_entrypoint: true
+  deterministic_input: true
+  correctness_oracle: true
+  measurable_end_to_end_runtime: true
+  cpu_or_batch_stage: true
+
+failure_taxonomy:
+  - environment_or_build_failure
+  - entrypoint_misunderstanding
+  - wrong_hotspot
+  - cross_file_dependency_failure
+  - shared_state_or_side_effect_failure
+  - correctness_failure
+  - integration_failure
+  - task_granularity_failure
+  - serialization_or_copy_overhead
+  - load_imbalance
+  - local_speedup_without_end_to_end_gain
+  - end_to_end_performance_regression
+  - effective_parallelization
+
+projects:
+  - id: radon
+    repository: https://github.com/rubik/radon
+    commit: 54b88e5878b2724bf4d77f97349588b811abdff2
+    license: MIT
+    source_files: 28
+    entrypoint: python -m radon cc
+    workload:
+      adapter: scripts/run_candidate_baseline.py
+      input: first 1800 sorted Python files from the experiment environment
+      input_limit: 1800
+      baseline_median_seconds: 13.401696699998865
+      output_items: 1521
+      stable_output: true
+    correctness_oracle:
+      project_tests: 399 passed, 5 skipped
+      output_check: canonical JSON object equality
+    status: accepted
+
+  - id: vulture
+    repository: https://github.com/jendrikseipp/vulture
+    commit: 2c21cb0ae2afa657e36f6a397cb573608a65d79e
+    license: MIT
+    source_files: 23
+    entrypoint: python -m vulture
+    workload:
+      adapter: scripts/run_candidate_baseline.py
+      input: installed OpenAI Python package source tree
+      input_limit: null
+      baseline_median_seconds: 3.866179299999203
+      output_items: 3728
+      stable_output: true
+    correctness_oracle:
+      project_tests: 297 passed
+      output_check: canonical unused-code records in deterministic order
+    status: accepted
+
+  - id: chardet
+    repository: https://github.com/chardet/chardet
+    commit: ac49ec6e91c3e247b83ef78bbef0c78574b018a0
+    license: 0BSD
+    source_files: 29
+    entrypoint: chardet.cli.main
+    workload:
+      adapter: scripts/run_candidate_baseline.py
+      input: first 500 sorted files from the official chardet test-data repository
+      input_limit: 500
+      baseline_median_seconds: 3.2324222000024747
+      output_items: 500
+      stable_output: true
+    correctness_oracle:
+      project_tests: 9325 passed, 21 expected failures
+      excluded_environment_test: Windows symlink privilege test
+      output_check: per-file detection records in input order
+    status: accepted
