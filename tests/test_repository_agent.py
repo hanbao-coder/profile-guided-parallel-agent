@@ -29,6 +29,7 @@ def _session(
     tmp_path: Path,
     *,
     edit_mode: str = "legacy",
+    contract_mode: bool = False,
 ) -> RepositoryAgentSession:
     command = _command(tmp_path)
     return RepositoryAgentSession(
@@ -43,6 +44,7 @@ def _session(
             test_command=command,
             benchmark_command=command,
             edit_mode=edit_mode,
+            contract_mode=contract_mode,
         )
     )
 
@@ -239,6 +241,100 @@ def test_anchored_mode_reserves_one_exploration_for_read_lines(
     )
     assert observation["ok"] is True
     assert finished is False
+
+
+def test_contract_mode_requires_grounded_contract_before_edit(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("value = 1\n", encoding="utf-8")
+    session = _session(
+        tmp_path,
+        edit_mode="anchored",
+        contract_mode=True,
+    )
+    observed = session._read_lines(
+        {"path": "main.py", "start": 1, "end": 1}
+    )
+    edit = {
+        "action": "apply_edits",
+        "edits": [
+            {
+                "path": "main.py",
+                "start": 1,
+                "end": 1,
+                "anchor_sha256": observed["anchor_sha256"],
+                "new": "value = 2",
+            }
+        ],
+    }
+
+    with pytest.raises(RepositoryAgentError, match="contract before editing"):
+        session._apply_edits(edit)
+
+    contract = {
+        "target": "main.value",
+        "worker_inputs": ["value"],
+        "worker_outputs": ["updated value"],
+        "shared_or_dynamic_state": ["none observed"],
+        "ordering": "single result preserves input order",
+        "error_and_exit_behavior": "propagate the original exception",
+        "serialization_risks": ["integer input is serializable"],
+        "backend": "process",
+        "backend_rationale": "CPU-bound work can bypass the GIL",
+        "fallback_conditions": ["keep serial execution for one input"],
+        "evidence": [
+            {
+                "path": "main.py",
+                "start": 1,
+                "end": 1,
+                "anchor_sha256": observed["anchor_sha256"],
+            }
+        ],
+    }
+    result = session._declare_contract(
+        {"action": "declare_contract", "contract": contract}
+    )
+    assert result["ok"] is True
+    assert session.parallel_contract == contract
+    assert (session.run_dir / "parallelization-contract.json").is_file()
+
+    session._apply_edits(edit)
+    assert source.read_text(encoding="utf-8") == "value = 2\n"
+
+
+def test_contract_rejects_ungrounded_evidence(tmp_path: Path) -> None:
+    (tmp_path / "main.py").write_text("value = 1\n", encoding="utf-8")
+    session = _session(
+        tmp_path,
+        edit_mode="anchored",
+        contract_mode=True,
+    )
+    contract = {
+        "target": "main.value",
+        "worker_inputs": ["value"],
+        "worker_outputs": ["updated value"],
+        "shared_or_dynamic_state": ["none observed"],
+        "ordering": "preserve order",
+        "error_and_exit_behavior": "preserve errors",
+        "serialization_risks": ["none observed"],
+        "backend": "process",
+        "backend_rationale": "CPU-bound",
+        "fallback_conditions": ["small input"],
+        "evidence": [
+            {
+                "path": "main.py",
+                "start": 1,
+                "end": 1,
+                "anchor_sha256": "0" * 64,
+            }
+        ],
+    }
+
+    with pytest.raises(RepositoryAgentError, match="not returned"):
+        session._declare_contract(
+            {"action": "declare_contract", "contract": contract}
+        )
 
 
 def test_read_files_returns_subset_that_fits_budget(tmp_path: Path) -> None:

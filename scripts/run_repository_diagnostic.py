@@ -47,6 +47,7 @@ def _args() -> argparse.Namespace:
         choices=("legacy", "anchored"),
         default="legacy",
     )
+    parser.add_argument("--contract-mode", action="store_true")
     parser.add_argument("--test-command", type=_parse_command)
     parser.add_argument("--benchmark-command", type=_parse_command)
     parser.add_argument(
@@ -231,6 +232,7 @@ def main() -> int:
         test_command=test_command,
         benchmark_command=benchmark_command,
         edit_mode=args.edit_mode,
+        contract_mode=args.contract_mode,
     )
     agent_result = RepositoryAgentSession(config).run(context)
     final_test = run_controlled(test_command)

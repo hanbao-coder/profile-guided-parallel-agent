@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "included_runs": 6,
+  "excluded_runs": 0,
+  "outcome_counts": {
+    "no_meaningful_end_to_end_gain": 3,
+    "correctness_failure": 1,
+    "end_to_end_performance_regression": 1,
+    "integration_or_output_failure": 1
+  },
+  "runs": [
+    {
+      "project": "chardet",
+      "run": "run-01",
+      "primary_outcome": "no_meaningful_end_to_end_gain",
+      "speedup": 0.9693801734341593,
+      "turns": 11,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 11,
+      "model_tokens": 210279
+    },
+    {
+      "project": "chardet",
+      "run": "run-02",
+      "primary_outcome": "no_meaningful_end_to_end_gain",
+      "speedup": 0.9716376599415321,
+      "turns": 12,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 247363
+    },
+    {
+      "project": "chardet",
+      "run": "run-03",
+      "primary_outcome": "correctness_failure",
+      "speedup": null,
+      "turns": 12,
+      "edit_rounds": 2,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 222907
+    },
+    {
+      "project": "radon",
+      "run": "run-01",
+      "primary_outcome": "no_meaningful_end_to_end_gain",
+      "speedup": 0.9971314523174151,
+      "turns": 12,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 140141
+    },
+    {
+      "project": "radon",
+      "run": "run-02",
+      "primary_outcome": "end_to_end_performance_regression",
+      "speedup": 0.8577105539865347,
+      "turns": 12,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 158059
+    },
+    {
+      "project": "radon",
+      "run": "run-03",
+      "primary_outcome": "integration_or_output_failure",
+      "speedup": 1708.6808753373778,
+      "turns": 12,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 12,
+      "model_tokens": 135360
+    }
+  ],
+  "excluded": []
+}

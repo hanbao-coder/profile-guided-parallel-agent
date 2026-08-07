@@ -1,0 +1,7 @@
+﻿project,run,primary_outcome,speedup,turns,edit_rounds,patch_nonempty,model_calls,model_tokens
+chardet,run-01,no_meaningful_end_to_end_gain,0.9693801734341593,11,1,True,11,210279
+chardet,run-02,no_meaningful_end_to_end_gain,0.9716376599415321,12,1,True,12,247363
+chardet,run-03,correctness_failure,,12,2,True,12,222907
+radon,run-01,no_meaningful_end_to_end_gain,0.9971314523174151,12,1,True,12,140141
+radon,run-02,end_to_end_performance_regression,0.8577105539865347,12,1,True,12,158059
+radon,run-03,integration_or_output_failure,1708.6808753373778,12,1,True,12,135360

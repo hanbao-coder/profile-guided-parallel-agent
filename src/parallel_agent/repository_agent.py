@@ -74,6 +74,7 @@ class RepositoryAgentConfig:
     max_file_characters: int = 16_000
     max_total_read_characters: int = 40_000
     edit_mode: str = "legacy"
+    contract_mode: bool = False
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -269,6 +270,7 @@ class RepositoryAgentSession:
         self.recent_searches: list[dict[str, Any]] = []
         self.action_summaries: list[dict[str, Any]] = []
         self.read_anchors: set[tuple[str, int, int, str]] = set()
+        self.parallel_contract: dict[str, Any] | None = None
 
     def _system_prompt(self) -> str:
         if self.config.edit_mode == "anchored":
@@ -299,6 +301,21 @@ class RepositoryAgentSession:
             raise RepositoryAgentError(
                 f"unknown edit mode: {self.config.edit_mode!r}"
             )
+        if self.config.contract_mode:
+            contract_action = """
+{"action":"declare_contract","contract":{"target":"symbol to change","worker_inputs":["..."],"worker_outputs":["..."],"shared_or_dynamic_state":["..."],"ordering":"...","error_and_exit_behavior":"...","serialization_risks":["..."],"backend":"serial|thread|process","backend_rationale":"...","fallback_conditions":["..."],"evidence":[{"path":"relative/path.py","start":1,"end":20,"anchor_sha256":"hash from read_lines"}]},"reason":"..."}"""
+            contract_rule = """
+- Before apply_edits, declare one parallelization contract grounded in current
+  read_lines anchors.
+- The contract must explain Worker inputs/outputs, shared or dynamically bound
+  state (including plugins, injected callables or runtime replacements), result
+  order, aggregation, per-item errors, overall exit behavior, serialization,
+  backend choice, overhead and serial fallback conditions.
+- Treat the declared contract as a constraint on every later edit and repair.
+"""
+        else:
+            contract_action = ""
+            contract_rule = ""
         return f"""
 You are a general repository-level coding Agent. Your task is to modify a real
 multi-file serial Python project so its registered end-to-end workload uses
@@ -319,6 +336,7 @@ Every reply must be one JSON object with exactly one action:
 {{"action":"read_files","paths":["relative/path.py"],"reason":"..."}}
 {{"action":"read_lines","path":"relative/path.py","start":1,"end":200,"reason":"..."}}
 {{"action":"search","query":"literal text","reason":"..."}}
+{contract_action}
 {edit_action}
 {{"action":"run_validation","kind":"test|benchmark","reason":"..."}}
 {{"action":"finish","reason":"..."}}
@@ -329,6 +347,7 @@ Rules:
   subset that fits a 40000-character observation. Use `read_lines` for a
   precise block in a large file.
 {edit_rule}
+{contract_rule}
 - Return complete JSON, with no Markdown fences.
 - Do not create shell commands, access secrets, use the network, or edit files
   outside the repository.
@@ -349,6 +368,7 @@ Rules:
                 "read_files",
                 "read_lines",
                 "search",
+                *(["declare_contract"] if self.config.contract_mode else []),
                 "apply_edits",
                 "run_validation",
                 "finish",
@@ -369,14 +389,19 @@ Rules:
             or (
                 self.action_summaries
                 and self.action_summaries[-1]["action"]
-                in {"apply_edits", "run_validation"}
+                in {"declare_contract", "apply_edits", "run_validation"}
             )
         )
         model = self.config.model if use_pro else self.config.flash_model
         thinking_enabled = not self.traces
         convergence_note = (
-            "Exploration budget is exhausted. The next action must be "
-            "apply_edits or finish; do not request more files or searches."
+            (
+                "Exploration budget is exhausted. Declare the grounded "
+                "parallelization contract now."
+                if self.config.contract_mode and self.parallel_contract is None
+                else "Exploration budget is exhausted. The next action must be "
+                "apply_edits or finish; do not request more files or searches."
+            )
             if self.exploration_actions >= self.config.max_exploration_actions
             else (
                 f"Exploration actions used: {self.exploration_actions}/"
@@ -387,6 +412,7 @@ Rules:
             "project": self.initial_payload,
             "source_evidence": self.working_files,
             "recent_search_results": self.recent_searches[-3:],
+            "parallelization_contract": self.parallel_contract,
             "action_history": self.action_summaries[-10:],
             "instruction": convergence_note,
         }
@@ -485,6 +511,10 @@ Rules:
         }
 
     def _apply_edits(self, data: dict[str, Any]) -> dict[str, Any]:
+        if self.config.contract_mode and self.parallel_contract is None:
+            raise RepositoryAgentError(
+                "declare a grounded parallelization contract before editing"
+            )
         if self.config.edit_mode == "anchored":
             return self._apply_anchored_edits(data)
         if self.edit_rounds >= self.config.max_edit_rounds:
@@ -535,6 +565,77 @@ Rules:
                 path.relative_to(self.root).as_posix() for path in modified_paths
             ],
             "matches": matches,
+        }
+
+    def _declare_contract(self, data: dict[str, Any]) -> dict[str, Any]:
+        if not self.config.contract_mode:
+            raise RepositoryAgentError("contract mode is not enabled")
+        contract = data.get("contract")
+        if not isinstance(contract, dict):
+            raise RepositoryAgentError("declare_contract requires a contract object")
+        required_strings = (
+            "target",
+            "ordering",
+            "error_and_exit_behavior",
+            "backend",
+            "backend_rationale",
+        )
+        required_lists = (
+            "worker_inputs",
+            "worker_outputs",
+            "shared_or_dynamic_state",
+            "serialization_risks",
+            "fallback_conditions",
+            "evidence",
+        )
+        for key in required_strings:
+            if not isinstance(contract.get(key), str) or not contract[key].strip():
+                raise RepositoryAgentError(
+                    f"parallelization contract field {key!r} must be non-empty"
+                )
+        for key in required_lists:
+            value = contract.get(key)
+            if not isinstance(value, list) or not value:
+                raise RepositoryAgentError(
+                    f"parallelization contract field {key!r} must be a non-empty list"
+                )
+        if contract["backend"] not in {"serial", "thread", "process"}:
+            raise RepositoryAgentError(
+                "parallelization contract backend must be serial, thread or process"
+            )
+        for key in required_lists[:-1]:
+            if not all(isinstance(item, str) and item.strip() for item in contract[key]):
+                raise RepositoryAgentError(
+                    f"parallelization contract field {key!r} must contain strings"
+                )
+        for evidence in contract["evidence"]:
+            if not isinstance(evidence, dict):
+                raise RepositoryAgentError("contract evidence must be an object")
+            try:
+                anchor_key = (
+                    str(evidence["path"]),
+                    int(evidence["start"]),
+                    int(evidence["end"]),
+                    str(evidence["anchor_sha256"]),
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RepositoryAgentError(
+                    "contract evidence requires path, start, end and anchor_sha256"
+                ) from exc
+            if anchor_key not in self.read_anchors:
+                raise RepositoryAgentError(
+                    "contract evidence was not returned by current read_lines"
+                )
+        self.parallel_contract = contract
+        (self.run_dir / "parallelization-contract.json").write_text(
+            json.dumps(contract, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return {
+            "ok": True,
+            "backend": contract["backend"],
+            "target": contract["target"],
+            "evidence_count": len(contract["evidence"]),
         }
 
     def _apply_anchored_edits(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -720,6 +821,8 @@ Rules:
             }
             self.exploration_actions += 1
             return result, False
+        if action == "declare_contract":
+            return self._declare_contract(data), False
         if action == "apply_edits":
             return self._apply_edits(data), False
         if action == "run_validation":
