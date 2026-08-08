@@ -48,6 +48,11 @@ def _all_data_files(root: Path, limit: int | None = None) -> list[Path]:
     return files if limit is None else files[:limit]
 
 
+def _relative_path(path: str | Path, root: Path) -> str:
+    """Remove machine-specific absolute prefixes from semantic outputs."""
+    return Path(path).resolve().relative_to(root.resolve()).as_posix()
+
+
 def _radon_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
     from radon.cli import cc
 
@@ -57,7 +62,8 @@ def _radon_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
         stream = io.StringIO()
         with contextlib.redirect_stdout(stream):
             cc(targets, json=True)
-        return json.loads(stream.getvalue())
+        raw = json.loads(stream.getvalue())
+        return {_relative_path(path, input_root): value for path, value in raw.items()}
 
     return run
 
@@ -72,7 +78,7 @@ def _vulture_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
         analyzer.scavenge(files)
         return [
             {
-                "filename": str(item.filename),
+                "filename": _relative_path(item.filename, input_root),
                 "first_lineno": item.first_lineno,
                 "last_lineno": item.last_lineno,
                 "name": item.name,
@@ -95,7 +101,16 @@ def _chardet_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
         stream = io.StringIO()
         with contextlib.redirect_stdout(stream):
             chardet_main(argv)
-        return stream.getvalue().splitlines()
+        lines = stream.getvalue().splitlines()
+        labels = {str(path): _relative_path(path, input_root) for path in files}
+        normalized = []
+        for line in lines:
+            for absolute, relative in labels.items():
+                if line.startswith(absolute):
+                    line = relative + line[len(absolute) :]
+                    break
+            normalized.append(line)
+        return normalized
 
     return run
 
@@ -201,6 +216,7 @@ def main() -> int:
 
     result = {
         "schema_version": 1,
+        "output_schema_version": 2,
         "project": args.project,
         "python": sys.version,
         "input_root": str(args.input_root.resolve()),

@@ -1,0 +1,9 @@
+colorama==0.4.6
+iniconfig==2.3.0
+mando==0.7.1
+packaging==26.3
+pluggy==1.6.0
+Pygments==2.20.0
+pytest==9.1.1
+pytest-mock==3.15.1
+six==1.17.0

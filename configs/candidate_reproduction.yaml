@@ -1,0 +1,40 @@
+schema_version: 1
+output_schema_version: 2
+projects:
+  radon:
+    test_args: ["-m", "pytest", "-q", "--basetemp", ".repro-pytest"]
+    input: workload_site_packages
+    limit: 1800
+    expected_output_hash: 30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3
+  vulture:
+    test_args: ["-m", "pytest", "-q", "--basetemp", ".repro-pytest"]
+    input: workload_openai
+    limit: null
+    expected_output_hash: 411d1a97559fb3ec5e2acd598f43b51cfcbb386fd77a46b03d91b2c5bd70aae2
+  chardet:
+    test_args:
+      - "-m"
+      - "pytest"
+      - "-q"
+      - "-k"
+      - "not test_symlink_used_as_is and not test_ratio_cold_vs_warm_model_loading"
+      - "--basetemp"
+      - ".repro-pytest"
+    input: project_test_data
+    limit: 500
+    expected_output_hash: d318534fd481d014a2adff1ef66268893acbf2f348966e009546ff253bd87326
+  mkdocs:
+    test_args:
+      - "-m"
+      - "pytest"
+      - "-q"
+      - "mkdocs"
+      - "-o"
+      - "python_files=*_tests.py"
+      - "-k"
+      - "not testing_server and not test_watch_with_broken_symlinks and not test_watches_direct_symlinks and not test_watches_through_relative_symlinks and not test_watches_through_symlinks"
+      - "--basetemp"
+      - ".repro-pytest"
+    input: project_source
+    limit: null
+    expected_output_hash: f7bec1068641767bbc715ec09f95eec8e03d2c896eb90bc77bc3cd24ed10f8e8

@@ -1,0 +1,46 @@
+schema_version: 1
+python: "3.12"
+projects:
+  radon:
+    commit: 54b88e5878b2724bf4d77f97349588b811abdff2
+    archive_url: https://github.com/rubik/radon/archive/54b88e5878b2724bf4d77f97349588b811abdff2.zip
+    archive_sha256: 35dfa80c3cfbd254bfb717ba9c033b9295e0c696b298e0c45bbfe83db4178134
+    source_dir: radon
+    import_subdir: .
+    requirements: configs/candidate_requirements/radon.txt
+    editable_version: null
+  vulture:
+    commit: 2c21cb0ae2afa657e36f6a397cb573608a65d79e
+    archive_url: https://github.com/jendrikseipp/vulture/archive/2c21cb0ae2afa657e36f6a397cb573608a65d79e.zip
+    archive_sha256: 7cda108cdf39f5baac7b41ac5c893ac5e096bbfc80d228b77ab35a7ea8929aea
+    source_dir: vulture
+    import_subdir: .
+    requirements: configs/candidate_requirements/vulture.txt
+    editable_version: null
+  chardet:
+    commit: ac49ec6e91c3e247b83ef78bbef0c78574b018a0
+    archive_url: https://github.com/chardet/chardet/archive/ac49ec6e91c3e247b83ef78bbef0c78574b018a0.zip
+    archive_sha256: 43800ba01d8e67d4ce0738bde1968ef0c7b76d302a276fe78075b4fcfe17abb2
+    source_dir: chardet
+    import_subdir: src
+    requirements: configs/candidate_requirements/chardet.txt
+    editable_version: 7.0.0.dev0
+    test_data:
+      commit: fa16e9ffde8fd55606e2c7be7423a5fa702cb4a1
+      archive_url: https://github.com/chardet/test-data/archive/fa16e9ffde8fd55606e2c7be7423a5fa702cb4a1.zip
+      archive_sha256: a323ac01da5007b41d59cf9e741d862cd14aada832e7182c19be19c1bd984449
+      destination: tests/data
+      cache_label: main
+  mkdocs:
+    commit: bb7e8b62185b11d9f59bb7f50b13c15134f62f8a
+    archive_url: https://github.com/mkdocs/mkdocs/archive/bb7e8b62185b11d9f59bb7f50b13c15134f62f8a.zip
+    archive_sha256: 3b80647f4e71a38ac876ec7ddc89293fa58029c7631ca6935411a964ffde77f0
+    source_dir: mkdocs
+    import_subdir: .
+    requirements: configs/candidate_requirements/mkdocs.txt
+    editable_version: 1.6.1
+
+workload_input_environment:
+  requirements: configs/research_environment_lock.txt
+  openai_version: 2.50.0
+  note: Radon uses the first 1800 sorted Python files in this locked site-packages tree; Vulture uses the pinned openai package source tree.

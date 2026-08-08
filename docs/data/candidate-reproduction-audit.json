@@ -1,0 +1,191 @@
+{
+    "schema_version":  1,
+    "bootstrap_evidence":  "{workspace}\\bootstrap-evidence.json",
+    "configuration":  "{repository}\\configs\\candidate_reproduction.yaml",
+    "all_passed":  true,
+    "projects":  [
+                     {
+                         "project":  "radon",
+                         "test":  {
+                                      "argv":  [
+                                                   "{workspace}\\envs\\radon\\Scripts\\python.exe",
+                                                   "-m",
+                                                   "pytest",
+                                                   "-q",
+                                                   "--basetemp",
+                                                   ".repro-pytest"
+                                               ],
+                                      "returncode":  0,
+                                      "elapsed_seconds":  0.7353998999969917,
+                                      "stdout_tail":  "........................................................................ [ 17%]\n........................................................................ [ 35%]\n........................................................................ [ 53%]\n....................sssss............................................... [ 71%]\n........................................................................ [ 89%]\n............................................                             [100%]\n399 passed, 5 skipped in 0.42s",
+                                      "stderr_tail":  "",
+                                      "passed":  true
+                                  },
+                         "baseline":  {
+                                          "argv":  [
+                                                       "{workspace}\\envs\\radon\\Scripts\\python.exe",
+                                                       "{repository}\\scripts\\run_candidate_baseline.py",
+                                                       "--project",
+                                                       "radon",
+                                                       "--input-root",
+                                                       "{workspace}\\envs\\workload-input\\Lib\\site-packages",
+                                                       "--output",
+                                                       "{workspace}\\reproduction-baselines\\radon.json",
+                                                       "--warmups",
+                                                       "1",
+                                                       "--repeats",
+                                                       "3",
+                                                       "--limit",
+                                                       "1800"
+                                                   ],
+                                          "returncode":  0,
+                                          "elapsed_seconds":  50.16605200000049,
+                                          "passed":  true,
+                                          "stable_output":  true,
+                                          "median_seconds":  12.332131699997262,
+                                          "output_items":  1521,
+                                          "actual_output_hash":  "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+                                          "expected_output_hash":  "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+                                          "hash_matches":  true
+                                      }
+                     },
+                     {
+                         "project":  "vulture",
+                         "test":  {
+                                      "argv":  [
+                                                   "{workspace}\\envs\\vulture\\Scripts\\python.exe",
+                                                   "-m",
+                                                   "pytest",
+                                                   "-q",
+                                                   "--basetemp",
+                                                   ".repro-pytest"
+                                               ],
+                                      "returncode":  0,
+                                      "elapsed_seconds":  4.444750800001202,
+                                      "stdout_tail":  "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n=============================== tests coverage ================================\n______________ coverage: platform win32, python 3.12.13-final-0 _______________\n\nName                      Stmts   Miss  Cover\n---------------------------------------------\nvulture\\__init__.py           4      0   100%\nvulture\\__main__.py           2      2     0%\nvulture\\config.py            67      3    96%\nvulture\\core.py             323     35    89%\nvulture\\lines.py              7      0   100%\nvulture\\noqa.py              17      0   100%\nvulture\\reachability.py      93      0   100%\nvulture\\utils.py             83      4    95%\nvulture\\version.py            1      0   100%\n---------------------------------------------\nTOTAL                       597     44    93%\nCoverage HTML written to dir htmlcov\nCoverage XML written to file coverage.xml\n297 passed in 3.97s",
+                                      "stderr_tail":  "",
+                                      "passed":  true
+                                  },
+                         "baseline":  {
+                                          "argv":  [
+                                                       "{workspace}\\envs\\vulture\\Scripts\\python.exe",
+                                                       "{repository}\\scripts\\run_candidate_baseline.py",
+                                                       "--project",
+                                                       "vulture",
+                                                       "--input-root",
+                                                       "{workspace}\\envs\\workload-input\\Lib\\site-packages\\openai",
+                                                       "--output",
+                                                       "{workspace}\\reproduction-baselines\\vulture.json",
+                                                       "--warmups",
+                                                       "1",
+                                                       "--repeats",
+                                                       "3"
+                                                   ],
+                                          "returncode":  0,
+                                          "elapsed_seconds":  20.307233799998357,
+                                          "passed":  true,
+                                          "stable_output":  true,
+                                          "median_seconds":  5.347857699998713,
+                                          "output_items":  3728,
+                                          "actual_output_hash":  "411d1a97559fb3ec5e2acd598f43b51cfcbb386fd77a46b03d91b2c5bd70aae2",
+                                          "expected_output_hash":  "411d1a97559fb3ec5e2acd598f43b51cfcbb386fd77a46b03d91b2c5bd70aae2",
+                                          "hash_matches":  true
+                                      }
+                     },
+                     {
+                         "project":  "chardet",
+                         "test":  {
+                                      "argv":  [
+                                                   "{workspace}\\envs\\chardet\\Scripts\\python.exe",
+                                                   "-m",
+                                                   "pytest",
+                                                   "-q",
+                                                   "-k",
+                                                   "not test_symlink_used_as_is and not test_ratio_cold_vs_warm_model_loading",
+                                                   "--basetemp",
+                                                   ".repro-pytest"
+                                               ],
+                                      "returncode":  0,
+                                      "elapsed_seconds":  61.561671399998886,
+                                      "stdout_tail":  "tests/test_accuracy.py::test_detect[windows-1250-sl/_enca_cp1250_sl.txt]\n  {workspace}\\sources\\chardet\\tests\\test_accuracy.py:136: UserWarning: Language mismatch: expected=sl, got=hr (encoding=windows-1250, file=_enca_cp1250_sl.txt)\n    warnings.warn(\n\ntests/test_accuracy.py::test_detect[windows-1250-sr/github_bug_672.txt]\n  {workspace}\\sources\\chardet\\tests\\test_accuracy.py:136: UserWarning: Language mismatch: expected=sr, got=hr (encoding=windows-1250, file=github_bug_672.txt)\n    warnings.warn(\n\ntests/test_accuracy.py::test_detect[windows-1257-et/_ude_1.txt]\n  {workspace}\\sources\\chardet\\tests\\test_accuracy.py:136: UserWarning: Language mismatch: expected=et, got=lt (encoding=windows-1257, file=_ude_1.txt)\n    warnings.warn(\n\ntests/test_api.py::test_rename_legacy_true\n  {workspace}\\sources\\chardet\\tests\\test_api.py:145: DeprecationWarning: should_rename_legacy is deprecated, use prefer_superset instead\n    result = chardet.detect(\n\ntests/test_api.py::test_rename_legacy_detect_all\n  {workspace}\\sources\\chardet\\tests\\test_api.py:161: DeprecationWarning: should_rename_legacy is deprecated, use prefer_superset instead\n    results = chardet.detect_all(b\"Hello world\", should_rename_legacy=True)\n\ntests/test_api.py::test_rename_legacy_detector\n  {workspace}\\sources\\chardet\\tests\\test_api.py:173: DeprecationWarning: should_rename_legacy is deprecated, use prefer_superset instead\n    det = UniversalDetector(should_rename_legacy=True)\n\ntests/test_orchestrator.py::test_encoding_era_filtering\n  {workspace}\\envs\\chardet\\Lib\\site-packages\\_pytest\\python.py:167: UserWarning: no_match_encoding \u0027cp1252\u0027 is excluded by include_encodings/exclude_encodings; returning encoding=None\n    result = testfunction(**testargs)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n9324 passed, 8 deselected, 21 xfailed, 67 warnings in 60.88s (0:01:00)",
+                                      "stderr_tail":  "",
+                                      "passed":  true
+                                  },
+                         "baseline":  {
+                                          "argv":  [
+                                                       "{workspace}\\envs\\chardet\\Scripts\\python.exe",
+                                                       "{repository}\\scripts\\run_candidate_baseline.py",
+                                                       "--project",
+                                                       "chardet",
+                                                       "--input-root",
+                                                       "{workspace}\\sources\\chardet\\tests\\data",
+                                                       "--output",
+                                                       "{workspace}\\reproduction-baselines\\chardet.json",
+                                                       "--warmups",
+                                                       "1",
+                                                       "--repeats",
+                                                       "3",
+                                                       "--limit",
+                                                       "500"
+                                                   ],
+                                          "returncode":  0,
+                                          "elapsed_seconds":  12.415560599998571,
+                                          "passed":  true,
+                                          "stable_output":  true,
+                                          "median_seconds":  3.1651295000010577,
+                                          "output_items":  500,
+                                          "actual_output_hash":  "d318534fd481d014a2adff1ef66268893acbf2f348966e009546ff253bd87326",
+                                          "expected_output_hash":  "d318534fd481d014a2adff1ef66268893acbf2f348966e009546ff253bd87326",
+                                          "hash_matches":  true
+                                      }
+                     },
+                     {
+                         "project":  "mkdocs",
+                         "test":  {
+                                      "argv":  [
+                                                   "{workspace}\\envs\\mkdocs\\Scripts\\python.exe",
+                                                   "-m",
+                                                   "pytest",
+                                                   "-q",
+                                                   "mkdocs",
+                                                   "-o",
+                                                   "python_files=*_tests.py",
+                                                   "-k",
+                                                   "not testing_server and not test_watch_with_broken_symlinks and not test_watches_direct_symlinks and not test_watches_through_relative_symlinks and not test_watches_through_symlinks",
+                                                   "--basetemp",
+                                                   ".repro-pytest"
+                                               ],
+                                      "returncode":  0,
+                                      "elapsed_seconds":  11.752984099999594,
+                                      "stdout_tail":  "........................................................................ [ 10%]\n........................................................................ [ 20%]\n........................................................................ [ 30%]\n........................................................................ [ 40%]\n........................................................................ [ 50%]\n........................................................................ [ 60%]\n........................................................................ [ 70%]\n..........................s............................................. [ 80%]\n........................................................................ [ 90%]\n........................................................................ [100%]\n============================== warnings summary ===============================\n..\\..\\envs\\mkdocs\\Lib\\site-packages\\dateutil\\tz\\tz.py:37\n  {workspace}\\envs\\mkdocs\\Lib\\site-packages\\dateutil\\tz\\tz.py:37: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).\n    EPOCH = datetime.datetime.utcfromtimestamp(0)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n719 passed, 1 skipped, 5 deselected, 1 warning in 11.38s",
+                                      "stderr_tail":  "",
+                                      "passed":  true
+                                  },
+                         "baseline":  {
+                                          "argv":  [
+                                                       "{workspace}\\envs\\mkdocs\\Scripts\\python.exe",
+                                                       "{repository}\\scripts\\run_candidate_baseline.py",
+                                                       "--project",
+                                                       "mkdocs",
+                                                       "--input-root",
+                                                       "{workspace}\\sources\\mkdocs",
+                                                       "--output",
+                                                       "{workspace}\\reproduction-baselines\\mkdocs.json",
+                                                       "--warmups",
+                                                       "1",
+                                                       "--repeats",
+                                                       "3"
+                                                   ],
+                                          "returncode":  0,
+                                          "elapsed_seconds":  17.847655500001565,
+                                          "passed":  true,
+                                          "stable_output":  true,
+                                          "median_seconds":  4.512539899998956,
+                                          "output_items":  67,
+                                          "actual_output_hash":  "f7bec1068641767bbc715ec09f95eec8e03d2c896eb90bc77bc3cd24ed10f8e8",
+                                          "expected_output_hash":  "f7bec1068641767bbc715ec09f95eec8e03d2c896eb90bc77bc3cd24ed10f8e8",
+                                          "hash_matches":  true
+                                      }
+                     }
+                 ]
+}

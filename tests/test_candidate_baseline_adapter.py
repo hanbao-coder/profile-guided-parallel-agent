@@ -30,9 +30,17 @@ def test_chardet_workload_uses_public_cli_entrypoint(monkeypatch, tmp_path):
 
     assert calls == [[str(first), str(second)]]
     assert result == [
-        f"{first}: utf-8 with confidence 1.0",
-        f"{second}: utf-8 with confidence 1.0",
+        "a.txt: utf-8 with confidence 1.0",
+        "b.txt: utf-8 with confidence 1.0",
     ]
+
+
+def test_relative_path_removes_machine_specific_prefix(tmp_path):
+    nested = tmp_path / "package" / "module.py"
+    nested.parent.mkdir()
+    nested.touch()
+
+    assert adapter._relative_path(nested, tmp_path) == "package/module.py"
 
 
 def test_built_site_records_hashes_decompressed_gzip_content(tmp_path):

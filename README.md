@@ -7,7 +7,7 @@
 Agent 需要检查源码位置、共享状态和输出语义，并用原项目测试、固定输出及配对性能测量决定
 是否保留修改；证据不合格时恢复串行版本。
 
-当前代码版本：`v0.23.2-repository-study`。
+当前代码版本：`v0.24.0-reproducible-repository-study`。
 
 ## 当前实验结论
 
@@ -73,6 +73,19 @@ DeepSeek Key 只保存在本机 `.env`，不进入 Git。
 ```powershell
 .\.venv\python.exe -m pytest -q
 ```
+
+从零下载四个固定版本的真实项目、创建隔离环境并验证原测试与串行输出：
+
+```powershell
+.\.venv\python.exe scripts\bootstrap_candidate_projects.py `
+  --workspace work\reproduction --input-environment
+.\.venv\python.exe scripts\verify_candidate_reproduction.py `
+  --workspace work\reproduction --output work\reproduction-audit.json
+```
+
+本次干净环境审计已通过，紧凑证据见
+[`docs/data/candidate-reproduction-audit.json`](docs/data/candidate-reproduction-audit.json)。
+详细说明见 [`docs/reproducibility.md`](docs/reproducibility.md)。
 
 从本机原始实验重新生成紧凑结果和中文图表：
 
