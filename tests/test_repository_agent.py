@@ -11,6 +11,7 @@ from parallel_agent.repository_agent import (
     RepositoryAgentConfig,
     RepositoryAgentError,
     RepositoryAgentSession,
+    analyze_process_worker_boundaries,
     detect_parallel_constructs,
     _safe_path,
     _search,
@@ -69,6 +70,54 @@ def test_search_returns_file_and_line(tmp_path: Path) -> None:
     assert _search(tmp_path, "serial_loop") == [
         {"path": "main.py", "line": 1, "text": "def serial_loop():"}
     ]
+
+
+def test_worker_boundary_flags_bound_instance_process_worker(tmp_path: Path) -> None:
+    source = tmp_path / "worker.py"
+    source.write_text(
+        """from concurrent.futures import ProcessPoolExecutor
+
+class Analyzer:
+    def analyze(self, item):
+        return item
+
+    def run(self, items):
+        with ProcessPoolExecutor() as executor:
+            return list(executor.map(self.analyze, items))
+""",
+        encoding="utf-8",
+    )
+
+    report = analyze_process_worker_boundaries([source])
+
+    assert report["status"] == "risky_process_boundary"
+    assert report["process_submission_calls"] == 1
+    assert {finding["kind"] for finding in report["findings"]} == {
+        "bound_instance_worker"
+    }
+
+
+def test_worker_boundary_accepts_module_level_minimal_worker(tmp_path: Path) -> None:
+    source = tmp_path / "worker.py"
+    source.write_text(
+        """from concurrent.futures import ProcessPoolExecutor
+
+def analyze_one(path, strict):
+    return path, strict
+
+def run(paths, strict):
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(analyze_one, path, strict) for path in paths]
+        return [future.result() for future in futures]
+""",
+        encoding="utf-8",
+    )
+
+    report = analyze_process_worker_boundaries([source])
+
+    assert report["status"] == "no_high_confidence_risk"
+    assert report["process_submission_calls"] == 1
+    assert report["findings"] == []
 
 
 def test_apply_edit_requires_unique_exact_text(tmp_path: Path) -> None:

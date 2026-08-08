@@ -268,3 +268,29 @@ MkDocs 消融每组只有 3 次，只能说明在该项目上反馈与回退阻�
 - 紧凑结果：`docs/data/m6-study-summary.json`、`docs/data/m6-study-summary.csv`；
 - 图表生成脚本：`scripts/summarize_m6_study.py`；
 - 方法与结果说明：`docs/method.md`、`docs/m6-findings.md`、`docs/experiments.md`、`docs/limitations.md`。
+
+## 2026-08-08：M7 Worker 边界假设冻结
+
+### 问题来源
+
+完整方法 12 次运行只得到 1 次有效并行，说明“能拒绝坏候选”还不等于“能生成好候选”。
+Radon 的失败 Agent 版本和人工参考版本形成了清楚对照：前者把绑定实例方法和整个动态对象
+送入子进程，后者使用模块顶层 Worker，只传最小值，并把排序与聚合留在主进程。
+
+### 当日操作
+
+1. 实现只检查高置信度模式的进程 Worker 边界分析；
+2. 检查绑定实例方法、嵌套函数、lambda 和 self/cls 派生任务参数；
+3. 在历史失败 Radon 补丁和人工参考版本上回放；
+4. 在新 Agent 运行前冻结 H5、唯一变化、实验范围和指标。
+
+### 回放结果
+
+- 历史失败补丁被准确标为 `bound_instance_worker`，位置为已知根因所在的提交语句；
+- 人工参考版本的模块顶层 Worker 未被标为风险；
+- 检查器只作为提前反馈，不能替代项目测试、输出和性能验证。
+
+### 下一步
+
+按 `docs/m7-worker-boundary-design.md` 在 Radon 上运行 3 次边界证据方法。若没有形成正确候选，
+如实否定或收缩假设，不继续扩大实验。

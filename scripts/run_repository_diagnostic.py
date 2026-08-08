@@ -50,6 +50,7 @@ def _args() -> argparse.Namespace:
     )
     parser.add_argument("--contract-mode", action="store_true")
     parser.add_argument("--performance-feedback-mode", action="store_true")
+    parser.add_argument("--worker-boundary-mode", action="store_true")
     parser.add_argument("--test-command", type=_parse_command)
     parser.add_argument("--benchmark-command", type=_parse_command)
     parser.add_argument(
@@ -329,6 +330,7 @@ def main() -> int:
         edit_mode=args.edit_mode,
         contract_mode=args.contract_mode,
         performance_feedback_mode=args.performance_feedback_mode,
+        worker_boundary_mode=args.worker_boundary_mode,
     )
     agent_result = RepositoryAgentSession(config).run(context)
     final_test = run_controlled(test_command)

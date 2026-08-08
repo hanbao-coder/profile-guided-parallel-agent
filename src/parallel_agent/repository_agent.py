@@ -8,6 +8,7 @@ hint about which parallelization failure the research project should solve.
 
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 import hashlib
@@ -76,6 +77,158 @@ def detect_parallel_constructs(patch: str) -> list[str]:
     ]
 
 
+def analyze_process_worker_boundaries(paths: list[Path]) -> dict[str, Any]:
+    """Find clearly unsafe values crossing newly edited process boundaries.
+
+    This deliberately checks only high-confidence Python patterns.  It is a
+    diagnostic gate, not a proof that an unflagged process worker is safe.
+    """
+    findings: list[dict[str, Any]] = []
+    process_calls = 0
+    for path in paths:
+        if path.suffix.lower() != ".py" or not path.is_file():
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except SyntaxError as exc:
+            findings.append(
+                {
+                    "path": str(path),
+                    "line": exc.lineno,
+                    "kind": "syntax_error",
+                    "message": "The edited file cannot be parsed before boundary analysis.",
+                }
+            )
+            continue
+
+        process_executor_names = {"ProcessPoolExecutor"}
+        multiprocessing_aliases = {"multiprocessing", "mp"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module == "concurrent.futures":
+                for alias in node.names:
+                    if alias.name == "ProcessPoolExecutor":
+                        process_executor_names.add(alias.asname or alias.name)
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "multiprocessing":
+                        multiprocessing_aliases.add(alias.asname or alias.name)
+
+        process_executor_variables: set[str] = set()
+        process_pool_variables: set[str] = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.With, ast.AsyncWith)):
+                continue
+            for item in node.items:
+                call = item.context_expr
+                target = item.optional_vars
+                if not isinstance(call, ast.Call) or not isinstance(target, ast.Name):
+                    continue
+                if isinstance(call.func, ast.Name) and call.func.id in process_executor_names:
+                    process_executor_variables.add(target.id)
+                if (
+                    isinstance(call.func, ast.Attribute)
+                    and isinstance(call.func.value, ast.Name)
+                    and call.func.value.id in multiprocessing_aliases
+                    and call.func.attr in {"Pool", "get_context"}
+                ):
+                    process_pool_variables.add(target.id)
+
+        nested_functions: set[str] = set()
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                for child in ast.walk(node):
+                    if child is not node and isinstance(
+                        child, (ast.FunctionDef, ast.AsyncFunctionDef)
+                    ):
+                        nested_functions.add(child.name)
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            owner = node.func.value
+            if not isinstance(owner, ast.Name):
+                continue
+            if owner.id not in process_executor_variables | process_pool_variables:
+                continue
+            if node.func.attr not in {"submit", "map", "starmap", "imap", "imap_unordered"}:
+                continue
+            process_calls += 1
+            if not node.args:
+                continue
+            worker = node.args[0]
+            if (
+                isinstance(worker, ast.Attribute)
+                and isinstance(worker.value, ast.Name)
+                and worker.value.id in {"self", "cls"}
+            ):
+                findings.append(
+                    {
+                        "path": str(path),
+                        "line": node.lineno,
+                        "kind": "bound_instance_worker",
+                        "message": (
+                            "A bound self/cls method is submitted to a process pool; "
+                            "this also transfers the owning object and its dynamic state."
+                        ),
+                    }
+                )
+            elif isinstance(worker, ast.Lambda):
+                findings.append(
+                    {
+                        "path": str(path),
+                        "line": node.lineno,
+                        "kind": "lambda_worker",
+                        "message": "A lambda worker is not a stable process-pool boundary.",
+                    }
+                )
+            elif isinstance(worker, ast.Name) and worker.id in nested_functions:
+                findings.append(
+                    {
+                        "path": str(path),
+                        "line": node.lineno,
+                        "kind": "nested_worker",
+                        "message": "A nested function is submitted to a process pool.",
+                    }
+                )
+            for argument in node.args[1:]:
+                unsafe_root = isinstance(argument, ast.Name) and argument.id in {"self", "cls"}
+                if isinstance(argument, ast.Attribute):
+                    root = argument.value
+                    while isinstance(root, ast.Attribute):
+                        root = root.value
+                    unsafe_root = isinstance(root, ast.Name) and root.id in {"self", "cls"}
+                if unsafe_root:
+                    findings.append(
+                        {
+                            "path": str(path),
+                            "line": node.lineno,
+                            "kind": "instance_state_argument",
+                            "message": (
+                                "A self/cls-derived object is passed across the process boundary; "
+                                "pass only the minimal immutable values the worker needs."
+                            ),
+                        }
+                    )
+                if isinstance(argument, ast.Lambda):
+                    findings.append(
+                        {
+                            "path": str(path),
+                            "line": node.lineno,
+                            "kind": "lambda_argument",
+                            "message": "A lambda is passed to a process worker.",
+                        }
+                    )
+    return {
+        "status": "risky_process_boundary" if findings else "no_high_confidence_risk",
+        "process_submission_calls": process_calls,
+        "findings": findings,
+        "scope": (
+            "High-confidence AST checks only; a clean report is not a proof of "
+            "serialization safety or semantic correctness."
+        ),
+    }
+
+
 @dataclass(frozen=True)
 class ControlledCommand:
     name: str
@@ -106,6 +259,7 @@ class RepositoryAgentConfig:
     edit_mode: str = "legacy"
     contract_mode: bool = False
     performance_feedback_mode: bool = False
+    worker_boundary_mode: bool = False
     minimum_speedup: float = 1.05
 
 
@@ -382,6 +536,19 @@ class RepositoryAgentSession:
             )
             feedback_action = ""
             feedback_rule = ""
+        if self.config.worker_boundary_mode:
+            boundary_rule = """
+- After every edit, a high-confidence AST check inspects process-pool Worker
+  boundaries before running the project tests. A bound self/cls method, nested
+  function, lambda, or self-derived argument is treated as risky evidence.
+- For process parallelism, prefer a module-level Worker that receives only the
+  minimum immutable or plainly serializable values. Rebuild or aggregate
+  project state in the parent process.
+- A clean boundary report is not proof of correctness; all project tests,
+  output checks and performance gates still apply.
+"""
+        else:
+            boundary_rule = ""
         return f"""
 You are a general repository-level coding Agent. Your task is to modify a real
 multi-file serial Python project so its registered end-to-end workload uses
@@ -416,6 +583,7 @@ Rules:
 {edit_rule}
 {contract_rule}
 {feedback_rule}
+{boundary_rule}
 - Return complete JSON, with no Markdown fences.
 - Do not create shell commands, access secrets, use the network, or edit files
   outside the repository.
@@ -893,6 +1061,32 @@ Rules:
 
     def _evaluate_candidate(self) -> dict[str, Any]:
         """Run correctness first, then expose compact end-to-end feedback."""
+        boundary_report = None
+        if self.config.worker_boundary_mode:
+            boundary_report = analyze_process_worker_boundaries(
+                sorted(self.original_contents)
+            )
+            boundary_path = (
+                self.run_dir
+                / f"worker-boundary-edit-{self.edit_rounds:02d}.json"
+            )
+            boundary_path.write_text(
+                json.dumps(boundary_report, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            if boundary_report["findings"]:
+                evaluation = {
+                    "status": "worker_boundary_failure",
+                    "tests_pass": None,
+                    "worker_boundary_report": boundary_report,
+                    "instruction": (
+                        "Move process work to a module-level function and pass "
+                        "only minimal values; keep dynamic state and aggregation "
+                        "in the parent before running the expensive test suite."
+                    ),
+                }
+                self.last_candidate_evaluation = evaluation
+                return evaluation
         test = run_controlled(self.config.test_command)
         test_path = self.run_dir / f"auto-test-edit-{self.edit_rounds:02d}.json"
         test_path.write_text(
@@ -910,6 +1104,8 @@ Rules:
                 "test_stderr_tail": _trim(str(test["stderr"]), 4_000),
                 "instruction": "Repair correctness before measuring performance.",
             }
+            if boundary_report is not None:
+                evaluation["worker_boundary_report"] = boundary_report
             self.last_candidate_evaluation = evaluation
             return evaluation
 
@@ -949,6 +1145,8 @@ Rules:
                 "benchmark_stderr_tail": _trim(str(benchmark["stderr"]), 4_000),
                 "instruction": "Repair the registered workload or output semantics.",
             }
+            if boundary_report is not None:
+                evaluation["worker_boundary_report"] = boundary_report
             self.last_candidate_evaluation = evaluation
             return evaluation
 
@@ -1004,6 +1202,8 @@ Rules:
             "timings_seconds": parsed.get("timings_seconds", []),
             "instruction": instruction,
         }
+        if boundary_report is not None:
+            evaluation["worker_boundary_report"] = boundary_report
         self.last_candidate_evaluation = evaluation
         return evaluation
 
