@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "project": "radon",
+  "control": {
+    "runs": 3,
+    "effective": 0,
+    "safe_fallback": 3,
+    "model_tokens": 394311
+  },
+  "worker_boundary": {
+    "runs": 3,
+    "effective": 0,
+    "safe_fallback": 3,
+    "model_tokens": 443561,
+    "candidate_evaluations": {
+      "correctness_failure": 2,
+      "non_parallel_candidate": 1,
+      "worker_boundary_failure": 3,
+      "integration_or_output_failure": 3
+    },
+    "boundary_failures": 3
+  },
+  "conclusion": "The boundary checker detected three risky process boundaries in two runs, but produced no correct or effective final candidate; H5 is not supported on the preregistered primary outcomes."
+}
