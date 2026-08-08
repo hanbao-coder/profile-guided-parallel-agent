@@ -72,6 +72,11 @@ def main() -> int:
         type=Path,
         default=ROOT / "results/m7/worker-boundary",
     )
+    parser.add_argument(
+        "--reference-summary",
+        type=Path,
+        default=ROOT / "docs/data/radon-manual-reference-summary.json",
+    )
     parser.add_argument("--output", type=Path, default=ROOT / "docs/data/m7-worker-boundary.json")
     parser.add_argument("--figure", type=Path, default=ROOT / "docs/figures/m7-worker-boundary.png")
     args = parser.parse_args()
@@ -80,6 +85,13 @@ def main() -> int:
     treatment_runs = _radon_runs(_read(args.treatment_summary))
     treatment_statuses = _candidate_statuses(args.treatment_results)
     finding_kinds = _boundary_finding_kinds(args.treatment_results)
+    reference = _read(args.reference_summary)
+    reference_effective = bool(reference.get("effective_at_1_05"))
+    study_status = (
+        "complete" if len(treatment_runs) >= 3 and reference_effective
+        else "terminated_invalid_reference" if not reference_effective
+        else "pending"
+    )
     compact = {
         "schema_version": 1,
         "project": "radon",
@@ -100,12 +112,22 @@ def main() -> int:
                 count for kind, count in finding_kinds.items() if kind != "syntax_error"
             ),
         },
-        "study_complete": len(treatment_runs) >= 3,
+        "reference": {
+            "speedup": reference.get("speedup"),
+            "effective_at_1_05": reference_effective,
+        },
+        "study_complete": study_status == "complete",
+        "study_status": study_status,
         "conclusion": (
             "The preregistered treatment has three valid runs and produced no correct "
             "or effective final candidate; H5 is not supported on the primary outcomes."
-            if len(treatment_runs) >= 3
-            else "The treatment has fewer than three valid runs, so H5 remains pending."
+            if study_status == "complete"
+            else (
+                "The study was terminated because the manual reference achieved less "
+                "than the preregistered 1.05x speedup, invalidating the performance premise."
+                if study_status == "terminated_invalid_reference"
+                else "The treatment has fewer than three valid runs, so H5 remains pending."
+            )
         ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -126,18 +148,23 @@ def main() -> int:
     ax.set_ylim(0, 3.35)
     ax.set_yticks([0, 1, 2, 3])
     ax.set_ylabel("运行次数")
-    ax.set_title(
-        "Radon Worker 边界实验：等待补齐运行"
-        if not compact["study_complete"]
-        else "Radon Worker 边界实验：最终结果没有改善"
-    )
+    title = {
+        "terminated_invalid_reference": "Radon Worker 边界支线：性能前提失效后终止",
+        "pending": "Radon Worker 边界实验：等待补齐运行",
+        "complete": "Radon Worker 边界实验：最终结果没有改善",
+    }[compact["study_status"]]
+    ax.set_title(title)
     ax.text(
         0.5,
         0.92,
         (
+            f"人工参考仅 {compact['reference']['speedup']:.4f}×，未达到 1.05× 门槛；"
+            "两次 Agent 运行只保留为探索证据"
+            if compact["study_status"] == "terminated_invalid_reference"
+            else
             f"当前发现 {compact['worker_boundary']['boundary_failures']} 次边界风险；"
             "有效运行不足 3 次，暂不下最终结论"
-            if not compact["study_complete"]
+            if compact["study_status"] == "pending"
             else f"新检查发现 {compact['worker_boundary']['boundary_failures']} 次边界风险，"
             "但两组最终都没有有效并行结果"
         ),

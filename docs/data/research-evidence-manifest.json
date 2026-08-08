@@ -1,0 +1,2175 @@
+{
+  "schema_version": 1,
+  "formal_run_count": 27,
+  "all_formal_runs_complete": true,
+  "required_files_per_run": [
+    "import-preflight.json",
+    "outcome.json",
+    "agent/events.json",
+    "agent/patch.diff",
+    "agent/prompt.json",
+    "agent/response.jsonl",
+    "baseline/validation.json"
+  ],
+  "groups": [
+    {
+      "group": "B1_ordinary_agent",
+      "root": "results/m5/corrected-b0",
+      "expected_runs": 12,
+      "audited_runs": 12,
+      "runs": [
+        {
+          "project": "radon",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 605914,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/agent/events.json",
+              "bytes": 245104,
+              "sha256": "417ca1c2db96d48dbec14d918ddf5a113763030197fa1c57496ec3e8df26cae6"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/agent/prompt.json",
+              "bytes": 5083,
+              "sha256": "96f0ddb11f5cd56c653034c4151b0efa3a835bd042d464e03986bb860855c08d"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/agent/response.jsonl",
+              "bytes": 33251,
+              "sha256": "e1e0d2f21ed833ccbde0ea9efd6587e8f0506e31d55173406e5f198ef1078739"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/baseline/validation.json",
+              "bytes": 2456,
+              "sha256": "01ab826566ba49cbe53f19264165a1e9870af9ad3dcd34d8194549cdc43d4629"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/import-preflight.json",
+              "bytes": 614,
+              "sha256": "eabf7f864966bf59bad00bc2be2f026b7d9c37e96d46f89b163aa63b03dacd90"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/launcher.pid",
+              "bytes": 6,
+              "sha256": "7abc0f69fee25001fe64680d5899b2fd18997e878622344642145b8e740f8ec1"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/launcher.stderr.log",
+              "bytes": 33650,
+              "sha256": "e283826a15f8b6ad94f3be31d9dd946b74f9eb5a8146b6df779b6372b57f7b43"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-01/outcome.json",
+              "bytes": 285750,
+              "sha256": "a6455cbf160eb7744238e8689e9263fe1fd4e0de351d4a849b5536c1162e5bb5"
+            }
+          ]
+        },
+        {
+          "project": "radon",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 805726,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/agent/events.json",
+              "bytes": 289494,
+              "sha256": "9f43a86b9633f7ccff9924d950ba15db4e4f5077702017be538dc4687002fa81"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/agent/prompt.json",
+              "bytes": 5083,
+              "sha256": "4d97e72125342cea96c6b652a3b77d19ba34320df9cb70687e324001c6aacbac"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/agent/response.jsonl",
+              "bytes": 88807,
+              "sha256": "f57d22f3d22a007a8cf2bd826e04bc9f8643c4b73a68f901796612af7aae58ee"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/baseline/validation.json",
+              "bytes": 2455,
+              "sha256": "36c9a9b734a7decae7a7975100380f7b80164668a2c25c8109cad11f3ac16dfd"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/import-preflight.json",
+              "bytes": 614,
+              "sha256": "8e6c3c5fb564f73787906c175b584fcfd6d06972222eb92a91d98677d7ade606"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/launcher.pid",
+              "bytes": 6,
+              "sha256": "7b08aefd3557571b44f21fa9e477193367802afe947c0feef409ca972e467a3f"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/launcher.stderr.log",
+              "bytes": 33650,
+              "sha256": "e283826a15f8b6ad94f3be31d9dd946b74f9eb5a8146b6df779b6372b57f7b43"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-02/outcome.json",
+              "bytes": 385617,
+              "sha256": "5084147ffffbe17b0b199596e35a836f88bb36f35e8fa56e3ae12937fc882fdc"
+            }
+          ]
+        },
+        {
+          "project": "radon",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 633526,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/agent/events.json",
+              "bytes": 233086,
+              "sha256": "e422f4a6effe95512cebfe9f7d4b25a63bce890feb0ca278a579c976758d2042"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/agent/prompt.json",
+              "bytes": 5082,
+              "sha256": "8c2138d7bbf9f4467729ef897b45e3ec4811fbb7125b4d2a70353449d61d35a2"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/agent/response.jsonl",
+              "bytes": 59062,
+              "sha256": "503956306ffdace640df45b9481d662f3db43bfece37104d20f6c6534f91d07a"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/baseline/validation.json",
+              "bytes": 2453,
+              "sha256": "ff27e188f279bf4da2f316f1d113e00842dfdf0b07ed36768a3a61e83f2e01c5"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/import-preflight.json",
+              "bytes": 614,
+              "sha256": "06486085acdf61234a07e3df4965a2396a4712162c717d1a49924c1d407b21a5"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/launcher.pid",
+              "bytes": 6,
+              "sha256": "a8c60a5a8c4e8457a39cd99e32fb81a00381861916028488ca0f4602dd635a15"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/launcher.stderr.log",
+              "bytes": 33650,
+              "sha256": "e283826a15f8b6ad94f3be31d9dd946b74f9eb5a8146b6df779b6372b57f7b43"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/radon/run-03/outcome.json",
+              "bytes": 299573,
+              "sha256": "a879a704c04633d5734485db47c663a9438ab50b9229f8e9aefbdb0b42fe293b"
+            }
+          ]
+        },
+        {
+          "project": "vulture",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 11,
+          "total_bytes": 493493,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/agent/events.json",
+              "bytes": 165671,
+              "sha256": "0f1b3d32b8aeca31ab7e06a9f648eba573b3f49d81ebbae47b8f4316f24a33fd"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/agent/patch.diff",
+              "bytes": 3268,
+              "sha256": "b640855b223446a79a2a1debe2d294d717d45add9e8f27b35dfb92bfa8373d69"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/agent/prompt.json",
+              "bytes": 6023,
+              "sha256": "4989cfa45c5efc7fad6fa1ea7859d96d1a6b5ec28e45c43c7823c4b135dc77e4"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/agent/response.jsonl",
+              "bytes": 47851,
+              "sha256": "32d4aaed6306686872c7abc23e1e1c8d8a0bec6ccfc9042b951fb22d62de6913"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/agent/test-11.json",
+              "bytes": 17393,
+              "sha256": "eb664e724420772eefeabd989bdee1c1ac87d6c1dd7dfdf9d43277b4b8d2272b"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/baseline/validation.json",
+              "bytes": 4822,
+              "sha256": "5d58c7fce9e8e3f60c5ed9d10a92135a5b624abde1341b3c578cc13a9d51bc33"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/import-preflight.json",
+              "bytes": 628,
+              "sha256": "65c3616866516b286827c87b66c5d6aa25b124f55119f45e6cad193cdaf39fdf"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/launcher.pid",
+              "bytes": 7,
+              "sha256": "7d9f76b682d2bbd3f03d9d4e7a4cc58b3daad0411b7d78e7479f7649feaa1110"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/launcher.stderr.log",
+              "bytes": 7347,
+              "sha256": "26f9d275bb5094eda1c93f8ce7014247649f2414cdf54be1a14974f72e74c71b"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-01/outcome.json",
+              "bytes": 240483,
+              "sha256": "515c0c01dc6cb6ea5de78494a3364ef9ef37e8db4ef58cdf47df496aa36fa75e"
+            }
+          ]
+        },
+        {
+          "project": "vulture",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 432072,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/agent/events.json",
+              "bytes": 148754,
+              "sha256": "6be19c41ae999afa378dbb237bfe0a448f0685c0cdd9ea2422c7974be5a25e83"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/agent/prompt.json",
+              "bytes": 6023,
+              "sha256": "5103b6869be968c3ad63a5a73dcd1506545b3cafe42aba75e463d9422aabf6b0"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/agent/response.jsonl",
+              "bytes": 51900,
+              "sha256": "f45bc2990d58a21156a6add9d86d76825b1736e162331079884bd142649b993c"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/baseline/validation.json",
+              "bytes": 4823,
+              "sha256": "a690cedfcf318884f9c68492e963b8aefc1da4d35376ccb6f02c80633d709da1"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/import-preflight.json",
+              "bytes": 627,
+              "sha256": "3f27e09a1355696eb3369bbaf6e345426b4e5b237bcb19109f0972e2f676f062"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "f326f894b9e721c9840a8ad1e91504e61cd9e4f4954cf6ae6ca59e7ba022ff39"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/launcher.stderr.log",
+              "bytes": 7347,
+              "sha256": "26f9d275bb5094eda1c93f8ce7014247649f2414cdf54be1a14974f72e74c71b"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-02/outcome.json",
+              "bytes": 212591,
+              "sha256": "709e777b5322f6f309d2a11909a2403f88d4edda686dc9daba4605e21130dae2"
+            }
+          ]
+        },
+        {
+          "project": "vulture",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 470528,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/agent/events.json",
+              "bytes": 170680,
+              "sha256": "ef714d246932da823001151668c358f8798287726a9752d2a28278e4ed5062c7"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/agent/prompt.json",
+              "bytes": 6023,
+              "sha256": "a714026ad05ca4beb8e6d49bebdc2a7d9f3777cc00fcd92e8bd687ad13c3d610"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/agent/response.jsonl",
+              "bytes": 49135,
+              "sha256": "0f2294f129411d00ae276b837e6304f3ab90c259def2ec9700adfd91003a553b"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/baseline/validation.json",
+              "bytes": 4820,
+              "sha256": "28c231b9fd7a73e5a058136ee37e412aecbf8b5f94d5696afbf0395b2946eb04"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/import-preflight.json",
+              "bytes": 627,
+              "sha256": "dd268c7271e82ebf90629727e79d8fe614eb941f089febe64c971d9c1b86d0b8"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/launcher.pid",
+              "bytes": 7,
+              "sha256": "31195d186d5a9ba60b18018d84a42a4d87a047df374c5ec41b3b4b3ca3b99e17"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/launcher.stderr.log",
+              "bytes": 7347,
+              "sha256": "26f9d275bb5094eda1c93f8ce7014247649f2414cdf54be1a14974f72e74c71b"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/vulture/run-03/outcome.json",
+              "bytes": 231889,
+              "sha256": "17a2861db8f068d677811033fe34a5205953b0bffb5f3bd44b146df945494992"
+            }
+          ]
+        },
+        {
+          "project": "chardet",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 9,
+          "total_bytes": 583620,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/agent/benchmark-09.json",
+              "bytes": 1348,
+              "sha256": "dee956af4af342cc9ea0811bb76f070eeba9f05a800fab389a95abc791a7c174"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/agent/events.json",
+              "bytes": 191814,
+              "sha256": "4393e85916661ef8491c025f0e04ce862136fb5b90fa3c786edd664160b7c988"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/agent/patch.diff",
+              "bytes": 2204,
+              "sha256": "ab24d381a98c7dca1f3156a939992cd76ee76f535b37d8deab317f4abc7826ea"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/agent/prompt.json",
+              "bytes": 31787,
+              "sha256": "b598e20983ed1ad2c50d772851a586751f40c813ce6c3b740a9849a5a4ee8de5"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/agent/response.jsonl",
+              "bytes": 17875,
+              "sha256": "fcd1e36e3eae135df5b82e141a4bf73261da42807a0ff9d7bdc2742482b44579"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/agent/test-08.json",
+              "bytes": 29968,
+              "sha256": "293092c9eb6fdab13a5a57024602a2a83672078449d4da433973d205a8416ac2"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/baseline/validation.json",
+              "bytes": 31668,
+              "sha256": "ccb11bd981d1186f12e5df9fb74cb3b6c36d198275ddded1a4573caf16b775d1"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/import-preflight.json",
+              "bytes": 638,
+              "sha256": "82a214680fdb23752faf8619df472b0df2c58c660cc3b9b0deee58362d6a456b"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-01/outcome.json",
+              "bytes": 276318,
+              "sha256": "16c45abdf26332d00267d273abd4d445153cfbe3b38ff7a2f661338a7ecaaca9"
+            }
+          ]
+        },
+        {
+          "project": "chardet",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 8,
+          "total_bytes": 655661,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/agent/events.json",
+              "bytes": 208840,
+              "sha256": "eb446b1f6278be22ec48a99f227dd81cb4524d993d86feff99b7db4ee38d8bff"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/agent/patch.diff",
+              "bytes": 3986,
+              "sha256": "0bb253932fb8ba399b89251dabc56566b754f38f6d7a21080baec5ffa652ae39"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/agent/prompt.json",
+              "bytes": 31786,
+              "sha256": "6f4e2b949ebd4c6c6d7801a71ccde8f63df6bd640ede1b8247f15684b7f5a8fe"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/agent/response.jsonl",
+              "bytes": 30362,
+              "sha256": "441aa7106b9ecad756106042dc974a50901b592ade7abf73b9450ad20320b0f0"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/agent/test-08.json",
+              "bytes": 36155,
+              "sha256": "27681f530674b0e28e9d81e58728d84538d520aaaab8f4080a8fee96652fc6bb"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/baseline/validation.json",
+              "bytes": 31665,
+              "sha256": "de4cc759528d5e47b5f36f449f260fc524e68b52976d5e25d38e55a8371144a1"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/import-preflight.json",
+              "bytes": 638,
+              "sha256": "93723489d692fa9a6ec7cdbb3b523956957690492c0e493ec0c1fb15720681ff"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-02/outcome.json",
+              "bytes": 312229,
+              "sha256": "ead30e9255db5e2fd7d2ca80eeaa6d79c14e3a783152389cb741091798a4e2eb"
+            }
+          ]
+        },
+        {
+          "project": "chardet",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 8,
+          "total_bytes": 670173,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/agent/events.json",
+              "bytes": 181918,
+              "sha256": "212913d81696a99966e29502e4d6e455f0331be988fccbd7beb292e129c3e502"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/agent/patch.diff",
+              "bytes": 2544,
+              "sha256": "baebc3e0b9bd494aee640248a00012352d56ad90127bc3bcaf4066a9ae87dddb"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/agent/prompt.json",
+              "bytes": 31787,
+              "sha256": "aaae4cab16c09b25895dc374578ebe239566d52bea522d2c564ca354b312ecc9"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/agent/response.jsonl",
+              "bytes": 25313,
+              "sha256": "d6c3d6bc9b2e0245e4a78ee267b527b20637e9bfca318ad84390bf952428d2c7"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/agent/test-08.json",
+              "bytes": 75706,
+              "sha256": "a316e3a152a24b7a057b2737ba864afd2735a0c0fd7ab631444a7e94bcd408d7"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/baseline/validation.json",
+              "bytes": 31668,
+              "sha256": "6ce61b6920eca910c7c7830f3dfde9acc26f3e1b3cad7a2c60199d369c0c5973"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/import-preflight.json",
+              "bytes": 638,
+              "sha256": "93bd394c64fc138ac792aaeb15637f9187a5fc44e43e6ac30017be9b24bbf49b"
+            },
+            {
+              "path": "results/m5/corrected-b0/chardet/run-03/outcome.json",
+              "bytes": 320599,
+              "sha256": "b00b4becb21000988e5f09cee301c567b03ca9accbca378023937721df8f375f"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 11,
+          "total_bytes": 526487,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/agent/events.json",
+              "bytes": 224628,
+              "sha256": "115be52f7148ef3153f4627c8ca130b29d0ae10faa87008c7c1b9ae763f00ec6"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/agent/patch.diff",
+              "bytes": 1422,
+              "sha256": "d68fdc54c6b2c8be5ab0ee61dd540348bcf53c9c42c7a1c30a60e29b2bb1a50e"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/agent/prompt.json",
+              "bytes": 9357,
+              "sha256": "e557e335b30548adb8589d57f7706b5190176715f78b9bafcb54e7cbc5b5ae74"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/agent/response.jsonl",
+              "bytes": 24692,
+              "sha256": "ea879b1b5b61cf56a1ecdf5781d0dd3b6da8e184d25d3a7d3bde6382540e0da9"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/agent/test-08.json",
+              "bytes": 2059,
+              "sha256": "97cf0e829158ee4def86f147ed90be975cd533d64ed4980b4a5726ec25b85fff"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/baseline/validation.json",
+              "bytes": 3717,
+              "sha256": "f2bd223ac955d304bb9afd9e9658cdb6d81a35ae6cb70e21ae1a9e6c00bba2eb"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/import-preflight.json",
+              "bytes": 621,
+              "sha256": "42a8174b4ae4e1adb33d53a66524ddc50edb6e997be362cc569bad51c4275d22"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/launcher.pid",
+              "bytes": 7,
+              "sha256": "70c39661ebc87fe73a8b53bb34a58078e05b1ce57d5c8620a172e95b667da084"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-01/outcome.json",
+              "bytes": 259984,
+              "sha256": "c298b3e11877458d63f83b46376361b85e3ac4b3c677dbc8912684004e03e99f"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 561020,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/agent/events.json",
+              "bytes": 253599,
+              "sha256": "446834b06324fb415ce8df50ad035ee7aad54ec535e0d56bcd78abb1ed3158c4"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/agent/prompt.json",
+              "bytes": 9358,
+              "sha256": "2aecbb0d794a58e04b46283d8ad2451e0e912034fdeb39ce86abb61ca9d353ce"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/agent/response.jsonl",
+              "bytes": 15090,
+              "sha256": "8c845c887318e672e11306b25de567a9441c86dc0ea6ab30d9855eb53a348071"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/baseline/validation.json",
+              "bytes": 3719,
+              "sha256": "3797def5b93445335feffcfe2efc18a5685ae029f34054d21127e489efbc0fd8"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/import-preflight.json",
+              "bytes": 621,
+              "sha256": "335a448e021eeaba40d09edf191cc4790250d788dc0b956c852778f4928c0c75"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "1f15841026fe555881aed029af3bb0807c19d23dd3fde7bf901a56ddb8d59609"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-02/outcome.json",
+              "bytes": 278626,
+              "sha256": "7696a55ddc3fbb602c2cee1ca6359ad3c6f54b1143e7c2533bbe77535a0b884d"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 12,
+          "total_bytes": 479802,
+          "files": [
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/agent/benchmark-09.json",
+              "bytes": 1101,
+              "sha256": "aa2cdad8f1ab87a4d4ddd6435456264bb0401ab2e5e09bdf595911b3b5c16905"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/agent/events.json",
+              "bytes": 210165,
+              "sha256": "60a26fc7c148505d5ecea7d2d6bb92b968eeb48b971fa72278dfb0f31f6701e4"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/agent/patch.diff",
+              "bytes": 1417,
+              "sha256": "1150a02d643bfd1a1f4947900eb3ca3eb035a025e08c9f68d9fca68e7db5cb9e"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/agent/prompt.json",
+              "bytes": 9358,
+              "sha256": "b8b3ec5b8876cd6c8fe18f13a20c90c789f3f51526c5207eee979707ce0615c6"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/agent/response.jsonl",
+              "bytes": 15472,
+              "sha256": "488c51c5794051266c5be9868ebc02f41f5541b9028b6a296a536da7f3e466ee"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/agent/test-08.json",
+              "bytes": 2058,
+              "sha256": "80188c05564d7be8b0968c72c4d13cd29b890f17c8261ebd8ee53cdd6e2e1ae3"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/baseline/validation.json",
+              "bytes": 3722,
+              "sha256": "04e38b2cb6587e46a261c5a2dc11c3749b6bc9c3be9c3b8f28497a81487fe60a"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/import-preflight.json",
+              "bytes": 621,
+              "sha256": "d7a4786d08a9a86e4eff3e561e1cff41b40693c313b5eac1da2a49aad4eb3022"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/launcher.pid",
+              "bytes": 7,
+              "sha256": "888fee8c4f5f38a1fb1206eb5c4d832614d820849faa1c21f7056794a48bfe86"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-b0/mkdocs/run-03/outcome.json",
+              "bytes": 235881,
+              "sha256": "d5836a753745abab06bd38ae5d2fab7f7adbe3a3e5c8e5099ceca5e6fa49bd43"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "B2_full_method",
+      "root": "results/m5/corrected-final",
+      "expected_runs": 12,
+      "audited_runs": 12,
+      "runs": [
+        {
+          "project": "radon",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 15,
+          "total_bytes": 646634,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/auto-benchmark-edit-01.json",
+              "bytes": 1317,
+              "sha256": "bf1a6a92a8f368f116d2fa82fc54f1a2f16613fde676e208627c2ed79d9f63b1"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/auto-benchmark-edit-02.json",
+              "bytes": 1317,
+              "sha256": "e30ac503fba2940138fc955b1d37b7ebb77eb19863c313ee54a36cfd9825c1e8"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/auto-test-edit-01.json",
+              "bytes": 795,
+              "sha256": "48343e4db80104885f4df28aed4c5348ae1bd1c4b4d3d54454b6d8e6555c53cf"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/auto-test-edit-02.json",
+              "bytes": 795,
+              "sha256": "d18d2e9f81e5eeeb7f12cf8e4a86eb1a4e013c4065eeb27db52098f91c2ba0d2"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/events.json",
+              "bytes": 260267,
+              "sha256": "c6440497ae02aafcb18c1b3fc06c6d12f4e198e0e9dd1628778a53611d56d1d6"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/parallelization-contract.json",
+              "bytes": 2284,
+              "sha256": "2bcad3e8ed9dfd40ba9d522450794e4f799866c1e8687f4d889fc857aa06f22c"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/prompt.json",
+              "bytes": 7389,
+              "sha256": "b75909555a0bec0942569d4e1f3298e8c5fd8be9189e021d96df9a1f13d7395f"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/agent/response.jsonl",
+              "bytes": 33978,
+              "sha256": "303f0534baf946386f145e0a269f6396b4a9e079e5cc455ff8396b65f3c46483"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/baseline/validation.json",
+              "bytes": 2457,
+              "sha256": "42ec4f571f190219dfaa9ba7f2ca717a5ee57039901f0753b5a2b6773dea8295"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/import-preflight.json",
+              "bytes": 619,
+              "sha256": "ba00f14ba805fcaa3288fc886b471eb9aae947c30aed74fe2e55f0c502ecee2f"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/launcher.pid",
+              "bytes": 7,
+              "sha256": "904c5874f3ef6f6bd25b4f8f271f307e95c9dcb7849b2ca8fc3add9f60326ef2"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/launcher.stderr.log",
+              "bytes": 33650,
+              "sha256": "e283826a15f8b6ad94f3be31d9dd946b74f9eb5a8146b6df779b6372b57f7b43"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-01/outcome.json",
+              "bytes": 301759,
+              "sha256": "730e7d550881761b32102eb47b9d139208fa761dab7e438be8e1f9c03ed77ac5"
+            }
+          ]
+        },
+        {
+          "project": "radon",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 17,
+          "total_bytes": 845389,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/auto-benchmark-edit-01.json",
+              "bytes": 2696,
+              "sha256": "3ff024d197c84b3a5a2d1374a5fcb48d29e383cf6b4521b84f1f8c5ad40c1e08"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/auto-benchmark-edit-02.json",
+              "bytes": 2696,
+              "sha256": "22e3427efbbd0c49a8720caa9faaad015cb2f2ff301092b8d63fa3f1febe0b15"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/auto-benchmark-edit-03.json",
+              "bytes": 2696,
+              "sha256": "28389c0f7d72780a0acbeafe2f6933f0c32a147729914c9800c378541113d108"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/auto-test-edit-01.json",
+              "bytes": 795,
+              "sha256": "42f65c71d13b4714a7803a024a551a83cc840454de7ebce623d8d4168c3a26cc"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/auto-test-edit-02.json",
+              "bytes": 795,
+              "sha256": "857f4f29c9d9dc6a2ffe84bb816bb6691d20228c6240d81b2620f702be97a9f2"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/auto-test-edit-03.json",
+              "bytes": 795,
+              "sha256": "7c103f5f1994543e0158043016ada2bb92e7901dd1719a138ddbd2cf29179b20"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/events.json",
+              "bytes": 339149,
+              "sha256": "c96c41d23834fbc06812d2eee05ac5bd6e59ce8156876cbfebe783790653a108"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/parallelization-contract.json",
+              "bytes": 1998,
+              "sha256": "be9a39c119f15d0ec622bd1716ae5d59dfdab89aca15291814e9cae28e087d26"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/prompt.json",
+              "bytes": 7389,
+              "sha256": "c31a84195f77de4f43b38618a512aec791ce27a9ed642c036d7c4821b470b666"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/agent/response.jsonl",
+              "bytes": 51323,
+              "sha256": "ed52a0e82161955739e0ac4b7c6f93badd8b13d065b2308e053251e8dbc24786"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/baseline/validation.json",
+              "bytes": 2455,
+              "sha256": "6b964c2f53d86c566a45673fe10164cad9f5711052028306f0452720965bd1c5"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/import-preflight.json",
+              "bytes": 620,
+              "sha256": "7114a80655357e96fef5ddbef91bd5840cfd37df15066ecf66ad66aa76d0cf5c"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "a41166135bfc0df844ad1b79a1424db9d54bf8a885c2055e6d55ee18c21b3d76"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/launcher.stderr.log",
+              "bytes": 33650,
+              "sha256": "e283826a15f8b6ad94f3be31d9dd946b74f9eb5a8146b6df779b6372b57f7b43"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-02/outcome.json",
+              "bytes": 398325,
+              "sha256": "e124ca187ebd1ff61924f14a1395b8bd046a00e235bbc10e7619dd766f33dbb5"
+            }
+          ]
+        },
+        {
+          "project": "radon",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 15,
+          "total_bytes": 661379,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/auto-benchmark-edit-01.json",
+              "bytes": 1314,
+              "sha256": "4fd8b1858d7e2741ee8eb3e9b3ec70b6b75f199a0e0cd94b720a952b351d0f1a"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/auto-benchmark-edit-02.json",
+              "bytes": 1316,
+              "sha256": "e8d4208b52224bbce61a0f9f8a4013b52dd94a1866022a49a336e98de0083074"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/auto-test-edit-01.json",
+              "bytes": 794,
+              "sha256": "6e53e5be1a60062630c2b0029ea30f6ca574a2b5960f9de41a230e30331cf007"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/auto-test-edit-02.json",
+              "bytes": 795,
+              "sha256": "f9575861a77ac94e5923f771b7ab09c596978f03c6a4569a11a5063b4d540c21"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/events.json",
+              "bytes": 265307,
+              "sha256": "b029387fd2fd7d2dbe39d3d889e523860b3f24720c11437a8553ba9fe56034eb"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/parallelization-contract.json",
+              "bytes": 2036,
+              "sha256": "d006fc1d0de3e20649d69503b01c578b990cb05a3641525533cb65a465de79ae"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/prompt.json",
+              "bytes": 7388,
+              "sha256": "060a0faaf37dc71130c364d4158278593e7e8128d315cea40a98fda110077523"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/agent/response.jsonl",
+              "bytes": 36439,
+              "sha256": "2a45e961369b4c6aad4ee8bae04a3b9f30965d9674837ca47aa9559fb6271993"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/baseline/validation.json",
+              "bytes": 2454,
+              "sha256": "94e57cf2b2404a7c590a7c67a12adb8532dd640fce83b535d615b6fb9c627aa9"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/import-preflight.json",
+              "bytes": 620,
+              "sha256": "e13429dbf3d5253b83abfb5c88170f4e82d3d59ff317a07e151021fc2d697864"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/launcher.pid",
+              "bytes": 7,
+              "sha256": "0bda8d219a8a95cf9aa9c6a586e559338a9211bbc795316048cd738384fbba5a"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/launcher.stderr.log",
+              "bytes": 33650,
+              "sha256": "e283826a15f8b6ad94f3be31d9dd946b74f9eb5a8146b6df779b6372b57f7b43"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/radon/run-03/outcome.json",
+              "bytes": 309259,
+              "sha256": "b867e77c12da3f8f313141628d5c2cc50db14611603f6c8d47aa56652a85332d"
+            }
+          ]
+        },
+        {
+          "project": "vulture",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 14,
+          "total_bytes": 1000195,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/auto-test-edit-01.json",
+              "bytes": 28719,
+              "sha256": "bce1bfab6be4b365d17c4b4784ff8c930e5a47a17d93041e4961ec30def40a20"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/auto-test-edit-02.json",
+              "bytes": 376041,
+              "sha256": "86a14855befbb222a98ab1b2e17046f290d4be6764de7ef41410c3cbc7208885"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/auto-test-edit-03.json",
+              "bytes": 28682,
+              "sha256": "95c57657264ba6a6900df40b12a4f65f78a5f0f16026c22029ed36bcb3cbd7aa"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/events.json",
+              "bytes": 246072,
+              "sha256": "27810bfc85166c8e39be1338147d553257918c3abe88aac6761663034264b05b"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/parallelization-contract.json",
+              "bytes": 3177,
+              "sha256": "295ad47c30469bcb96ac7610190f2ce94ce2ab3f9e628004fbec8bce1346bc5d"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/prompt.json",
+              "bytes": 8329,
+              "sha256": "d7a71479915eb2f4bb88bb671552f92d569fba8c50f913a87e63f59eeb26406b"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/agent/response.jsonl",
+              "bytes": 18849,
+              "sha256": "268d454b32f7f27f6532a2fe7e525c4706e33c774e33e1482aeb3427c8cbba6d"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/baseline/validation.json",
+              "bytes": 4820,
+              "sha256": "f73bdf7cd5d1b75053ff22d47363c129cb0f4f8fe988009c7a9255c363bd374d"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/import-preflight.json",
+              "bytes": 634,
+              "sha256": "a6b636422996cca8869708f650b8803a7f309ddab309bcef78842c1dbddc1ce7"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/launcher.pid",
+              "bytes": 6,
+              "sha256": "538576aa53acdb3d7c7b6108d3c3a730636c2429aaf91e85da864c3911efb278"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/launcher.stderr.log",
+              "bytes": 7347,
+              "sha256": "26f9d275bb5094eda1c93f8ce7014247649f2414cdf54be1a14974f72e74c71b"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-01/outcome.json",
+              "bytes": 277519,
+              "sha256": "1cd7b99dddc2bfa32a38b742f38e553c3d440c09e961b7fb187f6e5270b28ee6"
+            }
+          ]
+        },
+        {
+          "project": "vulture",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 10,
+          "total_bytes": 185221,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/agent/events.json",
+              "bytes": 70728,
+              "sha256": "84708804351bb223fc5216a22dcaad6602c90f29b06fee565f7e397a133ef39c"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/agent/prompt.json",
+              "bytes": 8330,
+              "sha256": "bc17fce8586c7e0f13816ba57235c6f2524e34cb8abbc9a44ec17860ecfb51d0"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/agent/response.jsonl",
+              "bytes": 5523,
+              "sha256": "2a3abb759b03f70577232a1048b5406ebef13781ba7ecd801911b0d0cdd7a7f3"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/baseline/validation.json",
+              "bytes": 4827,
+              "sha256": "99e4a66178b83e519952dff318bea41711957cd179497a500d6f96b9e631a394"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/import-preflight.json",
+              "bytes": 634,
+              "sha256": "00336cc70ec62914e21371c64bd6e302fdeda58bb69effb90ca5ba45b80184d1"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "fbd98a93c6b9035cafed6b53806bbb85133913407541364e265e6e47daf6877d"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/launcher.stderr.log",
+              "bytes": 7347,
+              "sha256": "26f9d275bb5094eda1c93f8ce7014247649f2414cdf54be1a14974f72e74c71b"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-02/outcome.json",
+              "bytes": 87825,
+              "sha256": "bdb40d570fa5bebf29befa4262fc6e98d8229a5e5ca4b4ab69a259f5cd51405f"
+            }
+          ]
+        },
+        {
+          "project": "vulture",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 15,
+          "total_bytes": 703425,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/auto-test-edit-01.json",
+              "bytes": 28340,
+              "sha256": "2f90e64a38ebfd3da8b11fc97b3fc2420983073cb5cefbc2b39dcee476dc7da3"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/auto-test-edit-02.json",
+              "bytes": 31563,
+              "sha256": "a0907704644a45bea83192a23ad7fb9746bd921ce5f9415bbe3d9eb7593386ae"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/auto-test-edit-03.json",
+              "bytes": 31563,
+              "sha256": "dc422190ef9cbcab6ba8d520ce7361547b7c061a60523746238d470a805cc4c7"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/auto-test-edit-04.json",
+              "bytes": 31562,
+              "sha256": "2b703249fdd1057c6b7280d1b311d7a8406c5fc375ed889e43c2e9e5fcb7acd9"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/events.json",
+              "bytes": 237273,
+              "sha256": "61a09ea8b541148ab6ab336e7b47d2f50cb8dab3dff30435ea22bcd70b4deb1a"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/parallelization-contract.json",
+              "bytes": 2110,
+              "sha256": "d3fb959f8af4b30903b48aba14fc64b937aaeb9a47bf6e9b3cd9c2625bd748d8"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/prompt.json",
+              "bytes": 8330,
+              "sha256": "c578545e87ad560a5e949fbe10398cedca7cd9fa0b76548d4ffb20b0c749a19a"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/agent/response.jsonl",
+              "bytes": 35043,
+              "sha256": "2934c444680b0976b31073ed4efc7f2bed373a9bbb861e3608cff094e8c0cc1c"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/baseline/validation.json",
+              "bytes": 4816,
+              "sha256": "b72987e600a619bc4189d5a5003b1099c380ab80a2db12f1bdc99420aee9cf95"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/import-preflight.json",
+              "bytes": 634,
+              "sha256": "6ca4c0d6a687dddcda6ee42809f24ec8a845974714dea1da5a037184983485ae"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/launcher.pid",
+              "bytes": 6,
+              "sha256": "90461add7972d23ea6bfe32487b5f6094eabfe21b80475af89ed716bab4bf64f"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/launcher.stderr.log",
+              "bytes": 7347,
+              "sha256": "26f9d275bb5094eda1c93f8ce7014247649f2414cdf54be1a14974f72e74c71b"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/vulture/run-03/outcome.json",
+              "bytes": 284838,
+              "sha256": "6950e6e317095c00aae0ab6bc2e1f8fa5bde99f4e7e2d52dec6c488eaa61c93c"
+            }
+          ]
+        },
+        {
+          "project": "chardet",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 10,
+          "total_bytes": 447368,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/auto-benchmark-edit-01.json",
+              "bytes": 1347,
+              "sha256": "425fd05496117c53def35f4eb8bc294b7c0064a1a7bdbedc1f5381fd34dca826"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/auto-test-edit-01.json",
+              "bytes": 30166,
+              "sha256": "7e5e7d8b3983e57622203c757eb1e5a97ddc98a8e02b00fc1263448d3e17ae6f"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/events.json",
+              "bytes": 119657,
+              "sha256": "7805e8e26aee64dd57d46a778564020d45aaf3a3e1eb946fa8c89b745906d1c0"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/parallelization-contract.json",
+              "bytes": 3048,
+              "sha256": "b96b9b77b9f571535c091dd3c214f7659bf25b3079c032caa641f7131586ae19"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/patch.diff",
+              "bytes": 4435,
+              "sha256": "ef39b2111142d0387477ad1f973265ea28841e97f32edb22a48fac34442a1d42"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/prompt.json",
+              "bytes": 34092,
+              "sha256": "e9c8fbb53e4af4d3ed84aa25abf8d6c89b906b9fd5ae03fd158254ba247ff35a"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/agent/response.jsonl",
+              "bytes": 17979,
+              "sha256": "597a369f5b7129f423949c25c53861f2fff3732e78dbce307c94674fea367099"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/baseline/validation.json",
+              "bytes": 31866,
+              "sha256": "48fb8a4d526c74514520c9bc832e9e1cd5907533d9c0c0df965697cf4eaeb57e"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/import-preflight.json",
+              "bytes": 643,
+              "sha256": "3c2dac747a2a2a55bc44815dc172ea95bf8ec8c84b9bc1356fc148f3f6e12e23"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-01/outcome.json",
+              "bytes": 204135,
+              "sha256": "c23596c83ff7a8158e4fcd58de4b3904f89c6d9ac5e30a25346bf46cc05c930e"
+            }
+          ]
+        },
+        {
+          "project": "chardet",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 15,
+          "total_bytes": 851619,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/auto-test-edit-01.json",
+              "bytes": 34756,
+              "sha256": "15d981dfad8ecf7d6a6fd2a77f06d4b3683c25b3b4ba46961f8dda0b4167bf8c"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/auto-test-edit-02.json",
+              "bytes": 34756,
+              "sha256": "796c4bf5f8ae615e78de14ae425f1ecdf67e4f9fe113c57bc67ad751a8fdf6eb"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/auto-test-edit-03.json",
+              "bytes": 34756,
+              "sha256": "e8bcbdbc741414512b85bb8924ac630546f627d5e289d60feaea9b6999f1fee9"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/auto-test-edit-04.json",
+              "bytes": 34756,
+              "sha256": "c9ef75c28563c1da8905a9a155d27f02390ee7cb520909a0bfdc5ca5f50037c9"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/events.json",
+              "bytes": 238525,
+              "sha256": "02f79bc534fbc353022cce3998d87e17300aea25c094f7b58537e3972da1bb25"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/parallelization-contract.json",
+              "bytes": 2365,
+              "sha256": "8766549e69461d3c2bc725557ef154ca2ccb9965ae4874b8209bc9b4a30ce612"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/prompt.json",
+              "bytes": 34093,
+              "sha256": "dbbcc09ae38d1de5ed573eea5e40001dbc64ca16a00f86c741ad634b716466b9"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/agent/response.jsonl",
+              "bytes": 42715,
+              "sha256": "5cb484284b80f62e1db65009cac4aabf8bd21c7e2bcce094643afc7d901dfc47"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/baseline/validation.json",
+              "bytes": 31867,
+              "sha256": "41e17d7eb10b3551abfb8dd12bb30f236b0c125f75b6723f866f89c7a3663246"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/import-preflight.json",
+              "bytes": 644,
+              "sha256": "4d976abf194afcb91a9a423c32f87b3a58c18786736b47c60c2e05cef8b56375"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "97bab5490190db19133cf835503a1fa68ff067989b6d982a67a419276f8a1013"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/launcher.stderr.log",
+              "bytes": 14477,
+              "sha256": "21721890076cd5f5cd8a64bc2ae95853b5ce0411b2a0f1fd6f6f425c8f422238"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-02/outcome.json",
+              "bytes": 347902,
+              "sha256": "2270a57cd2ac4dbd3cd2486f3955b60e361fc44f2024e6e6b70b1437cfbfc8cc"
+            }
+          ]
+        },
+        {
+          "project": "chardet",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 14,
+          "total_bytes": 766495,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/auto-test-edit-01.json",
+              "bytes": 34756,
+              "sha256": "ac05fe57f21a46ee77f7793c51a2432eee2d860c053351e0315c89d67bfc968d"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/auto-test-edit-02.json",
+              "bytes": 34755,
+              "sha256": "eca96e98fbb3edc5f71f7d5ced44a9d32a43859029dac9d7b4689e2780a8aedc"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/auto-test-edit-03.json",
+              "bytes": 34754,
+              "sha256": "4ec548baae9d8063347ac49d8df082bfda0ce71748352c74fa03a48e14664635"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/events.json",
+              "bytes": 203385,
+              "sha256": "a07eec40ae010a41a8054e866ba2810aa866600535b5151a3d13b2d8a706ccdc"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/parallelization-contract.json",
+              "bytes": 2668,
+              "sha256": "3ecf548c42ca1df62906f441d733ed4d421321a55220ee10ce36f59418a2d76e"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/prompt.json",
+              "bytes": 34092,
+              "sha256": "0bda5c56e02674b341f081537c4d4a08e0b01516cf9de353e0be642091a37644"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/agent/response.jsonl",
+              "bytes": 52613,
+              "sha256": "36e691476baa3f8b2211f36a497d8c752ea1c8d99389ec5a2e564a33ba0a6979"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/baseline/validation.json",
+              "bytes": 31864,
+              "sha256": "80d3a6856f824a1325e5fba6b626ae2059005a60349fde135fe1f8f0bd6bd9bd"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/import-preflight.json",
+              "bytes": 642,
+              "sha256": "c8522b3f4f99443e0022a482851b932d23c417f3c49e6b0a8c894e508cfe4662"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/launcher.pid",
+              "bytes": 7,
+              "sha256": "471626ed95f32e027a4d949c46df24ccfdd8dfb5db9ae94d7e5eaf79f49d9e6b"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/launcher.stderr.log",
+              "bytes": 14477,
+              "sha256": "21721890076cd5f5cd8a64bc2ae95853b5ce0411b2a0f1fd6f6f425c8f422238"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/chardet/run-03/outcome.json",
+              "bytes": 322482,
+              "sha256": "439c49780412c09ce7ba720eb97e1f6b0365a9abb68c5697f82f3f371720396b"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 15,
+          "total_bytes": 520974,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/auto-benchmark-edit-01.json",
+              "bytes": 1310,
+              "sha256": "d0a7f8c044228823c20f8842cb905db8885258a94828079d03bdefd79566df2a"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/auto-benchmark-edit-02.json",
+              "bytes": 1310,
+              "sha256": "f81bc500cc03de8e620d3f816028735e931bf58cc345da2397564761e0a0bdc7"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/auto-test-edit-01.json",
+              "bytes": 2059,
+              "sha256": "2c38d8156a4f850887b11a77ae83fddf30fc9481e5c5f0ea09a273f5655a629f"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/auto-test-edit-02.json",
+              "bytes": 2059,
+              "sha256": "1ad997dec8529bdbf79d98060c1ff5e9dc89047daeb94ab4f1b124e312a1eaf6"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/events.json",
+              "bytes": 213433,
+              "sha256": "0c19d09e6df7274805f2ccc44140a0ae2d737e8320e9364de3f93580a5a1000c"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/parallelization-contract.json",
+              "bytes": 2415,
+              "sha256": "7cb20805ba92871759e206c4d1ed1af3b21dfe4ccfbd39eaec54b99ce715b992"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/prompt.json",
+              "bytes": 11665,
+              "sha256": "89ae7f5e9162ca311bdd8fd048319f8393029c3e937bc038216cce2499fe8af3"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/agent/response.jsonl",
+              "bytes": 29617,
+              "sha256": "f2180049aa18e951cb7fab4265768482109805b0612fc0cdbc8682fd5248d4c0"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/baseline/validation.json",
+              "bytes": 3723,
+              "sha256": "98ec960952a6e30a7544a99c68f18e7a7603610a9466765ccd9d46026489cfd5"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/import-preflight.json",
+              "bytes": 627,
+              "sha256": "7bd41d735acda7942a0e6f8b7c559f853493e1bd75ec1cf96c5e6fc98b345ed0"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/launcher.pid",
+              "bytes": 7,
+              "sha256": "f660fc59c8939811b0adf7b58c9f4de74cb67b814f436d5942bc61b5da232e40"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-01/outcome.json",
+              "bytes": 252749,
+              "sha256": "ff4560d4474251560cef7e46bf3891b62ce359ee6065596f1bf834d975429e3d"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 14,
+          "total_bytes": 637480,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/auto-test-edit-01.json",
+              "bytes": 44070,
+              "sha256": "ea41a5e7daa9dab73e856d8ba0fa7a43f7a9d7942cc7fb6418337600da3decfe"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/auto-test-edit-02.json",
+              "bytes": 44070,
+              "sha256": "c791da6b6870ad551751af1924d54afcb6a4c9cf23f5712adbbc3ea3ae9714a7"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/auto-test-edit-03.json",
+              "bytes": 44070,
+              "sha256": "fc5cb071d0f2d194c7bb147446711c12c5284f5296d9f61efa0d0b162dd24941"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/events.json",
+              "bytes": 224255,
+              "sha256": "ec3e5608fb88b089d462c815738548da4975c7ed1d744b45e29cf976b3569e80"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/parallelization-contract.json",
+              "bytes": 3320,
+              "sha256": "4016f425d548cf6f95f0b76db5ea410fc22b5434026672af7b7279a9a3aa119e"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/prompt.json",
+              "bytes": 11664,
+              "sha256": "ab8bdaba6e7e7ce01f362d7fe08459d4b9bbc1d471ec4988898418c495511629"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/agent/response.jsonl",
+              "bytes": 13568,
+              "sha256": "1d82e1d9af7b256d67ee705839812a5837600d0b962103c5aaddfac420fcd160"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/baseline/validation.json",
+              "bytes": 3720,
+              "sha256": "1d3f247ae725731b5ec93b507fc087e9f4d75d27fc8fad169b8a74796137acb0"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/import-preflight.json",
+              "bytes": 627,
+              "sha256": "a4fc42be09092d5b2e3e393eac0851ac81c39b208278fcd5b32a0ba9d9cbf039"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "02e53e78c92241f65dc2bde12ad231214945a1612afb64dd7bd391bd5ee5b850"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-02/outcome.json",
+              "bytes": 248109,
+              "sha256": "c1f6dae1098a243c5d699449ab7ace75105041350e731624e7eb874d9a9d436f"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 17,
+          "total_bytes": 702865,
+          "files": [
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/auto-benchmark-edit-01.json",
+              "bytes": 1309,
+              "sha256": "f231bfeb33dee678641ad175a230bb500137a7537fc8fcef86424ef9b7261041"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/auto-benchmark-edit-02.json",
+              "bytes": 1310,
+              "sha256": "e69d8e7886e8150afa6fb56d0d37f28d6b76a7e3552d0a6856d13ec1c524c1e5"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/auto-benchmark-edit-03.json",
+              "bytes": 1309,
+              "sha256": "a288e3ee0e9f6b5ed75dd57c8a7d349ec045cd149cbfe43f67036037724d662c"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/auto-test-edit-01.json",
+              "bytes": 2059,
+              "sha256": "675035beb611039c31fb3ed2abd847f2d687ba8c42791dde147c7a9a875e5e9e"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/auto-test-edit-02.json",
+              "bytes": 2059,
+              "sha256": "c91a73a0dd8f8d7c0a46135652cfa816965e1757867c7561378c2486211c678f"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/auto-test-edit-03.json",
+              "bytes": 2059,
+              "sha256": "a5e94174ae900e7e03f47cec36a083f91851e4ae90019aa974fcb3cbe20a02cb"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/events.json",
+              "bytes": 285582,
+              "sha256": "83eb51a155df25417ee8a03fb7a71c77e39be16580ac3d9f8e2ba8c7f65185b3"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/parallelization-contract.json",
+              "bytes": 3198,
+              "sha256": "f71c690a24cae680da10c7a0e167ba1e0484a3af9abc638bac67a32c96a1f39b"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/prompt.json",
+              "bytes": 11664,
+              "sha256": "707b2ad399bb4622cbbc4d9c9142675d490719645f8c3d5c1712784e6e5f20fb"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/agent/response.jsonl",
+              "bytes": 46075,
+              "sha256": "10dacf80f2a0269b14961cac161074bd29c805bc549711f5b725f2fd0e657ed8"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/baseline/validation.json",
+              "bytes": 3720,
+              "sha256": "3e872247ef08a1dc573362fe1c791264dd1397bbab02d4f490793294deca6434"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/import-preflight.json",
+              "bytes": 627,
+              "sha256": "bf7b2cc53dd50e5a3eae2925695c9193fff46a8043312522933f925e644d594c"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/launcher.pid",
+              "bytes": 6,
+              "sha256": "14030db3431a176a75e868146f16abbd5a327e16096a3c9c83daec6b1e619555"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m5/corrected-final/mkdocs/run-03/outcome.json",
+              "bytes": 341888,
+              "sha256": "0da750b1d99167b0a88366b7b300cb48c14ad93dd9a9d75cd95f000666273d8c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "A1_contract_only",
+      "root": "results/m6/ablation-contract-only",
+      "expected_runs": 3,
+      "audited_runs": 3,
+      "runs": [
+        {
+          "project": "mkdocs",
+          "run": "run-01",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 12,
+          "total_bytes": 435258,
+          "files": [
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/agent/events.json",
+              "bytes": 163625,
+              "sha256": "311f3c1363ce1b0f3f305fcfa7928fcc821a8eb3c8cb11e49c7432ba2bc86262"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/agent/parallelization-contract.json",
+              "bytes": 2723,
+              "sha256": "043ac27e8a40998b01763ed9c3ff2eaa75b8fcc023411cab0602c229d105acaa"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/agent/patch.diff",
+              "bytes": 3078,
+              "sha256": "6dca3d4592c4129c421cc037b48d2ec90ecff6d625e13e034188dfdbd6125cf0"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/agent/prompt.json",
+              "bytes": 10635,
+              "sha256": "b3e693f6c06d8e6d3d75a32beae3808814cd77aa424a530ad416e2f13b8e939f"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/agent/response.jsonl",
+              "bytes": 37121,
+              "sha256": "4a170b823c7fedb1af70e28d136f9c73fc427b7f91e307064b0fb844fd90f639"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/agent/test-11.json",
+              "bytes": 2059,
+              "sha256": "63bc3d9d22303f640af9fda1a2630e7d744079e3a59bb4c981a22ed30edcf41f"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/baseline/validation.json",
+              "bytes": 3722,
+              "sha256": "bd1f18d95b6f152a6ba5578b51cba40f791d948ea60bd151ccd5a2b0ec94c0bb"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/import-preflight.json",
+              "bytes": 641,
+              "sha256": "c0a774907b1dff2f01e893e265d68c7daba0120c20f834fa32a81d7c4d25d121"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/launcher.pid",
+              "bytes": 7,
+              "sha256": "1e767c357453c1d62d6f9d26d27bc62c434a04cfae2af1ba54b53f731c0b08ea"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-01/outcome.json",
+              "bytes": 211647,
+              "sha256": "413e8562043d876598f84002559266044769114844c6c7422a6012c1f8bb7869"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-02",
+          "status": "completed",
+          "patch_nonempty": true,
+          "file_count": 13,
+          "total_bytes": 458278,
+          "files": [
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/events.json",
+              "bytes": 175061,
+              "sha256": "8b69f831ec7c6c3e7aaabeb03182a346c74fbe124a5dc3236661d65912140753"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/parallelization-contract.json",
+              "bytes": 4445,
+              "sha256": "f1df4509d1f980bf3bad25e57616ec72ef98c6200ba8fa155948f06c6e76549a"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/patch.diff",
+              "bytes": 4980,
+              "sha256": "1f1656f5db93b7b4dcdd0be0d3302b387678c66d9b58860ef20ab4449b82ee09"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/prompt.json",
+              "bytes": 10634,
+              "sha256": "f71d2f72d6a9aafec80b53a6f456a818e46be5417c289d58b86bff3055d724cf"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/response.jsonl",
+              "bytes": 31947,
+              "sha256": "eb7db742fd0dc18e5374a6752e50cdc0d2cce2298dd7806708df0a7179eec6db"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/test-08.json",
+              "bytes": 3737,
+              "sha256": "3b8949134a3ca87d4e54fe3377e903e6a4c1bb2fd56136a30002ab061c715605"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/agent/test-11.json",
+              "bytes": 3737,
+              "sha256": "85007de06ce0065a064abe3cb464dd4619563c0f2c422e7f963db5fae63f4627"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/baseline/validation.json",
+              "bytes": 3719,
+              "sha256": "6659c1969abedbd6f0763df981af2ec8b3c38e1fe7f06578c5c06caa229f49a6"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/import-preflight.json",
+              "bytes": 641,
+              "sha256": "e4b8a143e6ac644f3d37748cea7d64b698839f0a64ffaef41420078fe73f582b"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/launcher.pid",
+              "bytes": 7,
+              "sha256": "f45607b2a2eaab03d32670e26c9908c7ae619e021ad0f246d7f1b849cd717f82"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-02/outcome.json",
+              "bytes": 219370,
+              "sha256": "eb22ef99cb6c64754a78b3d78bf03a4e69c357afaa97d1288dddf250a9bc002b"
+            }
+          ]
+        },
+        {
+          "project": "mkdocs",
+          "run": "run-03",
+          "status": "completed",
+          "patch_nonempty": false,
+          "file_count": 11,
+          "total_bytes": 406873,
+          "files": [
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/agent/events.json",
+              "bytes": 155266,
+              "sha256": "431bc4d28ec7ee6b662b60e36fb3f51d6ca12938a93df8f08519680ad3c4fdf4"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/agent/parallelization-contract.json",
+              "bytes": 2921,
+              "sha256": "112ea865ff43c852ec4660ca5dd5d5a591c347da99bf7e44a6b5657b52def268"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/agent/patch.diff",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/agent/prompt.json",
+              "bytes": 10634,
+              "sha256": "0c3d2e44de6cc53c547098d170bf921b0eecf6e65059c5bf9f930f08d4cb25bd"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/agent/response.jsonl",
+              "bytes": 34205,
+              "sha256": "a40c4bc48105b2f00e7ae1752a054d9238862ea3fbd736663fb427dc74879167"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/baseline/validation.json",
+              "bytes": 3721,
+              "sha256": "54a42f3e76c2ec1d1fe1ad4986136f6840258bc4065414882e8001e0b297296e"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/import-preflight.json",
+              "bytes": 640,
+              "sha256": "22a152d9ffc2ef51c77d57baf5aea1adeb24e72175ffa63552e27616622a8d20"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/launcher.pid",
+              "bytes": 7,
+              "sha256": "3cbf1646fde8fec12647250b2580ec0b4736edad29e359b1b0c6c00cef0376bb"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/launcher.stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/launcher.stdout.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "results/m6/ablation-contract-only/mkdocs/run-03/outcome.json",
+              "bytes": 199479,
+              "sha256": "1d28564be859d328d3bd99e22492ef0bf77633314592590263c93bc62d7d37c4"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "excluded_run_records": [
+    {
+      "path": "results/diagnostic/chardet/excluded-bypassed-entrypoint-run-01/exclusion.json",
+      "bytes": 288,
+      "sha256": "3deb0e52514585617e1fa3b491b79831b6bd1367ddc7f5255490783fe2df4ad3"
+    },
+    {
+      "path": "results/diagnostic/chardet/excluded-bypassed-entrypoint-run-01/outcome.json",
+      "bytes": 287013,
+      "sha256": "aa294174f12d4f60a858c9d2272be681eb044ec8f79d73479e957fa7196cc8af"
+    },
+    {
+      "path": "results/diagnostic/chardet/excluded-bypassed-entrypoint-run-02/exclusion.json",
+      "bytes": 288,
+      "sha256": "3deb0e52514585617e1fa3b491b79831b6bd1367ddc7f5255490783fe2df4ad3"
+    },
+    {
+      "path": "results/diagnostic/chardet/excluded-bypassed-entrypoint-run-02/outcome.json",
+      "bytes": 311981,
+      "sha256": "04b4d4d1856f31242660b7de3ed0bb5beff02ad1d26793a7b654edf211f9cc90"
+    },
+    {
+      "path": "results/diagnostic/chardet/excluded-bypassed-entrypoint-run-03/exclusion.json",
+      "bytes": 372,
+      "sha256": "818da03a8f5a2c4e8aa41899fd15ab0b421f253ef8fe1c3f398ac3f2493b6c6a"
+    },
+    {
+      "path": "results/diagnostic/chardet/excluded-bypassed-entrypoint-run-03/outcome.json",
+      "bytes": 174985,
+      "sha256": "25c4bc0079ccae6ff65c468d66fa06077b64bb9a1b26aa1c2a5c188212cb7d2f"
+    },
+    {
+      "path": "results/diagnostic/chardet/run-01/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/diagnostic/chardet/run-02/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/diagnostic/chardet/run-03/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/diagnostic/radon/excluded-api-latency/exclusion.json",
+      "bytes": 475,
+      "sha256": "6725911ee3041172edd658dc738787ba4860438464e6ed4e9791d212270130e8"
+    },
+    {
+      "path": "results/diagnostic/radon/pilot-invalid-context/exclusion.json",
+      "bytes": 659,
+      "sha256": "947c59b7fe5ff57e01110855dc013b2d00f3b0b5b1e32eca5356957d92fc67c5"
+    },
+    {
+      "path": "results/diagnostic/radon/pilot-missing-line-read/exclusion.json",
+      "bytes": 682,
+      "sha256": "d88a9f51cb13fab16b8bdb1e2746b62b71eba7fca1319d3e8a90164d3e0b804c"
+    },
+    {
+      "path": "results/diagnostic/radon/pilot-multi-edit-recorder/exclusion.json",
+      "bytes": 730,
+      "sha256": "40d9d351cd2b62e8e9f1a1aa288a119a8cc0db663cc75f7b4107a2efb977a9e5"
+    },
+    {
+      "path": "results/diagnostic/radon/pilot-read-budget-rejection/exclusion.json",
+      "bytes": 563,
+      "sha256": "d6ccad385de62cc0dd2efa708fa2c840be84d9d23e9a305dff4ce9db84e64a84"
+    },
+    {
+      "path": "results/diagnostic/radon/pilot-unbounded-context/exclusion.json",
+      "bytes": 833,
+      "sha256": "8cb8cd096e7497b0df2d3cfd9cd9766e06eaf67df9a53f7cfa8ddb6b62286022"
+    },
+    {
+      "path": "results/diagnostic/radon/preliminary-strict-run-01/exclusion.json",
+      "bytes": 364,
+      "sha256": "576db100887d569ee6959057dba5b88872fd65fead1a3811a730b7827b9cf900"
+    },
+    {
+      "path": "results/diagnostic/radon/preliminary-strict-run-02/exclusion.json",
+      "bytes": 364,
+      "sha256": "576db100887d569ee6959057dba5b88872fd65fead1a3811a730b7827b9cf900"
+    },
+    {
+      "path": "results/diagnostic/radon/preliminary-strict-run-03/exclusion.json",
+      "bytes": 491,
+      "sha256": "7209609181c6b01313f5c32e04ab5cceb9a60a8e82470e33957dcb548410bee8"
+    },
+    {
+      "path": "results/diagnostic/vulture/excluded-temp-permission/exclusion.json",
+      "bytes": 409,
+      "sha256": "470b0e0409f3b96e9673c203e8620828ae33ad24ce58719d10797ee008023d0f"
+    },
+    {
+      "path": "results/diagnostic/vulture/excluded-temp-permission/outcome.json",
+      "bytes": 252944,
+      "sha256": "92250057a60b67a2f1faa02c9fbcca2fb5feec10b4cf5996effd98b021c6daa9"
+    },
+    {
+      "path": "results/diagnostic/vulture/pilot-strict-patch/exclusion.json",
+      "bytes": 608,
+      "sha256": "d1bba29ea673910ad016b06c7d8462e5acfc1a2b0731f3ef2bd8da7e6caf0cd2"
+    },
+    {
+      "path": "results/m4/anchor/chardet/run-01/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m4/anchor/chardet/run-02/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m4/anchor/chardet/run-03/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m4/anchor/radon/excluded-missing-anchor-memory/exclusion.json",
+      "bytes": 380,
+      "sha256": "bc8c28e85c730ad392da2ed2152f724da64a12561954b49ac16865495e41e3d9"
+    },
+    {
+      "path": "results/m4/anchor/radon/excluded-missing-anchor-memory/outcome.json",
+      "bytes": 280947,
+      "sha256": "98a11459a07d1d2a85d4bdfdc957c5eb0a554dbba0dfa0e36c0b99a312353553"
+    },
+    {
+      "path": "results/m4/anchor/radon/excluded-no-reserved-anchor-read/exclusion.json",
+      "bytes": 379,
+      "sha256": "847ba15d13ed91580f28c1fb29751fc595c4c1764cfb9a33b80d3c9935fe9f56"
+    },
+    {
+      "path": "results/m4/anchor/radon/excluded-no-reserved-anchor-read/outcome.json",
+      "bytes": 427678,
+      "sha256": "0deafa3d16390047bbd56d73f3c7b9f98ec7e91ea0f4a44b4d93f14e11a9a185"
+    },
+    {
+      "path": "results/m4/contract/chardet/run-01/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m4/contract/chardet/run-02/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m4/contract/chardet/run-03/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m5/corrected-b0/mkdocs/excluded-baseline-cwd-run-01/exclusion.json",
+      "bytes": 551,
+      "sha256": "c206378f38c6eb903784116af79f6de4b20d8837b07bce9bc5957f1f5a09f6f3"
+    },
+    {
+      "path": "results/m5/corrected-b0/mkdocs/excluded-baseline-cwd-run-01/outcome.json",
+      "bytes": 3891,
+      "sha256": "2456137b623d3bf165c4805f218bb3bf9eda39b08f25177d562289c27287585c"
+    },
+    {
+      "path": "results/m5/formal-feedback/chardet/run-01/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m5/formal-feedback/chardet/run-02/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m5/formal-feedback/chardet/run-03/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m5/robust-feedback/chardet/run-01/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m5/robust-feedback/chardet/run-02/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m5/robust-feedback/chardet/run-03/exclusion.json",
+      "bytes": 328,
+      "sha256": "6c611a70ff45d2fd4ddeabe111a3e5d51af5bed14167f4c552ca395f9d656f33"
+    },
+    {
+      "path": "results/m7/worker-boundary/radon/run-03/exclusion.json",
+      "bytes": 417,
+      "sha256": "833b5f03fdbab120046076499ceb27a4dcdffccc41a05e167c2ae478c5b39daa"
+    },
+    {
+      "path": "results/m7/worker-boundary/radon/run-04/exclusion.json",
+      "bytes": 355,
+      "sha256": "8b27b631b5f53504e4fc48c5ff3a908f0fa457b528f509d5e598fa047649e23b"
+    }
+  ],
+  "additional_research_artifacts": [
+    {
+      "path": "docs/data/m7-worker-boundary.json",
+      "bytes": 906,
+      "sha256": "59537c0a3e91e1c8b727336cd3e07e46496afe9656551e95fb3222a04170b997"
+    },
+    {
+      "path": "docs/data/radon-manual-reference.patch",
+      "bytes": 3637,
+      "sha256": "28357b4e05fa2b5bd0f32b36cb5db9665d70e49119cc29c914dfc583ef247784"
+    },
+    {
+      "path": "docs/data/radon-manual-reference-summary.json",
+      "bytes": 2951,
+      "sha256": "16d621ba09c074369216d712e478b643ff2cad778daeb246101eb86ea2ab6e75"
+    },
+    {
+      "path": "docs/figures/m7-worker-boundary.png",
+      "bytes": 63265,
+      "sha256": "9384d601d7d8dfce72e21601752a34fab196805e392868d515fbaeb4019f6c0a"
+    },
+    {
+      "path": "docs/figures/radon-manual-reference-recheck.png",
+      "bytes": 55242,
+      "sha256": "b54c6f64f7fff3bb2af25d4edc9db32c2dca6546e89734dc75451fa5e5f26ac1"
+    }
+  ],
+  "note": "The manifest proves which local raw files were audited. It does not embed model responses and cannot recreate them if the local results directory is deleted."
+}

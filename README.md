@@ -7,7 +7,7 @@
 Agent 需要检查源码位置、共享状态和输出语义，并用原项目测试、固定输出及配对性能测量决定
 是否保留修改；证据不合格时恢复串行版本。
 
-当前代码版本：`v0.24.0-reproducible-repository-study`。
+当前代码版本：`v0.25.0-evidence-corrected-repository-study`。
 
 ## 当前实验结论
 
@@ -15,16 +15,22 @@ Agent 需要检查源码位置、共享状态和输出语义，并用原项目�
 
 | 方法 | 有效并行 | 安全回退 | 错误修改 | 未形成方案 |
 |---|---:|---:|---:|---:|
-| 普通 Agent | 0 | 0 | 6 | 6 |
-| 完整方法 | 1 | 10 | 0 | 1 |
+| B1 普通 Agent | 0 | 0 | 6 | 6 |
+| B2 完整方法 | 1 | 10 | 0 | 1 |
 
 完整方法在 Chardet 上有 1 次得到 3.251 倍端到端加速。其余大部分运行选择回退，说明当前
 方法主要改善的是交付安全性，还不能稳定完成自动加速。详细结果见
 [M6 真实项目实验发现](docs/m6-findings.md)。
 
-后续 Radon 实验正在检查 Worker 边界证据是否能改善候选。一次分类错误已被发现并排除；
-当前只有 2 次有效运行，第 3 次替代实验因 DeepSeek 余额不足等待补跑，因此暂不下结论。
-详见 [M7 Worker 边界实验](docs/m7-worker-boundary-design.md)。
+实验编号统一为 B0 原始串行项目、B1 普通 Agent、B2 完整方法；MkDocs 的只加语义约束组记为
+A1，Radon 的人工参考案例记为 B3。27 次正式 Agent 运行的原始证据哈希清单见
+[`docs/data/research-evidence-manifest.json`](docs/data/research-evidence-manifest.json)。
+
+Radon 的 Worker 边界实验原先建立在“人工参考版本有明显加速”这一前提上。固定协议复核发现，
+人工版本虽然输出正确，但加速仅为 0.9986 倍，没有达到 1.05 倍门槛；旧的约 5.98 倍结论已撤回。
+因此 M7 按研究前提失效终止，而不是继续用更多模型调用补齐一个已经无法回答原问题的实验。
+详见 [Radon 人工参考复核](docs/reference-upper-bound.md)和
+[M7 终止说明](docs/m7-worker-boundary-design.md)。
 
 ![主实验结果](docs/figures/m6-overall-outcomes.png)
 
@@ -47,16 +53,17 @@ Agent 需要检查源码位置、共享状态和输出语义，并用原项目�
 
 - [方法说明](docs/method.md)：系统为什么这样设计；
 - [实验设计与结果](docs/experiments.md)：项目、对照组、指标和真实数字；
-- [相关工作](docs/related-work-project-level-parallelization.md)：论文与本项目的区别；
+- [相关工作](docs/related-work.md)：论文、研究空白与本项目的区别；
+- [最终研究报告](docs/final-research-report.md)：从诊断、观点、方法到实验结论的完整整理；
 - [当前局限](docs/limitations.md)：哪些结论现在还不能说；
-- [Worker 边界实验](docs/m7-worker-boundary-design.md)：当前正在补齐的后续假设；
+- [Worker 边界实验](docs/m7-worker-boundary-design.md)：为什么该支线因实验前提失效而终止；
 - [复现说明](docs/reproducibility.md)：环境与运行入口；
 - [研究日志](docs/research-log.md)：问题发现、协议修正和方向变化。
 
 ## 环境
 
 项目使用 Python 3.10～3.12。当前本机已经配置仓库专用环境，Python 位于
-`.venv/python.exe`。在新的 Windows 环境中可使用 Conda：
+`.venv\Scripts\python.exe`。在新的 Windows 环境中可使用 Conda：
 
 ```powershell
 conda create -n parallel-agent python=3.12 -y

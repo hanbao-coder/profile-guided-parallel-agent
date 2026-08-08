@@ -23,6 +23,11 @@
     },
     "boundary_failures": 1
   },
+  "reference": {
+    "speedup": 0.9986329041562992,
+    "effective_at_1_05": false
+  },
   "study_complete": false,
-  "conclusion": "The treatment has fewer than three valid runs, so H5 remains pending."
+  "study_status": "terminated_invalid_reference",
+  "conclusion": "The study was terminated because the manual reference achieved less than the preregistered 1.05x speedup, invalidating the performance premise."
 }

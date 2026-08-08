@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "project": "radon",
+  "comparison": "B0 serial vs B3 manual reference",
+  "patch": {
+    "path": "docs/data/radon-manual-reference.patch",
+    "sha256": "28357b4e05fa2b5bd0f32b36cb5db9665d70e49119cc29c914dfc583ef247784"
+  },
+  "source_import_preflight_passed": true,
+  "project_tests_passed": true,
+  "project_test_stdout_tail": "........................................................................ [ 17%]\n........................................................................ [ 35%]\n........................................................................ [ 53%]\n....................sssss............................................... [ 71%]\n........................................................................ [ 89%]\n............................................                             [100%]\n399 passed, 5 skipped in 0.54s",
+  "hashes_match": true,
+  "speedup": 0.9986329041562992,
+  "effective_at_1_05": false,
+  "b0_serial": {
+    "schema_version": 1,
+    "output_schema_version": 2,
+    "project": "radon",
+    "limit": 1800,
+    "warmups": 1,
+    "repeats": 5,
+    "timings_seconds": [
+      11.787500599999476,
+      12.700814200001332,
+      12.927053999999771,
+      12.993040299999848,
+      12.600168900000426
+    ],
+    "median_seconds": 12.700814200001332,
+    "output_hashes": [
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3"
+    ],
+    "stable_output": true,
+    "output_items": 1521
+  },
+  "b3_reference": {
+    "schema_version": 1,
+    "output_schema_version": 2,
+    "project": "radon",
+    "limit": 1800,
+    "warmups": 1,
+    "repeats": 5,
+    "timings_seconds": [
+      12.135268799996993,
+      12.51568430000043,
+      13.690953200002696,
+      13.695534599999519,
+      12.718201200001204
+    ],
+    "median_seconds": 12.718201200001204,
+    "output_hashes": [
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3",
+      "30b791dd47b2c07cd40f2df175f1494525aa1ca7e370f8cfa1780582c9165bb3"
+    ],
+    "stable_output": true,
+    "output_items": 1521
+  },
+  "execution_seconds": {
+    "project_tests": 0.9182871000011801,
+    "b0_serial": 76.93631119999918,
+    "b3_reference": 77.7913308999996
+  },
+  "interpretation": "The manual patch is a correctness reference. It is an effective performance upper bound only when effective_at_1_05 is true."
+}
