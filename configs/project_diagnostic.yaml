@@ -1,8 +1,9 @@
 study:
   name: project_level_parallelization_diagnostic
-  phase: diagnostic
-  research_question_status: open
-  final_hypothesis_selected: false
+  phase: evaluation
+  research_question_status: selected
+  final_hypothesis_selected: true
+  selected_question: Can evidence-gated validation and safe fallback prevent an agent from delivering incorrect or slower project-level parallelization patches?
 
 agent:
   baseline_protocol_version: 2
@@ -111,4 +112,23 @@ projects:
       project_tests: 9325 passed, 21 expected failures
       excluded_environment_test: Windows symlink privilege test
       output_check: public CLI output records in input order
+    status: accepted
+
+  - id: mkdocs
+    repository: https://github.com/mkdocs/mkdocs
+    commit: bb7e8b62185b11d9f59bb7f50b13c15134f62f8a
+    license: BSD-2-Clause
+    source_files: 61
+    entrypoint: mkdocs.commands.build.build
+    workload:
+      adapter: scripts/run_candidate_baseline.py
+      input: complete official MkDocs documentation site from the project root
+      input_limit: null
+      baseline_median_seconds: 4.4353637999993225
+      output_items: 67
+      stable_output: true
+    correctness_oracle:
+      project_tests: 719 passed, 1 skipped
+      excluded_environment_test: four Windows symlink privilege tests and one pytest helper collection
+      output_check: every generated path and normalized file content
     status: accepted

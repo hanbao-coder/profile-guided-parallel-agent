@@ -27,6 +27,8 @@ def main() -> int:
         "诊断实验规范": ROOT / "docs" / "diagnostic-study.md",
         "相关工作": ROOT / "docs" / "related-work.md",
         "真实项目筛选": ROOT / "docs" / "candidate-screening.md",
+        "当前方法": ROOT / "docs" / "method.md",
+        "M6 实验发现": ROOT / "docs" / "m6-findings.md",
     }
     config_path = ROOT / "configs" / "project_diagnostic.yaml"
 
@@ -44,11 +46,12 @@ def main() -> int:
         project_rules = config["required_project_properties"]
         taxonomy = config["failure_taxonomy"]
 
-        require(study["phase"] == "diagnostic", "当前阶段必须保持为 diagnostic")
+        require(study["phase"] == "evaluation", "当前阶段必须为 evaluation")
         require(
-            study["research_question_status"] == "open"
-            and not study["final_hypothesis_selected"],
-            "诊断实验前不得提前冻结最终研究问题或假设",
+            study["research_question_status"] == "selected"
+            and study["final_hypothesis_selected"]
+            and bool(study.get("selected_question")),
+            "诊断实验完成后必须记录已经选择的研究问题",
         )
         require(
             int(agent["independent_runs_per_project"]) >= 3,
@@ -96,8 +99,8 @@ def main() -> int:
 
         projects = config["projects"]
         require(
-            isinstance(projects, list) and len(projects) >= 3,
-            "M2 至少需要三个经过验证的真实项目",
+            isinstance(projects, list) and len(projects) >= 4,
+            "M6 至少需要四个经过验证的真实项目",
         )
         for project in projects:
             project_id = project.get("id", "<missing id>")
@@ -126,12 +129,12 @@ def main() -> int:
         print(f"[失败] {exc}", file=sys.stderr)
         return 1
 
-    print("[通过] M0 项目级诊断研究设置验收完成")
-    print("  最终研究问题：保持开放")
+    print("[通过] M6 项目级研究设置验收完成")
+    print("  研究问题：已由诊断实验选定")
     print("  诊断重复：每项目至少 3 次 Agent 运行")
     print("  性能重复：每个正式候选至少 5 次")
     print("  证据保留：失败、原始回答和补丁均为强制项")
-    print(f"  M2 已筛选真实项目：{len(config['projects'])} 个")
+    print(f"  M6 已验证真实项目：{len(config['projects'])} 个")
     return 0
 
 

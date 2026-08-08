@@ -207,7 +207,8 @@ FormulaCode、PEACE 和 PerfAgent，并检查其论文页面、公开基准说�
 3. MkDocs 官方站点通过真实 `mkdocs.commands.build.build` 入口生成 67 个文件；
 4. 首轮输出不稳定只来自首页注释中的 UTC 构建时间，页面其余内容相同；
 5. 只规范化该时间后，五次输出哈希完全一致；
-6. MkDocs 五次端到端时间为 4.643～4.675 秒，中位数 4.672 秒。
+6. MkDocs 从项目根目录构建的五次端到端时间为 4.373～4.479 秒，中位数 4.435 秒；
+7. 从仓库外和项目根目录运行时，`mkdocstrings` 对源码的解析范围不同；正式协议固定为项目根目录，错误工作目录的首次试验在调用 Agent 前被哈希门控拦截并排除。
 
 ### 当前解释
 
@@ -218,6 +219,7 @@ Pygments 的排除说明，项目是否“能运行多个输入”还不够；�
 - Pygments 源码和环境：`work/candidate-sources/pygments-2.20.0/`、`work/candidate-envs/pygments/`；
 - MkDocs 源码和环境：`work/candidate-sources/mkdocs-1.6.1/`、`work/candidate-envs/mkdocs/`；
 - MkDocs 正式串行基线：`work/candidate-results/mkdocs-baseline-v2.json`；
+- MkDocs 项目根目录基线：`work/candidate-results/mkdocs-baseline-source-cwd.json`；
 - 统一工作负载：`scripts/run_candidate_baseline.py`；
 - 项目配置：`configs/project_contexts/mkdocs.json`、`configs/project_commands/mkdocs*.json`。
 
@@ -226,3 +228,43 @@ Pygments 的排除说明，项目是否“能运行多个输入”还不够；�
 1. 对 MkDocs 运行普通 Agent 和完整方法各 3 次独立实验；
 2. 完成 Vulture 的修正后实验；
 3. 将四项目结果按相同规则汇总，再决定最终方法是否需要针对“并行语义错误诊断”进一步收缩。
+
+## 2026-08-08：M6 四项目主实验与 MkDocs 消融完成
+
+### 当日操作
+
+1. 完成 Radon、Vulture、Chardet、MkDocs 的修正后普通 Agent 实验，共 12 次；
+2. 完成带源码来源预检、源码锚点、并行化契约、稳健性能反馈和安全回退的完整方法实验，共 12 次；
+3. 在 MkDocs 上额外运行 3 次“只有源码锚点和语义契约、没有性能反馈与回退”的消融；
+4. 将全部运行统一分类，并生成紧凑 JSON、CSV 和中文图表；
+5. 更新研究问题、方法、实验、局限和复现文档；
+6. 使用独立临时目录运行本项目 113 项自动测试，全部通过。
+
+### 已验证事实
+
+1. 普通 Agent 的 12 次运行中，6 次留下错误修改，6 次没有形成可用方案，0 次有效并行；
+2. 完整方法的 12 次运行中，1 次有效并行、10 次安全回退、1 次未形成方案，没有留下已知错误修改；
+3. 唯一有效结果来自 Chardet，配对端到端中位加速为 3.251 倍；
+4. 完整方法实际检查 30 个候选：17 个测试失败、4 个输出或集成失败、3 个没有真实并行结构、3 个加速不足 5%、2 个整体变慢、1 个被接受；
+5. MkDocs 消融中，普通 Agent 和只加语义契约均为 2 次错误修改、1 次没有方案；完整方法 3 次均回退到串行版本；
+6. Radon 的人工状态最小版本可达到约 5.98 倍，说明完整方法在 Radon 上的回退不是因为工作负载本身绝对不可并行，而是 Agent 没有稳定找到正确边界；
+7. Chardet 的早期 `src` 导入路径错误和 MkDocs 的工作目录错误均已写排除原因并替代重跑，不进入正式结论。
+
+### 当前 insight
+
+项目级自动并行化不是一次性生成并行语法，而是一个必须允许拒绝候选的决策过程。结构化语义说明可以帮助模型思考，但不能代替原项目测试、固定输出和配对端到端性能。证据不合格时保留串行版本，比强行交付并行补丁更可靠。
+
+这个 insight 当前主要解决“错误交付”，不代表自动加速已经成功。有效并行率只有 1/12，下一阶段应研究如何从失败测试中提取状态边界，并提高安全候选的生成概率。
+
+### 消融结论边界
+
+MkDocs 消融每组只有 3 次，只能说明在该项目上反馈与回退阻止了错误交付，不能据此断言语义契约对所有项目都无效。完整方法同时包含多个变化，仍需扩大项目和运行次数，或继续拆分组件。
+
+### 原始证据
+
+- 普通 Agent：`results/m5/corrected-b0/`；
+- 完整方法：`results/m5/corrected-final/`；
+- MkDocs 消融：`results/m6/ablation-contract-only/`；
+- 紧凑结果：`docs/data/m6-study-summary.json`、`docs/data/m6-study-summary.csv`；
+- 图表生成脚本：`scripts/summarize_m6_study.py`；
+- 方法与结果说明：`docs/method.md`、`docs/m6-findings.md`、`docs/experiments.md`、`docs/limitations.md`。

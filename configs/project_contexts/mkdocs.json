@@ -5,8 +5,8 @@
   "import_module": "mkdocs",
   "public_entrypoint": "mkdocs.commands.build.build",
   "registered_workload": "Build the complete official MkDocs documentation site through the public build command and compare every generated file after normalizing only the embedded build timestamp.",
-  "serial_median_seconds": 4.672455400001127,
-  "baseline_output_hash": "beb9ff9157b3f9ec4ea73c8952f3a9bab8a853e0399670ec727fc0f687f854f7",
+  "serial_median_seconds": 4.4353637999993225,
+  "baseline_output_hash": "46d31d4fb379874600dbf4e66271cab174d7cfeea8d4903fcb2918b2ec2a491b",
   "correctness_requirements": [
     "The 719 runnable project tests must pass; four Windows symlink privilege tests and one pytest helper collection are explicitly excluded.",
     "The generated file set and every generated file's semantic content must match the serial build.",

@@ -1,61 +1,57 @@
 # Project-Level Parallelization Agent
 
-> 当前研究阶段：先诊断通用代码 Agent 并行化多文件串行项目时的真实失败，再根据
-> 实验证据确定一个主要研究问题并提出方法。
+本项目研究一个具体问题：通用代码 Agent 直接把真实的多文件 Python 项目并行化时，为什么
+经常得到“有并行语法，但项目不能用或整体没有变快”的结果？
 
-本仓库最初实现了面向规范化 Python 工作负载的 Ray 代码生成、正确性验证、性能
-测量和配置优化。这些能力现在作为实验基础设施保留，不再把功能数量本身当作研究
-贡献。
+当前观点是：项目级自动并行化不应只做一次代码生成，而应成为一个**允许拒绝候选的决策过程**。
+Agent 需要检查源码位置、共享状态和输出语义，并用原项目测试、固定输出及配对性能测量决定
+是否保留修改；证据不合格时恢复串行版本。
 
-新的研究主线是：
+当前代码版本：`v0.23.2-repository-study`。
 
-1. 准备 4～6 个可复现的多文件串行项目；
-2. 使用统一的普通 Agent 协议进行直接并行化；
-3. 保存提示、补丁、测试、端到端性能和失败日志；
-4. 统计主要失败模式；
-5. 由实验确定研究假设、insight 和针对性方法；
-6. 通过普通 Agent、改进 Agent 和人工参考版本进行对照。
+## 当前实验结论
 
-当前研究规范：
+主实验覆盖 Radon、Vulture、Chardet 和 MkDocs 四个真实开源项目，每种方法独立运行 12 次：
 
-- `docs/research-log.md`：事实、假设、证据和方向变化；
-- `docs/diagnostic-study.md`：项目选择、运行流程、失败分类和指标；
-- `docs/related-work.md`：相关工作与当前研究空白；
-- `configs/project_diagnostic.yaml`：机器可读的诊断实验约束。
+| 方法 | 有效并行 | 安全回退 | 错误修改 | 未形成方案 |
+|---|---:|---:|---:|---:|
+| 普通 Agent | 0 | 0 | 6 | 6 |
+| 完整方法 | 1 | 10 | 0 | 1 |
 
-在首轮诊断实验完成前，本项目没有预先确定的最终 insight。
+完整方法在 Chardet 上有 1 次得到 3.251 倍端到端加速。其余大部分运行选择回退，说明当前
+方法主要改善的是交付安全性，还不能稳定完成自动加速。详细结果见
+[M6 真实项目实验发现](docs/m6-findings.md)。
 
-[![Project verification](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/project-verification.yml/badge.svg)](https://github.com/hanbao-coder/profile-guided-parallel-agent/actions/workflows/project-verification.yml)
+![主实验结果](docs/figures/m6-overall-outcomes.png)
 
-基于性能剖析与依赖分析的 Python 串行代码自动并行化研究原型。
+## 方法流程
 
-每次推送或创建 Pull Request 时，GitHub 会在全新的 Linux / Python 3.12
-环境中自动运行完整项目验收。该流程不读取 DeepSeek Key，也不会产生 API 费用。
+```text
+固定串行项目
+  → 运行原测试、固定工作负载和串行计时
+  → Agent 阅读入口、调用关系和状态
+  → 生成任务边界与语义约束
+  → 生成候选并行修改
+  → 项目测试、固定输出和端到端性能检查
+  → 合格则保留；不合格则修复，仍失败就恢复串行代码
+```
 
-当前技术发布版本：`v0.23.2-node24-ci`。
+有效并行化必须同时满足：原项目测试通过、固定输出一致、存在实际并行结构、端到端中位加速
+至少 1.05 倍。只让某个内部函数变快不算成功。
 
-## 项目问题
+## 从哪里开始阅读
 
-LLM 很容易把循环改写为 `ray.remote`，但生成的代码不一定正确，也不一定
-更快。本项目比较三种方法：
-
-- **M0 Serial**：原始串行执行；
-- **M1 Naive**：Agent 朴素转换，一条数据一个 Ray Task；
-- **M2 Optimized**：根据试运行耗时估计任务粒度；若预测收益不足则回退
-  串行，否则批量提交并行任务。
-
-当前版本已经包含统一运行器、八类 Benchmark、正确性验证、CPU/内存采样、
-AST 静态分析、Worker/Chunk 搜索、收益 Gate、性能回退，以及受控的
-DeepSeek 在线代码生成与代码级修复。
-
-当前版本在 WSL2 单节点 Ray 上完成 3 轮正式复测：8 类任务、M0/M1/M2、
-每方法 5 次计时，共 360 次且全部正确。M2 预热宏平均加速为 2.406x，
-性能退化率为 0%，相对 M1 的几何平均提升为 1.734x。
+- [方法说明](docs/method.md)：系统为什么这样设计；
+- [实验设计与结果](docs/experiments.md)：项目、对照组、指标和真实数字；
+- [相关工作](docs/related-work-project-level-parallelization.md)：论文与本项目的区别；
+- [当前局限](docs/limitations.md)：哪些结论现在还不能说；
+- [复现说明](docs/reproducibility.md)：环境与运行入口；
+- [研究日志](docs/research-log.md)：问题发现、协议修正和方向变化。
 
 ## 环境
 
-推荐 Python 3.11 或 3.12。当前项目暂不支持 Python 3.13，主要是为了避免
-Ray 兼容性风险。
+项目使用 Python 3.10～3.12。当前本机已经配置仓库专用环境，Python 位于
+`.venv/python.exe`。在新的 Windows 环境中可使用 Conda：
 
 ```powershell
 conda create -n parallel-agent python=3.12 -y
@@ -63,282 +59,43 @@ conda activate parallel-agent
 python -m pip install -e ".[dev]"
 ```
 
-## 快速验证
+DeepSeek Key 只保存在本机 `.env`，不进入 Git。
 
-验收当前正式 Ray 数据、Agent–Ray 契约和完整测试（不调用 DeepSeek API）：
+## 快速检查
 
-```powershell
-python scripts/verify_project.py --run-tests
-```
-
-详细验收范围和结果边界见 `docs/reproducibility.md`。
-
-运行历史第一阶段的离线现场演示（仅用于复现早期里程碑，不是当前最终汇报）：
+不调用 DeepSeek，只检查项目代码：
 
 ```powershell
-python scripts/run_advisor_demo.py
+.\.venv\python.exe -m pytest -q
 ```
 
-历史演示顺序见 `docs/advisor-demo.md`。最终汇报材料仅在用户明确要求后，根据
-当前版本和正式数据重新生成。
-
-运行测试：
+从本机原始实验重新生成紧凑结果和中文图表：
 
 ```powershell
-pytest -q
+.\.venv\python.exe scripts\summarize_m6_study.py
 ```
 
-分析存在前缀依赖的程序：
+原始实验体积较大，默认只保存在本机 `results/`。Git 仓库保存汇总脚本、紧凑 JSON/CSV、
+中文图表和研究文档。
 
-```powershell
-parallel-agent analyze benchmarks/prefix_sum/serial.py `
-  --output results/raw/prefix_sum_analysis.json
-```
-
-只运行串行基线（无需 Ray）：
-
-```powershell
-parallel-agent benchmark benchmarks/prime_count/workload.py `
-  --size 8 --workers 4 --modes serial `
-  --output results/raw/prime_serial.json
-```
-
-运行完整三组对照：
-
-```powershell
-parallel-agent benchmark benchmarks/prime_count/workload.py `
-  --size 24 --workers 4 --backend multiprocessing `
-  --modes serial naive optimized `
-  --output results/raw/prime_count.json
-```
-
-本机 Windows 主机名含中文，因此日常快速测试默认使用
-`multiprocessing` 后端；正式 Ray 实验已转移到 WSL2 Ubuntu。Linux 或 WSL2
-中可直接运行真实 Ray Task：
-
-```bash
-parallel-agent benchmark benchmarks/prime_count/workload.py \
-  --size 24 --workers 4 --backend ray \
-  --modes serial naive optimized \
-  --output results/raw/prime_count_ray.json
-```
-
-连接已经启动的 Ray 集群时增加 `--ray-address`：
-
-```bash
-parallel-agent benchmark benchmarks/prime_count/workload.py \
-  --size 24 --workers 8 --backend ray --ray-address auto \
-  --modes serial naive optimized \
-  --output results/raw/prime_count_cluster.json
-```
-
-结果文件包含中位运行时间、加速比、并行效率、CPU 利用率、任务数以及每次
-原始测量数据。Ray 结果还记录可用节点、集群资源和任务实际执行节点；只有
-至少两个不同节点真正执行过任务时，才标记为多节点执行。
-
-对普通串行循环，可使用单命令前端完成识别、规范化和 Agent 闭环：
-
-```bash
-parallel-agent agent-loop examples/simple_serial_loop.py \
-  --entry run_serial \
-  --output-dir generated/simple_loop \
-  --adapter deepseek \
-  --execution-backend ray
-```
-
-当前前端只接受边界明确的“逐项调用一个函数、收集结果、最后统一聚合”模式。
-循环归约、全局/非局部状态以及更复杂的控制流会被拒绝，不会强行生成并行代码。
-标准化产物同时绑定原始源码和包装器哈希，任一文件变化后都必须重新分析。
-
-复现当前首轮实验：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/run_first_experiment.ps1
-```
-
-首轮结果及其边界见 `docs/first-results.md`。
-冷启动、热运行和自动开销标定结果见 `docs/calibrated-results.md`。
-六类任务覆盖和通信代理结果见 `docs/benchmark-suite-smoke.md`。
-五次重复的正式本机基线见 `docs/formal-multiprocessing-baseline.md`。
-DeepSeek 首次真实闭环见 `docs/deepseek-pilot.md`。
-性能反馈 Agent 与首轮消融见 `docs/performance-feedback-agent.md`。
-四任务、三模式、三次独立运行的正式结果见
-`docs/formal-agent-experiment.md`。
-受控 LLM 代码生成、安全门与四任务预检见 `docs/controlled-llm-codegen.md`。
-共享分析/计划的模板与 LLM 正式配对实验见
-`docs/formal-paired-generation-experiment.md`。
-多尺度 Worker/Chunk 搜索与性能回退正式实验见
-`docs/formal-configuration-search.md`。
-DeepSeek 分析与确定性性能搜索的端到端工具接入见
-`docs/agent-performance-tool.md`。
-固定配置、小样本直接决策与完整三阶段方法的正式消融见
-`docs/formal-configuration-ablation.md`。
-通信与复用感知任务融合实验见 `docs/task-fusion-experiment.md`。
-FIFO 与通信感知关键路径 DAG 调度模型见
-`docs/dag-scheduling-experiment.md`。
-
-从正式实验 CSV 生成汇报图：
-
-```powershell
-parallel-agent plot results/raw/formal_mp_large/suite_large.csv `
-  --output-dir docs/assets/formal_mp_large
-```
-
-一次运行配置中的全部 Benchmark：
-
-```powershell
-parallel-agent suite --config configs/benchmarks.yaml --scale small `
-  --workers 4 --backend multiprocessing --repeats 3 --warmups 1 `
-  --output-dir results/raw/suite_small
-```
-
-运行 Agent 最小闭环：
-
-```powershell
-parallel-agent agent benchmarks/prime_count/workload.py `
-  --output-dir generated/prime_agent --size 4 `
-  --workers 2 --chunks 2
-```
-
-它会生成 `analysis.json`、`parallel_plan.json`、`candidate.py` 和
-`run_report.json`。详细说明见 `docs/agent-mvp.md`。
-
-使用 DeepSeek 在线 Agent：
-
-1. 将 `.env.example` 复制为 `.env`；
-2. 在本机 `.env` 中填写 `DEEPSEEK_API_KEY`；
-3. 不要提交或分享 `.env`；
-4. 运行：
-
-```powershell
-parallel-agent agent benchmarks/prime_count/workload.py `
-  --adapter deepseek --output-dir generated/deepseek_prime `
-  --size 2 --workers 2 --chunks 2
-```
-
-运行性能反馈组：
-
-```powershell
-parallel-agent agent benchmarks/tiny_tasks/workload.py `
-  --adapter deepseek --feedback-mode performance `
-  --output-dir generated/tiny_performance `
-  --size 8 --workers 2 --chunks 2 `
-  --performance-repeats 3 --minimum-speedup 1.05
-```
-
-让 DeepSeek 生成受控的并行实现：
-
-```powershell
-parallel-agent agent benchmarks/prime_count/workload.py `
-  --adapter deepseek --generation-mode llm `
-  --feedback-mode correctness `
-  --output-dir generated/deepseek_llm_codegen_prime `
-  --size 8 --workers 4 --chunks 4
-```
-
-模型只允许实现任务划分与并行执行两个函数。候选必须先通过 AST 语法、函数签名、
-调用允许列表和危险操作检查，随后才能进入独立子进程执行与正确性验证。
-
-当前模型路由为：分析、修复和性能决策使用 `deepseek-v4-pro`，结构化计划
-使用关闭思考模式的 `deepseek-v4-flash`。这样把较高成本模型集中在真正影响
-正确性与效率的环节。
-
-运行可断点续跑的正式在线实验：
-
-```powershell
-parallel-agent agent-experiment configs/agent_experiment_formal.yaml `
-  --output-dir results/raw/agent_formal_20260729 `
-  --adapter deepseek
-```
-
-该实验包含调用数和 Token 双预算保护，并自动生成单次结果、分任务统计和
-跨任务总体统计。
-
-运行共享计划的模板/LLM 生成器配对实验：
-
-```powershell
-parallel-agent paired-generation-experiment `
-  configs/paired_generation_formal.yaml `
-  --output-dir results/raw/paired_generation_formal_20260729 `
-  --adapter deepseek
-```
-
-该实验让两个生成器共享同一份分析和并行计划，并随机交错重复测量，避免把
-分析差异或运行顺序误认为代码生成器差异。
-
-运行多尺度配置搜索：
-
-```powershell
-parallel-agent configuration-search-experiment `
-  configs/configuration_search_formal.yaml `
-  --output-dir results/raw/configuration_search_formal_final_v2_20260729
-```
-
-该实验先在小样本上搜索 Worker/Chunk，再在完整规模上与固定配置比较，最后使用
-独立留出测量报告结果。
-
-让 DeepSeek 分析代码，并调用确定性多尺度性能工具：
-
-```powershell
-parallel-agent agent benchmarks/load_imbalance/workload.py `
-  --output-dir results/raw/agent_tool_run `
-  --size 64 `
-  --workers 4 `
-  --feedback-mode performance `
-  --performance-controller configuration_search `
-  --search-tuning-size 16 `
-  --search-cache-dir work/configuration-search-cache `
-  --adapter deepseek
-```
-
-正式实验不使用缓存；日常重复分析同一份代码、输入规模和机器环境时可使用缓存，
-避免重复支付完整搜索成本。
-
-运行通信感知任务融合实验：
-
-```powershell
-parallel-agent task-fusion-experiment configs/task_fusion_formal.yaml `
-  --output-dir results/raw/task_fusion_formal
-```
-
-运行 DAG 调度模型实验：
-
-```powershell
-parallel-agent dag-scheduling-experiment configs/dag_scheduling_formal.yaml `
-  --output-dir results/raw/dag_scheduling_formal
-```
-
-如果第一次接触科研项目，请从以下两份文档开始：
-
-- `docs/project-control.md`：当前阶段、下一节点和汇报时间；
-- `docs/user-actions.md`：只有必须由本人完成的事项才会出现在这里。
-
-第一次导师汇报材料：
-
-- `docs/advisor-report-01.md`：书面进展报告；
-- `docs/advisor-talk-01.md`：8～10 分钟口头提纲与问答；
-- `docs/advisor-message-01.md`：联系导师的消息；
-- `docs/literature-notes.md`：已核验的论文依据。
-
-## 当前目录
+## 主要目录
 
 ```text
-benchmarks/        可复现实验程序
-configs/           实验配置
-docs/              开发日志和汇报材料
-src/parallel_agent 分析、剖析、执行与优化逻辑
-tests/             自动化测试
-results/           实验原始数据、表格和图片
+configs/             四个真实项目的固定命令和上下文
+src/parallel_agent/  仓库 Agent、验证与性能反馈实现
+scripts/             实验、汇总和验收入口
+tests/               本项目自动测试
+docs/                方法、实验、相关工作、局限和研究日志
+docs/data/           可提交的紧凑实验结果
+docs/figures/        由紧凑结果生成的中文图表
+results/             本机原始实验记录
+work/                固定源码副本和隔离环境
 ```
 
-## 当前限制
+## 研究边界
 
-- 目前只支持符合 `make_input/unit/combine/equivalent` 接口的基准程序；
-- 普通串行循环前端已支持一种保守的独立 Map-then-Combine 模式，但还不是
-  任意 Python 源码重构；
-- `agent-loop` 的 Ray 候选当前适用于单节点或共享源码目录；跨节点自动打包源码
-  尚未实现；
-- 受控 LLM 代码生成已完成 4 任务、3 次独立生成的共享计划正式配对实验；
-- 正式 Ray 结果已在 WSL2 单节点环境完成；真实多节点扩展性仍需要课题组或
-  云端提供至少两台互通的 Linux 节点；
-- AST 分析器只提供保守提示，不能替代实际正确性验证。
+- 当前研究单机 CPU 并行，不声称完成真实多节点扩展；
+- 主实验只有 4 个项目，每种方法 12 次运行；
+- 安全回退不等于并行化成功；
+- 现有测试和固定输出不能证明全部输入上的语义完全一致；
+- 旧的单文件 Ray、任务融合和 DAG 调度代码只作为历史实验工具，不作为当前研究贡献。

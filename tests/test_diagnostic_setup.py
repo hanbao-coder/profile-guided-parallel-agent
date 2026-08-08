@@ -17,6 +17,6 @@ def test_diagnostic_setup_verifier() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    assert "M0 项目级诊断研究设置验收完成" in completed.stdout
-    assert "最终研究问题：保持开放" in completed.stdout
-    assert "M2 已筛选真实项目：3 个" in completed.stdout
+    assert "M6 项目级研究设置验收完成" in completed.stdout
+    assert "研究问题：已由诊断实验选定" in completed.stdout
+    assert "M6 已验证真实项目：4 个" in completed.stdout

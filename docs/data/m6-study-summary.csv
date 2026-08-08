@@ -1,0 +1,4 @@
+﻿method,method_name,run_count,effective_count,safe_fallback_count,unsafe_change_count,no_candidate_count,effective_rate,unsafe_change_rate
+ordinary,普通 Agent,12,0,0,6,6,0.0,0.5
+contract_only,仅语义约束,3,0,0,2,1,0.0,0.6666666666666666
+full,完整方法,12,1,10,0,1,0.08333333333333333,0.0
