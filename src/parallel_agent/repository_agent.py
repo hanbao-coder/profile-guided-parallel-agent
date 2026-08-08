@@ -218,8 +218,16 @@ def analyze_process_worker_boundaries(paths: list[Path]) -> dict[str, Any]:
                             "message": "A lambda is passed to a process worker.",
                         }
                     )
+    has_syntax_error = any(item["kind"] == "syntax_error" for item in findings)
+    has_boundary_risk = any(item["kind"] != "syntax_error" for item in findings)
     return {
-        "status": "risky_process_boundary" if findings else "no_high_confidence_risk",
+        "status": (
+            "syntax_error"
+            if has_syntax_error
+            else "risky_process_boundary"
+            if has_boundary_risk
+            else "no_high_confidence_risk"
+        ),
         "process_submission_calls": process_calls,
         "findings": findings,
         "scope": (
@@ -1074,7 +1082,19 @@ Rules:
                 json.dumps(boundary_report, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-            if boundary_report["findings"]:
+            if boundary_report["status"] == "syntax_error":
+                evaluation = {
+                    "status": "syntax_failure",
+                    "tests_pass": None,
+                    "worker_boundary_report": boundary_report,
+                    "instruction": (
+                        "Repair the Python syntax before evaluating the process "
+                        "Worker boundary or running the expensive test suite."
+                    ),
+                }
+                self.last_candidate_evaluation = evaluation
+                return evaluation
+            if boundary_report["status"] == "risky_process_boundary":
                 evaluation = {
                     "status": "worker_boundary_failure",
                     "tests_pass": None,

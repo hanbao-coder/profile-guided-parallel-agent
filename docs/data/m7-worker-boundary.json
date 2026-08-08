@@ -8,17 +8,21 @@
     "model_tokens": 394311
   },
   "worker_boundary": {
-    "runs": 3,
+    "runs": 2,
     "effective": 0,
-    "safe_fallback": 3,
-    "model_tokens": 443561,
+    "safe_fallback": 2,
+    "model_tokens": 289814,
     "candidate_evaluations": {
       "correctness_failure": 2,
       "non_parallel_candidate": 1,
-      "worker_boundary_failure": 3,
-      "integration_or_output_failure": 3
+      "worker_boundary_failure": 1,
+      "integration_or_output_failure": 2
     },
-    "boundary_failures": 3
+    "boundary_findings": {
+      "instance_state_argument": 1
+    },
+    "boundary_failures": 1
   },
-  "conclusion": "The boundary checker detected three risky process boundaries in two runs, but produced no correct or effective final candidate; H5 is not supported on the preregistered primary outcomes."
+  "study_complete": false,
+  "conclusion": "The treatment has fewer than three valid runs, so H5 remains pending."
 }

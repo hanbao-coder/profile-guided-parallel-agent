@@ -22,9 +22,9 @@ Agent 需要检查源码位置、共享状态和输出语义，并用原项目�
 方法主要改善的是交付安全性，还不能稳定完成自动加速。详细结果见
 [M6 真实项目实验发现](docs/m6-findings.md)。
 
-后续 Radon 实验尝试加入 Worker 边界检查：它在 2 次运行中发现 3 个复杂状态跨进程风险，
-但 3/3 最终仍回退，没有提高正确候选率或有效并行率。这个负结果见
-[M7 Worker 边界实验](docs/m7-worker-boundary-design.md)。
+后续 Radon 实验正在检查 Worker 边界证据是否能改善候选。一次分类错误已被发现并排除；
+当前只有 2 次有效运行，第 3 次替代实验因 DeepSeek 余额不足等待补跑，因此暂不下结论。
+详见 [M7 Worker 边界实验](docs/m7-worker-boundary-design.md)。
 
 ![主实验结果](docs/figures/m6-overall-outcomes.png)
 
@@ -49,7 +49,7 @@ Agent 需要检查源码位置、共享状态和输出语义，并用原项目�
 - [实验设计与结果](docs/experiments.md)：项目、对照组、指标和真实数字；
 - [相关工作](docs/related-work-project-level-parallelization.md)：论文与本项目的区别；
 - [当前局限](docs/limitations.md)：哪些结论现在还不能说；
-- [Worker 边界负结果](docs/m7-worker-boundary-design.md)：一个被真实实验否定的后续假设；
+- [Worker 边界实验](docs/m7-worker-boundary-design.md)：当前正在补齐的后续假设；
 - [复现说明](docs/reproducibility.md)：环境与运行入口；
 - [研究日志](docs/research-log.md)：问题发现、协议修正和方向变化。
 

@@ -26,11 +26,32 @@ def _radon_runs(summary: dict[str, Any]) -> list[dict[str, Any]]:
 def _candidate_statuses(results_root: Path) -> Counter[str]:
     counts: Counter[str] = Counter()
     for path in sorted(results_root.glob("radon/*/outcome.json")):
+        if (path.parent / "exclusion.json").is_file():
+            continue
         outcome = _read(path)
         for event in outcome.get("agent", {}).get("events", []):
             evaluation = event.get("observation", {}).get("candidate_evaluation")
             if isinstance(evaluation, dict) and evaluation.get("status"):
                 counts[str(evaluation["status"])] += 1
+    return counts
+
+
+def _boundary_finding_kinds(results_root: Path) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for path in sorted(results_root.glob("radon/*/outcome.json")):
+        if (path.parent / "exclusion.json").is_file():
+            continue
+        outcome = _read(path)
+        for event in outcome.get("agent", {}).get("events", []):
+            evaluation = event.get("observation", {}).get("candidate_evaluation")
+            if not isinstance(evaluation, dict):
+                continue
+            report = evaluation.get("worker_boundary_report")
+            if not isinstance(report, dict):
+                continue
+            for finding in report.get("findings", []):
+                if isinstance(finding, dict) and finding.get("kind"):
+                    counts[str(finding["kind"])] += 1
     return counts
 
 
@@ -58,6 +79,7 @@ def main() -> int:
     control_runs = _radon_runs(_read(args.control_summary))
     treatment_runs = _radon_runs(_read(args.treatment_summary))
     treatment_statuses = _candidate_statuses(args.treatment_results)
+    finding_kinds = _boundary_finding_kinds(args.treatment_results)
     compact = {
         "schema_version": 1,
         "project": "radon",
@@ -73,12 +95,17 @@ def main() -> int:
             "safe_fallback": sum(run["primary_outcome"] == "safe_serial_fallback" for run in treatment_runs),
             "model_tokens": sum(int(run.get("model_tokens") or 0) for run in treatment_runs),
             "candidate_evaluations": dict(treatment_statuses),
-            "boundary_failures": treatment_statuses["worker_boundary_failure"],
+            "boundary_findings": dict(finding_kinds),
+            "boundary_failures": sum(
+                count for kind, count in finding_kinds.items() if kind != "syntax_error"
+            ),
         },
+        "study_complete": len(treatment_runs) >= 3,
         "conclusion": (
-            "The boundary checker detected three risky process boundaries in two runs, "
-            "but produced no correct or effective final candidate; H5 is not supported "
-            "on the preregistered primary outcomes."
+            "The preregistered treatment has three valid runs and produced no correct "
+            "or effective final candidate; H5 is not supported on the primary outcomes."
+            if len(treatment_runs) >= 3
+            else "The treatment has fewer than three valid runs, so H5 remains pending."
         ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -86,7 +113,10 @@ def main() -> int:
 
     plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "DejaVu Sans"]
     plt.rcParams["axes.unicode_minus"] = False
-    names = ["当前完整方法", "加入 Worker 边界检查"]
+    names = [
+        f"当前完整方法（{compact['control']['runs']} 次）",
+        f"Worker 边界检查（{compact['worker_boundary']['runs']} 次有效运行）",
+    ]
     effective = [compact["control"]["effective"], compact["worker_boundary"]["effective"]]
     fallback = [compact["control"]["safe_fallback"], compact["worker_boundary"]["safe_fallback"]]
     fig, ax = plt.subplots(figsize=(8.2, 4.8))
@@ -95,15 +125,26 @@ def main() -> int:
     ax.bar_label(bars, labels=[str(value) for value in fallback], label_type="center")
     ax.set_ylim(0, 3.35)
     ax.set_yticks([0, 1, 2, 3])
-    ax.set_ylabel("运行次数（每组 3 次）")
-    ax.set_title("Radon Worker 边界实验：最终结果没有改善")
+    ax.set_ylabel("运行次数")
+    ax.set_title(
+        "Radon Worker 边界实验：等待补齐运行"
+        if not compact["study_complete"]
+        else "Radon Worker 边界实验：最终结果没有改善"
+    )
     ax.text(
         0.5,
-        0.12,
-        "新检查在中间候选中发现 3 次风险，但两组最终都没有有效并行结果",
+        0.92,
+        (
+            f"当前发现 {compact['worker_boundary']['boundary_failures']} 次边界风险；"
+            "有效运行不足 3 次，暂不下最终结论"
+            if not compact["study_complete"]
+            else f"新检查发现 {compact['worker_boundary']['boundary_failures']} 次边界风险，"
+            "但两组最终都没有有效并行结果"
+        ),
         transform=ax.transAxes,
         ha="center",
         fontsize=10,
+        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.85},
     )
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2, frameon=False)
     ax.grid(axis="y", alpha=0.2)

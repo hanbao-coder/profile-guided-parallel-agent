@@ -48,3 +48,29 @@ def test_candidate_statuses_count_boundary_feedback(tmp_path: Path) -> None:
 
     assert counts["worker_boundary_failure"] == 1
     assert counts["integration_or_output_failure"] == 1
+
+
+def test_excluded_run_is_not_counted(tmp_path: Path) -> None:
+    run = tmp_path / "radon" / "run-03"
+    run.mkdir(parents=True)
+    (run / "outcome.json").write_text(
+        json.dumps(
+            {
+                "agent": {
+                    "events": [
+                        {
+                            "observation": {
+                                "candidate_evaluation": {
+                                    "status": "worker_boundary_failure"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run / "exclusion.json").write_text("{}", encoding="utf-8")
+
+    assert MODULE._candidate_statuses(tmp_path) == {}

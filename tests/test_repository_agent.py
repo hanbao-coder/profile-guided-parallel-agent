@@ -120,6 +120,16 @@ def run(paths, strict):
     assert report["findings"] == []
 
 
+def test_worker_boundary_keeps_syntax_failure_separate(tmp_path: Path) -> None:
+    source = tmp_path / "worker.py"
+    source.write_text("def broken(:\n    pass\n", encoding="utf-8")
+
+    report = analyze_process_worker_boundaries([source])
+
+    assert report["status"] == "syntax_error"
+    assert report["findings"][0]["kind"] == "syntax_error"
+
+
 def test_apply_edit_requires_unique_exact_text(tmp_path: Path) -> None:
     source = tmp_path / "main.py"
     source.write_text("value = 1\n", encoding="utf-8")
