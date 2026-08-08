@@ -50,7 +50,14 @@ def _primary_outcome(
         if isinstance(event.get("action"), dict)
         and event["action"].get("action") == "apply_edits"
     ]
+    action_names = {
+        str(event["action"].get("action", ""))
+        for event in events
+        if isinstance(event.get("action"), dict)
+    }
     if not outcome.get("patch_nonempty"):
+        if action_names & {"abandon_candidate", "automatic_safe_fallback"}:
+            return "safe_serial_fallback", None
         if edit_attempts:
             return "patch_application_failure", speedup
         return "analysis_nonconvergence", speedup
@@ -72,6 +79,29 @@ def _primary_outcome(
     if speedup < (1 / 1.05):
         return "end_to_end_performance_regression", speedup
     return "no_meaningful_end_to_end_gain", speedup
+
+
+def _feedback_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
+    evaluations = []
+    for event in events:
+        observation = event.get("observation", {})
+        evaluation = observation.get("candidate_evaluation")
+        if isinstance(evaluation, dict):
+            evaluations.append(evaluation)
+    accepted = next(
+        (
+            evaluation
+            for evaluation in reversed(evaluations)
+            if evaluation.get("status") == "effective_end_to_end_gain"
+        ),
+        None,
+    )
+    return {
+        "feedback_rounds": len(evaluations),
+        "accepted_quick_speedup": (
+            accepted.get("speedup") if isinstance(accepted, dict) else None
+        ),
+    }
 
 
 def _load_serial_medians(config_path: Path) -> dict[str, float]:
@@ -132,6 +162,8 @@ def main() -> int:
                 serial_median=medians[project],
             )
             agent = outcome.get("agent", {})
+            events = agent.get("events", [])
+            feedback = _feedback_summary(events if isinstance(events, list) else [])
             traces = agent.get("traces", [])
             model_events = [
                 event
@@ -146,6 +178,14 @@ def main() -> int:
                     "run": run_dir.name,
                     "primary_outcome": category,
                     "speedup": speedup,
+                    "feedback_rounds": feedback["feedback_rounds"],
+                    "accepted_quick_speedup": feedback["accepted_quick_speedup"],
+                    "formal_minus_quick_speedup": (
+                        speedup - float(feedback["accepted_quick_speedup"])
+                        if speedup is not None
+                        and feedback["accepted_quick_speedup"] is not None
+                        else None
+                    ),
                     "turns": agent.get("turns"),
                     "edit_rounds": agent.get("edit_rounds"),
                     "patch_nonempty": outcome.get("patch_nonempty"),
@@ -158,7 +198,7 @@ def main() -> int:
             )
 
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "included_runs": len(rows),
         "excluded_runs": len(excluded),
         "outcome_counts": dict(Counter(row["primary_outcome"] for row in rows)),
@@ -177,6 +217,9 @@ def main() -> int:
             "run",
             "primary_outcome",
             "speedup",
+            "feedback_rounds",
+            "accepted_quick_speedup",
+            "formal_minus_quick_speedup",
             "turns",
             "edit_rounds",
             "patch_nonempty",

@@ -1,0 +1,40 @@
+{
+  "test": [
+    "D:\\hustagent\\work\\candidate-envs\\radon\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "-q"
+  ],
+  "benchmark": [
+    "D:\\hustagent\\work\\candidate-envs\\radon\\Scripts\\python.exe",
+    "D:\\hustagent\\scripts\\run_candidate_baseline.py",
+    "--project",
+    "radon",
+    "--input-root",
+    "D:\\hustagent\\.venv\\Lib\\site-packages",
+    "--output",
+    ".diagnostic-robust-feedback.json",
+    "--warmups",
+    "1",
+    "--repeats",
+    "3",
+    "--limit",
+    "1800"
+  ],
+  "final_benchmark": [
+    "D:\\hustagent\\work\\candidate-envs\\radon\\Scripts\\python.exe",
+    "D:\\hustagent\\scripts\\run_candidate_baseline.py",
+    "--project",
+    "radon",
+    "--input-root",
+    "D:\\hustagent\\.venv\\Lib\\site-packages",
+    "--output",
+    ".diagnostic-formal.json",
+    "--warmups",
+    "1",
+    "--repeats",
+    "5",
+    "--limit",
+    "1800"
+  ]
+}

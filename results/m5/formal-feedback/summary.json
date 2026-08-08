@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "included_runs": 6,
+  "excluded_runs": 0,
+  "outcome_counts": {
+    "effective_parallelization": 3,
+    "end_to_end_performance_regression": 1,
+    "safe_serial_fallback": 2
+  },
+  "runs": [
+    {
+      "project": "chardet",
+      "run": "run-01",
+      "primary_outcome": "effective_parallelization",
+      "speedup": 1.129113956538238,
+      "feedback_rounds": 1,
+      "accepted_quick_speedup": 1.4414752282160586,
+      "formal_minus_quick_speedup": -0.3123612716778206,
+      "turns": 8,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 8,
+      "model_tokens": 154730
+    },
+    {
+      "project": "chardet",
+      "run": "run-02",
+      "primary_outcome": "effective_parallelization",
+      "speedup": 1.1236123232478565,
+      "feedback_rounds": 1,
+      "accepted_quick_speedup": 1.3897149121286,
+      "formal_minus_quick_speedup": -0.26610258888074356,
+      "turns": 8,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 8,
+      "model_tokens": 159377
+    },
+    {
+      "project": "chardet",
+      "run": "run-03",
+      "primary_outcome": "effective_parallelization",
+      "speedup": 1.0850887346295621,
+      "feedback_rounds": 1,
+      "accepted_quick_speedup": 1.4373631086528182,
+      "formal_minus_quick_speedup": -0.3522743740232561,
+      "turns": 9,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 9,
+      "model_tokens": 169354
+    },
+    {
+      "project": "radon",
+      "run": "run-01",
+      "primary_outcome": "end_to_end_performance_regression",
+      "speedup": 0.9454077321485287,
+      "feedback_rounds": 2,
+      "accepted_quick_speedup": 1.1412421964137178,
+      "formal_minus_quick_speedup": -0.19583446426518913,
+      "turns": 11,
+      "edit_rounds": 2,
+      "patch_nonempty": true,
+      "model_calls": 11,
+      "model_tokens": 128763
+    },
+    {
+      "project": "radon",
+      "run": "run-02",
+      "primary_outcome": "safe_serial_fallback",
+      "speedup": null,
+      "feedback_rounds": 3,
+      "accepted_quick_speedup": null,
+      "formal_minus_quick_speedup": null,
+      "turns": 13,
+      "edit_rounds": 3,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 136131
+    },
+    {
+      "project": "radon",
+      "run": "run-03",
+      "primary_outcome": "safe_serial_fallback",
+      "speedup": null,
+      "feedback_rounds": 3,
+      "accepted_quick_speedup": null,
+      "formal_minus_quick_speedup": null,
+      "turns": 13,
+      "edit_rounds": 3,
+      "patch_nonempty": false,
+      "model_calls": 12,
+      "model_tokens": 138393
+    }
+  ],
+  "excluded": []
+}
