@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/mkdocs/mkdocs",
+  "commit": "bb7e8b62185b11d9f59bb7f50b13c15134f62f8a",
+  "import_subdir": ".",
+  "import_module": "mkdocs",
+  "public_entrypoint": "mkdocs.commands.build.build",
+  "registered_workload": "Build the complete official MkDocs documentation site through the public build command and compare every generated file after normalizing only the embedded build timestamp.",
+  "serial_median_seconds": 4.672455400001127,
+  "baseline_output_hash": "beb9ff9157b3f9ec4ea73c8952f3a9bab8a853e0399670ec727fc0f687f854f7",
+  "correctness_requirements": [
+    "The 719 runnable project tests must pass; four Windows symlink privilege tests and one pytest helper collection are explicitly excluded.",
+    "The generated file set and every generated file's semantic content must match the serial build.",
+    "Navigation, page order, plugin events, templates, static assets, links, warnings and build failures must preserve the original behavior.",
+    "The mkdocs build command and configuration format must keep working."
+  ],
+  "constraints": [
+    "Use only the project's existing dependencies or the Python standard library.",
+    "Do not change the registered workload adapter or the official documentation input.",
+    "Do not disable plugins, remove pages or omit generated files to obtain an apparent speedup.",
+    "Only the automatically inserted build timestamp is normalized; all other output differences are correctness failures.",
+    "The final claim is based on complete end-to-end site build time."
+  ]
+}

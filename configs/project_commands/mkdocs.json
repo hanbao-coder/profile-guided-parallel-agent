@@ -1,0 +1,43 @@
+{
+  "test": [
+    "D:\\hustagent\\work\\candidate-envs\\mkdocs\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "mkdocs",
+    "-o",
+    "python_files=*_tests.py",
+    "-k",
+    "not testing_server and not test_watch_with_broken_symlinks and not test_watches_direct_symlinks and not test_watches_through_relative_symlinks and not test_watches_through_symlinks",
+    "--basetemp",
+    ".diagnostic-pytest"
+  ],
+  "benchmark": [
+    "D:\\hustagent\\work\\candidate-envs\\mkdocs\\Scripts\\python.exe",
+    "D:\\hustagent\\scripts\\run_candidate_baseline.py",
+    "--project",
+    "mkdocs",
+    "--input-root",
+    "D:\\hustagent\\work\\candidate-sources\\mkdocs-1.6.1",
+    "--output",
+    ".diagnostic-single.json",
+    "--warmups",
+    "0",
+    "--repeats",
+    "1"
+  ],
+  "final_benchmark": [
+    "D:\\hustagent\\work\\candidate-envs\\mkdocs\\Scripts\\python.exe",
+    "D:\\hustagent\\scripts\\run_candidate_baseline.py",
+    "--project",
+    "mkdocs",
+    "--input-root",
+    "D:\\hustagent\\work\\candidate-sources\\mkdocs-1.6.1",
+    "--output",
+    ".diagnostic-formal.json",
+    "--warmups",
+    "1",
+    "--repeats",
+    "5"
+  ]
+}

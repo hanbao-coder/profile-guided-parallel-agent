@@ -150,6 +150,7 @@ FormulaCode、PEACE 和 PerfAgent，并检查其论文页面、公开基准说�
 - 工作负载适配器：`scripts/run_candidate_baseline.py`；
 - 本机完整输出与计时：`work/candidate-results/`；
 - 本机候选源码：`work/candidate-sources/`。
+
 ## 2026-08-07：M3 项目级 Agent 运行器校准
 
 ### 当日操作
@@ -188,3 +189,40 @@ FormulaCode、PEACE 和 PerfAgent，并检查其论文页面、公开基准说�
 2. 完成 Vulture、Chardet 各 3 次运行；
 3. 比较“并行边界状态传递”“共享跨文件语义”“输出顺序/异常语义”等问题是否重复；
 4. 在跨项目数据出来前，不确定最终研究假设。
+
+## 2026-08-08：M2 扩充到第 4 个真实项目
+
+### 当日操作
+
+1. 筛选 Pygments 2.20.0 和 MkDocs 1.6.1；
+2. 分别固定上游提交、创建隔离环境并运行未修改项目测试；
+3. 因 Pygments 没有可由项目内部修改的批处理入口，将其保留为筛选排除样本；
+4. 将 MkDocs 官方完整文档构建接入统一端到端适配器；
+5. 定位并规范化首页中唯一的构建时间差异，再进行 1 次预热和 5 次正式复测。
+
+### 已验证事实
+
+1. Pygments 固定到 `708197d8`，5208 项测试通过、16 项跳过；
+2. MkDocs 固定到 `bb7e8b6`，排除 4 项 Windows 符号链接权限测试后，719 项通过、1 项跳过；
+3. MkDocs 官方站点通过真实 `mkdocs.commands.build.build` 入口生成 67 个文件；
+4. 首轮输出不稳定只来自首页注释中的 UTC 构建时间，页面其余内容相同；
+5. 只规范化该时间后，五次输出哈希完全一致；
+6. MkDocs 五次端到端时间为 4.643～4.675 秒，中位数 4.672 秒。
+
+### 当前解释
+
+Pygments 的排除说明，项目是否“能运行多个输入”还不够；并行循环必须位于 Agent 能修改、且属于原项目语义的入口内。MkDocs 补充了不同于文件分析器的多阶段构建流水线，后续可以观察页面转换看似独立时，插件、导航和模板上下文是否阻碍直接并行化。
+
+### 原始证据
+
+- Pygments 源码和环境：`work/candidate-sources/pygments-2.20.0/`、`work/candidate-envs/pygments/`；
+- MkDocs 源码和环境：`work/candidate-sources/mkdocs-1.6.1/`、`work/candidate-envs/mkdocs/`；
+- MkDocs 正式串行基线：`work/candidate-results/mkdocs-baseline-v2.json`；
+- 统一工作负载：`scripts/run_candidate_baseline.py`；
+- 项目配置：`configs/project_contexts/mkdocs.json`、`configs/project_commands/mkdocs*.json`。
+
+### 下一步
+
+1. 对 MkDocs 运行普通 Agent 和完整方法各 3 次独立实验；
+2. 完成 Vulture 的修正后实验；
+3. 将四项目结果按相同规则汇总，再决定最终方法是否需要针对“并行语义错误诊断”进一步收缩。

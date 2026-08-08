@@ -10,12 +10,15 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import gzip
 import hashlib
 import io
 import json
 import os
+import re
 import statistics
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -97,10 +100,67 @@ def _chardet_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
     return run
 
 
+def _built_site_records(site_dir: Path) -> list[dict[str, Any]]:
+    """Return a stable, content-based description of a generated site.
+
+    MkDocs may create gzip-compressed files whose container timestamp differs
+    between runs even when the decompressed site content is identical.  Hashing
+    decompressed bytes avoids treating that packaging detail as a semantic
+    output change.
+    """
+    records: list[dict[str, Any]] = []
+    for path in sorted(item for item in site_dir.rglob("*") if item.is_file()):
+        if path.suffix == ".gz":
+            with gzip.open(path, "rb") as stream:
+                payload = stream.read()
+        else:
+            payload = path.read_bytes()
+        if path.suffix == ".html":
+            payload = re.sub(
+                rb"Build Date UTC\s*:\s*[^\r\n<]+",
+                b"Build Date UTC : <normalized>",
+                payload,
+            )
+        records.append(
+            {
+                "path": path.relative_to(site_dir).as_posix(),
+                "size": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+    return records
+
+
+def _mkdocs_workload(input_root: Path, limit: int | None) -> Callable[[], Any]:
+    """Build a real multi-page MkDocs site through the public build command."""
+    if limit is not None:
+        raise ValueError("the MkDocs workload uses the complete registered site")
+
+    from mkdocs.commands.build import build
+    from mkdocs.config import load_config
+
+    config_file = input_root / "mkdocs.yml"
+    if not config_file.is_file():
+        raise FileNotFoundError(f"MkDocs config does not exist: {config_file}")
+
+    def run() -> Any:
+        with tempfile.TemporaryDirectory(prefix="parallel-agent-mkdocs-") as temp_dir:
+            site_dir = Path(temp_dir) / "site"
+            config = load_config(
+                config_file=str(config_file),
+                site_dir=str(site_dir),
+            )
+            build(config, dirty=False)
+            return _built_site_records(site_dir)
+
+    return run
+
+
 WORKLOADS: dict[str, Callable[[Path, int | None], Callable[[], Any]]] = {
     "radon": _radon_workload,
     "vulture": _vulture_workload,
     "chardet": _chardet_workload,
+    "mkdocs": _mkdocs_workload,
 }
 
 
