@@ -1,10 +1,7 @@
-﻿project,run,primary_outcome,speedup,turns,edit_rounds,patch_nonempty,model_calls,model_tokens
-chardet,run-01,end_to_end_performance_regression,0.8127536040369043,10,1,True,10,180491
-chardet,run-02,correctness_failure,2.9864808939246976,12,1,True,12,236647
-chardet,run-03,patch_application_failure,,12,0,False,12,235954
-radon,run-01,patch_application_failure,,12,0,False,12,133266
-radon,run-02,correctness_failure,11.344519051953412,12,3,True,12,166905
-radon,run-03,patch_application_failure,,12,0,False,12,140154
-vulture,run-01,patch_application_failure,,12,0,False,12,144356
-vulture,run-02,patch_application_failure,,12,0,False,12,150695
-vulture,run-03,patch_application_failure,,12,0,False,12,124947
+﻿project,run,primary_outcome,speedup,feedback_rounds,accepted_quick_speedup,formal_minus_quick_speedup,turns,edit_rounds,patch_nonempty,model_calls,model_tokens
+radon,run-01,patch_application_failure,,0,,,12,0,False,12,133266
+radon,run-02,correctness_failure,11.344519051953412,0,,,12,3,True,12,166905
+radon,run-03,patch_application_failure,,0,,,12,0,False,12,140154
+vulture,run-01,patch_application_failure,,0,,,12,0,False,12,144356
+vulture,run-02,patch_application_failure,,0,,,12,0,False,12,150695
+vulture,run-03,patch_application_failure,,0,,,12,0,False,12,124947

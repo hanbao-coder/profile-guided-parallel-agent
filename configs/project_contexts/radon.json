@@ -1,6 +1,8 @@
 {
   "repository": "https://github.com/rubik/radon",
   "commit": "54b88e5878b2724bf4d77f97349588b811abdff2",
+  "import_subdir": ".",
+  "import_module": "radon",
   "public_entrypoint": "python -m radon cc <paths> -j",
   "registered_workload": "Compute cyclomatic complexity for the first 1800 sorted Python files in the fixed experiment environment and return the same JSON result.",
   "serial_median_seconds": 13.401696699998865,

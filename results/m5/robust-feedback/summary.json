@@ -3,43 +3,50 @@
   "included_runs": 3,
   "excluded_runs": 3,
   "outcome_counts": {
-    "end_to_end_performance_regression": 1,
-    "safe_serial_fallback": 2
+    "non_parallel_candidate": 1,
+    "effective_parallelization": 1,
+    "safe_serial_fallback": 1
   },
   "runs": [
     {
       "project": "radon",
       "run": "run-01",
-      "primary_outcome": "end_to_end_performance_regression",
-      "speedup": 0.9454077321485287,
-      "feedback_rounds": 2,
-      "accepted_quick_speedup": 1.1412421964137178,
-      "formal_minus_quick_speedup": -0.19583446426518913,
-      "turns": 11,
-      "edit_rounds": 2,
+      "primary_outcome": "non_parallel_candidate",
+      "speedup": 1.1098857195981953,
+      "paired_serial_median_seconds": null,
+      "parallel_constructs": "",
+      "feedback_rounds": 3,
+      "accepted_quick_speedup": 1.0968734527805604,
+      "formal_minus_quick_speedup": 0.013012266817634899,
+      "turns": 12,
+      "edit_rounds": 3,
       "patch_nonempty": true,
-      "model_calls": 11,
-      "model_tokens": 128763
+      "model_calls": 12,
+      "model_tokens": 144713
     },
     {
       "project": "radon",
       "run": "run-02",
-      "primary_outcome": "safe_serial_fallback",
-      "speedup": null,
-      "feedback_rounds": 3,
-      "accepted_quick_speedup": null,
-      "formal_minus_quick_speedup": null,
-      "turns": 13,
-      "edit_rounds": 3,
-      "patch_nonempty": false,
-      "model_calls": 12,
-      "model_tokens": 136131
+      "primary_outcome": "effective_parallelization",
+      "speedup": 1.110544053110762,
+      "paired_serial_median_seconds": null,
+      "parallel_constructs": "concurrent.futures;ProcessPoolExecutor;multiprocessing;executor.submit",
+      "feedback_rounds": 1,
+      "accepted_quick_speedup": 1.1338345302204238,
+      "formal_minus_quick_speedup": -0.02329047710966181,
+      "turns": 8,
+      "edit_rounds": 1,
+      "patch_nonempty": true,
+      "model_calls": 8,
+      "model_tokens": 93918
     },
     {
       "project": "radon",
       "run": "run-03",
       "primary_outcome": "safe_serial_fallback",
       "speedup": null,
+      "paired_serial_median_seconds": null,
+      "parallel_constructs": "",
       "feedback_rounds": 3,
       "accepted_quick_speedup": null,
       "formal_minus_quick_speedup": null,
@@ -47,7 +54,7 @@
       "edit_rounds": 3,
       "patch_nonempty": false,
       "model_calls": 12,
-      "model_tokens": 138393
+      "model_tokens": 148299
     }
   ],
   "excluded": [

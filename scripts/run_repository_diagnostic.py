@@ -18,6 +18,7 @@ from parallel_agent.repository_agent import (
     ControlledCommand,
     RepositoryAgentConfig,
     RepositoryAgentSession,
+    detect_parallel_constructs,
     run_controlled,
 )
 
@@ -41,7 +42,7 @@ def _args() -> argparse.Namespace:
     parser.add_argument("--trial-root", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--python", type=Path, required=True)
-    parser.add_argument("--import-subdir", default=".")
+    parser.add_argument("--import-subdir")
     parser.add_argument(
         "--edit-mode",
         choices=("legacy", "anchored"),
@@ -116,6 +117,61 @@ def _write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _benchmark_summary(result: dict[str, object]) -> dict[str, object]:
+    try:
+        parsed = json.loads(str(result.get("stdout", "")))
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _import_preflight(
+    *,
+    python: Path,
+    module: str,
+    trial: Path,
+    import_subdir: str,
+) -> dict[str, object]:
+    if not module or any(not (part.isidentifier()) for part in module.split(".")):
+        raise ValueError(f"invalid import module: {module!r}")
+    command = _command(
+        name="trial_import_preflight",
+        argv=(
+            str(python.resolve()),
+            "-c",
+            (
+                "import importlib, pathlib; "
+                f"m=importlib.import_module({module!r}); "
+                "print(pathlib.Path(m.__file__).resolve())"
+            ),
+        ),
+        timeout=30,
+        trial=trial,
+        import_subdir=import_subdir,
+    )
+    result = run_controlled(command)
+    imported_path = str(result.get("stdout", "")).strip().splitlines()
+    resolved = Path(imported_path[-1]).resolve() if imported_path else None
+    belongs_to_trial = False
+    if resolved is not None:
+        try:
+            resolved.relative_to(trial.resolve())
+            belongs_to_trial = True
+        except ValueError:
+            pass
+    return {
+        **result,
+        "module": module,
+        "imported_path": str(resolved) if resolved is not None else None,
+        "belongs_to_trial": belongs_to_trial,
+        "ok": bool(
+            result.get("returncode") == 0
+            and not result.get("timed_out")
+            and belongs_to_trial
+        ),
+    }
+
+
 def _annotate_benchmark(
     result: dict[str, object],
     *,
@@ -156,6 +212,11 @@ def main() -> int:
     trial = args.trial_root.resolve()
     run_dir = args.run_dir.resolve()
     context = json.loads(args.context_json.read_text(encoding="utf-8"))
+    import_subdir = str(
+        args.import_subdir
+        if args.import_subdir is not None
+        else context.get("import_subdir", ".")
+    )
     commands: dict[str, tuple[str, ...]] = {}
     if args.commands_json:
         raw_commands = json.loads(args.commands_json.read_text(encoding="utf-8"))
@@ -180,26 +241,46 @@ def main() -> int:
         )
     _initialize_trial(source, trial)
 
+    import_module = str(context.get("import_module", ""))
+    if import_module:
+        preflight = _import_preflight(
+            python=args.python,
+            module=import_module,
+            trial=trial,
+            import_subdir=import_subdir,
+        )
+        _write_json(run_dir / "import-preflight.json", preflight)
+        if not preflight["ok"]:
+            _write_json(
+                run_dir / "outcome.json",
+                {
+                    "status": "import_preflight_failure",
+                    "project": args.project,
+                    "import_preflight": preflight,
+                },
+            )
+            return 2
+
     test_command = _command(
         name="project_tests",
         argv=test_argv,
         timeout=args.test_timeout,
         trial=trial,
-        import_subdir=args.import_subdir,
+        import_subdir=import_subdir,
     )
     benchmark_command = _command(
         name="quick_end_to_end_benchmark",
         argv=benchmark_argv,
         timeout=args.benchmark_timeout,
         trial=trial,
-        import_subdir=args.import_subdir,
+        import_subdir=import_subdir,
     )
     final_benchmark_command = _command(
         name="formal_end_to_end_benchmark",
         argv=final_benchmark_argv or benchmark_argv,
         timeout=args.benchmark_timeout,
         trial=trial,
-        import_subdir=args.import_subdir,
+        import_subdir=import_subdir,
     )
 
     started = time.perf_counter()
@@ -207,10 +288,19 @@ def main() -> int:
     if not args.skip_baseline:
         baseline["test"] = run_controlled(test_command)
         baseline["benchmark"] = run_controlled(final_benchmark_command)
+        baseline_summary = _benchmark_summary(baseline["benchmark"])
+        baseline_hashes = baseline_summary.get("output_hashes", [])
+        expected_context_hash = str(context.get("baseline_output_hash", ""))
+        baseline_hash_matches = bool(
+            baseline_hashes
+            and all(str(value) == expected_context_hash for value in baseline_hashes)
+        )
+        baseline["output_matches_registered_baseline"] = baseline_hash_matches
         _write_json(run_dir / "baseline" / "validation.json", baseline)
         if (
             baseline["test"]["returncode"] != 0  # type: ignore[index]
             or baseline["benchmark"]["returncode"] != 0  # type: ignore[index]
+            or not baseline_hash_matches
         ):
             _write_json(
                 run_dir / "outcome.json",
@@ -221,6 +311,10 @@ def main() -> int:
                 },
             )
             return 2
+        context = dict(context)
+        context["serial_median_seconds"] = float(baseline_summary["median_seconds"])
+        context["baseline_output_hash"] = str(baseline_hashes[0])
+        context["paired_baseline_measured_in_current_trial"] = True
 
     config = RepositoryAgentConfig(
         project_id=args.project,
@@ -242,10 +336,13 @@ def main() -> int:
         ["git", "diff", "--binary"],
         cwd=trial,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         check=False,
     ).stdout
     (run_dir / "agent" / "patch.diff").write_text(patch, encoding="utf-8")
+    parallel_constructs = detect_parallel_constructs(patch)
     expected_output_hash = str(context.get("baseline_output_hash", "")) or None
     tests_passed = (
         final_test.get("returncode") == 0 and not final_test.get("timed_out")
@@ -299,6 +396,7 @@ def main() -> int:
             "benchmark": final_benchmark,
         },
         "patch_nonempty": bool(patch.strip()),
+        "parallel_constructs": parallel_constructs,
     }
     _write_json(run_dir / "outcome.json", outcome)
     return 0

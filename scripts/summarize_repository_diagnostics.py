@@ -12,6 +12,8 @@ from typing import Any
 
 import yaml
 
+from parallel_agent.repository_agent import detect_parallel_constructs
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,6 +33,7 @@ def _primary_outcome(
     outcome: dict[str, Any],
     *,
     serial_median: float,
+    parallel_constructs: list[str] | None = None,
 ) -> tuple[str, float | None]:
     agent = outcome.get("agent", {})
     events = agent.get("events", [])
@@ -72,6 +75,8 @@ def _primary_outcome(
         )
     ):
         return "integration_or_output_failure", speedup
+    if not parallel_constructs:
+        return "non_parallel_candidate", speedup
     if speedup is None:
         return "performance_measurement_failure", speedup
     if speedup >= 1.05:
@@ -157,9 +162,27 @@ def main() -> int:
                 continue
             outcome = json.loads(outcome_path.read_text(encoding="utf-8"))
             project = str(outcome["project"])
+            baseline_summary = _benchmark_summary(
+                outcome.get("baseline", {}).get("benchmark", {})
+            )
+            paired_serial_median = baseline_summary.get("median_seconds")
+            patch_path = run_dir / "agent" / "patch.diff"
+            patch_text = (
+                patch_path.read_text(encoding="utf-8")
+                if patch_path.is_file()
+                else ""
+            )
+            parallel_constructs = outcome.get("parallel_constructs")
+            if not isinstance(parallel_constructs, list):
+                parallel_constructs = detect_parallel_constructs(patch_text)
             category, speedup = _primary_outcome(
                 outcome,
-                serial_median=medians[project],
+                serial_median=(
+                    float(paired_serial_median)
+                    if paired_serial_median is not None
+                    else medians[project]
+                ),
+                parallel_constructs=parallel_constructs,
             )
             agent = outcome.get("agent", {})
             events = agent.get("events", [])
@@ -178,6 +201,8 @@ def main() -> int:
                     "run": run_dir.name,
                     "primary_outcome": category,
                     "speedup": speedup,
+                    "paired_serial_median_seconds": paired_serial_median,
+                    "parallel_constructs": ";".join(parallel_constructs),
                     "feedback_rounds": feedback["feedback_rounds"],
                     "accepted_quick_speedup": feedback["accepted_quick_speedup"],
                     "formal_minus_quick_speedup": (
@@ -217,6 +242,8 @@ def main() -> int:
             "run",
             "primary_outcome",
             "speedup",
+            "paired_serial_median_seconds",
+            "parallel_constructs",
             "feedback_rounds",
             "accepted_quick_speedup",
             "formal_minus_quick_speedup",

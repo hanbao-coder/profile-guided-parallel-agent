@@ -1,50 +1,20 @@
 {
-  "schema_version": 1,
-  "included_runs": 6,
-  "excluded_runs": 2,
+  "schema_version": 2,
+  "included_runs": 3,
+  "excluded_runs": 5,
   "outcome_counts": {
-    "correctness_failure": 5,
+    "correctness_failure": 2,
     "patch_application_failure": 1
   },
   "runs": [
-    {
-      "project": "chardet",
-      "run": "run-01",
-      "primary_outcome": "correctness_failure",
-      "speedup": 2.840266734492036,
-      "turns": 12,
-      "edit_rounds": 1,
-      "patch_nonempty": true,
-      "model_calls": 12,
-      "model_tokens": 232734
-    },
-    {
-      "project": "chardet",
-      "run": "run-02",
-      "primary_outcome": "correctness_failure",
-      "speedup": 2.6798229842530725,
-      "turns": 12,
-      "edit_rounds": 1,
-      "patch_nonempty": true,
-      "model_calls": 12,
-      "model_tokens": 236955
-    },
-    {
-      "project": "chardet",
-      "run": "run-03",
-      "primary_outcome": "correctness_failure",
-      "speedup": 2.592977740495435,
-      "turns": 12,
-      "edit_rounds": 1,
-      "patch_nonempty": true,
-      "model_calls": 12,
-      "model_tokens": 230306
-    },
     {
       "project": "radon",
       "run": "run-01",
       "primary_outcome": "correctness_failure",
       "speedup": null,
+      "feedback_rounds": 0,
+      "accepted_quick_speedup": null,
+      "formal_minus_quick_speedup": null,
       "turns": 12,
       "edit_rounds": 2,
       "patch_nonempty": true,
@@ -56,6 +26,9 @@
       "run": "run-02",
       "primary_outcome": "patch_application_failure",
       "speedup": null,
+      "feedback_rounds": 0,
+      "accepted_quick_speedup": null,
+      "formal_minus_quick_speedup": null,
       "turns": 12,
       "edit_rounds": 0,
       "patch_nonempty": false,
@@ -67,6 +40,9 @@
       "run": "run-03",
       "primary_outcome": "correctness_failure",
       "speedup": null,
+      "feedback_rounds": 0,
+      "accepted_quick_speedup": null,
+      "formal_minus_quick_speedup": null,
       "turns": 12,
       "edit_rounds": 2,
       "patch_nonempty": true,
@@ -75,6 +51,21 @@
     }
   ],
   "excluded": [
+    {
+      "path": "chardet/run-01",
+      "status": "excluded_invalid_import_path",
+      "reason": "Chardet uses a src/ layout, but this run added only the repository root to PYTHONPATH. Tests and workloads resolved the installed original package instead of the Agent-edited trial copy. The raw run is preserved but cannot support correctness or performance claims."
+    },
+    {
+      "path": "chardet/run-02",
+      "status": "excluded_invalid_import_path",
+      "reason": "Chardet uses a src/ layout, but this run added only the repository root to PYTHONPATH. Tests and workloads resolved the installed original package instead of the Agent-edited trial copy. The raw run is preserved but cannot support correctness or performance claims."
+    },
+    {
+      "path": "chardet/run-03",
+      "status": "excluded_invalid_import_path",
+      "reason": "Chardet uses a src/ layout, but this run added only the repository root to PYTHONPATH. Tests and workloads resolved the installed original package instead of the Agent-edited trial copy. The raw run is preserved but cannot support correctness or performance claims."
+    },
     {
       "path": "radon/excluded-missing-anchor-memory",
       "status": "excluded_anchor_protocol_calibration",

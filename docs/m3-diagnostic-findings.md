@@ -1,5 +1,10 @@
 # M3 真实项目诊断结果
 
+> **有效性修正（2026-08-08）：** 旧 Chardet 运行没有把 `src/` 加入
+> `PYTHONPATH`，实际导入了已安装的原始包，因此全部排除。本文涉及 Chardet 的
+> 频率和案例不再作为正式证据；修正原因见
+> `docs/m5-protocol-correction-import-and-pairing.md`。Radon 与 Vulture 结果不受影响。
+
 ## 1. 诊断问题
 
 本阶段不预先假定依赖分析、任务粒度或调度一定是核心问题，而是先回答：

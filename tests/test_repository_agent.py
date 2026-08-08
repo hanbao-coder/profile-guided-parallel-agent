@@ -11,6 +11,7 @@ from parallel_agent.repository_agent import (
     RepositoryAgentConfig,
     RepositoryAgentError,
     RepositoryAgentSession,
+    detect_parallel_constructs,
     _safe_path,
     _search,
     _replace_with_context,
@@ -379,11 +380,44 @@ def test_performance_feedback_accepts_only_correct_end_to_end_gain(
         ]
     )
     monkeypatch.setattr(repository_agent, "run_controlled", lambda command: next(results))
+    monkeypatch.setattr(
+        repository_agent,
+        "detect_parallel_constructs",
+        lambda patch: ["ProcessPoolExecutor"],
+    )
 
     evaluation = session._evaluate_candidate()
 
     assert evaluation["status"] == "effective_end_to_end_gain"
     assert evaluation["speedup"] == pytest.approx(1.25)
+
+
+def test_detect_parallel_constructs_uses_added_diff_lines() -> None:
+    patch = """diff --git a/main.py b/main.py
+--- a/main.py
++++ b/main.py
+@@ -1 +1,3 @@
++from concurrent.futures import ProcessPoolExecutor
++with ProcessPoolExecutor() as executor:
++    results = list(executor.map(work, items))
+"""
+
+    constructs = detect_parallel_constructs(patch)
+
+    assert "ProcessPoolExecutor" in constructs
+    assert "executor.map" in constructs
+
+
+def test_detect_parallel_constructs_ignores_removed_parallel_code() -> None:
+    patch = """diff --git a/main.py b/main.py
+--- a/main.py
++++ b/main.py
+@@ -1 +1 @@
+-from concurrent.futures import ProcessPoolExecutor
++value = 1
+"""
+
+    assert detect_parallel_constructs(patch) == []
 
 
 def test_feedback_finish_rejects_slow_candidate_then_allows_safe_fallback(

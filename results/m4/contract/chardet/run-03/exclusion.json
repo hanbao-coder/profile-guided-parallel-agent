@@ -1,0 +1,4 @@
+{
+  "status": "excluded_invalid_import_path",
+  "reason": "Chardet uses a src/ layout, but this run added only the repository root to PYTHONPATH. Tests and workloads resolved the installed original package instead of the Agent-edited trial copy. The raw run is preserved but cannot support correctness or performance claims."
+}

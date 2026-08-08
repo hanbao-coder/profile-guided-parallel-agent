@@ -1,0 +1,4 @@
+{
+  "status": "excluded_workload_adapter_error",
+  "reason": "The registered workload called chardet.detect directly and bypassed the public chardet.cli.main path that the Agent was asked to parallelize. The run cannot test whether the patch improves the selected end-to-end scenario."
+}

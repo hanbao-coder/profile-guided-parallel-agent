@@ -1,6 +1,8 @@
 {
   "repository": "https://github.com/jendrikseipp/vulture",
   "commit": "2c21cb0ae2afa657e36f6a397cb573608a65d79e",
+  "import_subdir": ".",
+  "import_module": "vulture",
   "public_entrypoint": "python -m vulture <paths> --min-confidence 0",
   "registered_workload": "Scan the complete OpenAI Python package source tree and return the same unused-code records.",
   "serial_median_seconds": 3.866179299999203,

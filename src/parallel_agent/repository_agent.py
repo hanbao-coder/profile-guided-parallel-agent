@@ -42,9 +42,38 @@ IGNORED_PARTS = {
     "dist",
 }
 
+PARALLEL_CONSTRUCT_PATTERNS = {
+    "concurrent.futures": re.compile(r"\bconcurrent\.futures\b"),
+    "ThreadPoolExecutor": re.compile(r"\bThreadPoolExecutor\b"),
+    "ProcessPoolExecutor": re.compile(r"\bProcessPoolExecutor\b"),
+    "multiprocessing": re.compile(r"\bmultiprocessing\b"),
+    "Pool": re.compile(r"\bPool\s*\("),
+    "Thread": re.compile(r"\bThread\s*\("),
+    "Process": re.compile(r"\bProcess\s*\("),
+    "executor.submit": re.compile(r"\b\w+\.submit\s*\("),
+    "executor.map": re.compile(r"\b\w+\.map\s*\("),
+    "ray.remote": re.compile(r"\bray\.remote\b|@ray\.remote"),
+    "joblib.Parallel": re.compile(r"\bParallel\s*\("),
+    "dask": re.compile(r"\bdask\b"),
+}
+
 
 class RepositoryAgentError(RuntimeError):
     pass
+
+
+def detect_parallel_constructs(patch: str) -> list[str]:
+    """Return explicit concurrency constructs introduced by a unified diff."""
+    added = "\n".join(
+        line[1:]
+        for line in patch.splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    )
+    return [
+        name
+        for name, pattern in PARALLEL_CONSTRUCT_PATTERNS.items()
+        if pattern.search(added)
+    ]
 
 
 @dataclass(frozen=True)
@@ -333,8 +362,9 @@ class RepositoryAgentSession:
             feedback_rule = f"""
 - Tests and the registered end-to-end benchmark run automatically after every
   edit. Do not request a separate validation action.
-- A candidate is successful only when tests pass, output matches the serial
-  baseline, and measured speedup is at least {self.config.minimum_speedup:.3f}x.
+- A candidate is successful only when tests pass, output matches the paired
+  serial baseline, the patch introduces an explicit executable parallel
+  construct, and measured speedup is at least {self.config.minimum_speedup:.3f}x.
 - If feedback reports a correctness failure, performance regression or no
   meaningful gain, use the evidence to revise the candidate. Do not finish.
 - Every edit observation includes fresh repair_anchors for the current file
@@ -930,7 +960,24 @@ Rules:
             raise RepositoryAgentError(
                 "benchmark feedback needs positive serial and candidate medians"
             ) from exc
-        if speedup >= self.config.minimum_speedup:
+        patch = subprocess.run(
+            ["git", "diff", "--binary"],
+            cwd=self.root,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            check=False,
+        ).stdout
+        parallel_constructs = detect_parallel_constructs(patch)
+        if not parallel_constructs:
+            status = "non_parallel_candidate"
+            instruction = (
+                "The candidate does not introduce an explicit executable "
+                "parallel construct. Repair the registered workload with a "
+                "real parallel backend or abandon it."
+            )
+        elif speedup >= self.config.minimum_speedup:
             status = "effective_end_to_end_gain"
             instruction = "The candidate meets the measured acceptance threshold."
         elif speedup < 0.95:
@@ -953,6 +1000,7 @@ Rules:
             "candidate_median_seconds": candidate_seconds,
             "speedup": speedup,
             "required_speedup": self.config.minimum_speedup,
+            "parallel_constructs": parallel_constructs,
             "timings_seconds": parsed.get("timings_seconds", []),
             "instruction": instruction,
         }

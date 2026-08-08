@@ -92,3 +92,28 @@ def test_feedback_summary_keeps_accepted_quick_measurement():
     summary = _feedback_summary(events)
 
     assert summary == {"feedback_rounds": 2, "accepted_quick_speedup": 1.2}
+
+
+def test_primary_outcome_rejects_fast_non_parallel_change():
+    outcome = {
+        "agent": {"events": []},
+        "candidate": {
+            "test": {"returncode": 0, "timed_out": False},
+            "benchmark": {
+                "returncode": 0,
+                "timed_out": False,
+                "output_matches_baseline": True,
+                "stdout": '{"median_seconds": 5.0}',
+            },
+        },
+        "patch_nonempty": True,
+    }
+
+    category, speedup = _primary_outcome(
+        outcome,
+        serial_median=10.0,
+        parallel_constructs=[],
+    )
+
+    assert category == "non_parallel_candidate"
+    assert speedup == 2.0
