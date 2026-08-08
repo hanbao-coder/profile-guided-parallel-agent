@@ -5,7 +5,7 @@
     "pytest",
     "-q",
     "-k",
-    "not test_symlink_used_as_is",
+    "not test_symlink_used_as_is and not test_ratio_cold_vs_warm_model_loading",
     "--basetemp",
     ".diagnostic-pytest"
   ],

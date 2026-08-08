@@ -73,8 +73,11 @@ class RepositoryAgentConfig:
     max_files_per_read: int = 8
     max_file_characters: int = 16_000
     max_total_read_characters: int = 40_000
+    max_repair_read_actions: int = 3
     edit_mode: str = "legacy"
     contract_mode: bool = False
+    performance_feedback_mode: bool = False
+    minimum_speedup: float = 1.05
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -271,6 +274,11 @@ class RepositoryAgentSession:
         self.action_summaries: list[dict[str, Any]] = []
         self.read_anchors: set[tuple[str, int, int, str]] = set()
         self.parallel_contract: dict[str, Any] | None = None
+        self.original_contents: dict[Path, str] = {}
+        self.last_candidate_evaluation: dict[str, Any] | None = None
+        self.candidate_abandoned = False
+        self.repair_read_actions = 0
+        self.repair_anchor_ready = False
 
     def _system_prompt(self) -> str:
         if self.config.edit_mode == "anchored":
@@ -316,6 +324,34 @@ class RepositoryAgentSession:
         else:
             contract_action = ""
             contract_rule = ""
+        if self.config.performance_feedback_mode:
+            validation_action = ""
+            feedback_action = (
+                '{"action":"abandon_candidate","reason":"why the current '
+                'candidate cannot safely reach the required speedup"}'
+            )
+            feedback_rule = f"""
+- Tests and the registered end-to-end benchmark run automatically after every
+  edit. Do not request a separate validation action.
+- A candidate is successful only when tests pass, output matches the serial
+  baseline, and measured speedup is at least {self.config.minimum_speedup:.3f}x.
+- If feedback reports a correctness failure, performance regression or no
+  meaningful gain, use the evidence to revise the candidate. Do not finish.
+- Every edit observation includes fresh repair_anchors for the current file
+  contents. Reuse those anchors directly for the next edit. Use a focused
+  read_lines action only when the required repair lies outside those ranges.
+- If no safe repair remains, use abandon_candidate to restore the serial code;
+  a safe fallback is preferable to committing a wrong or slower candidate.
+  The first failed candidate must receive at least one feedback-guided edit
+  before abandonment is allowed.
+"""
+        else:
+            validation_action = (
+                '{"action":"run_validation","kind":"test|benchmark",'
+                '"reason":"..."}'
+            )
+            feedback_action = ""
+            feedback_rule = ""
         return f"""
 You are a general repository-level coding Agent. Your task is to modify a real
 multi-file serial Python project so its registered end-to-end workload uses
@@ -338,7 +374,8 @@ Every reply must be one JSON object with exactly one action:
 {{"action":"search","query":"literal text","reason":"..."}}
 {contract_action}
 {edit_action}
-{{"action":"run_validation","kind":"test|benchmark","reason":"..."}}
+{validation_action}
+{feedback_action}
 {{"action":"finish","reason":"..."}}
 
 Rules:
@@ -348,6 +385,7 @@ Rules:
   precise block in a large file.
 {edit_rule}
 {contract_rule}
+{feedback_rule}
 - Return complete JSON, with no Markdown fences.
 - Do not create shell commands, access secrets, use the network, or edit files
   outside the repository.
@@ -370,7 +408,11 @@ Rules:
                 "search",
                 *(["declare_contract"] if self.config.contract_mode else []),
                 "apply_edits",
-                "run_validation",
+                *(
+                    ["abandon_candidate"]
+                    if self.config.performance_feedback_mode
+                    else ["run_validation"]
+                ),
                 "finish",
             ],
         }
@@ -395,6 +437,11 @@ Rules:
         model = self.config.model if use_pro else self.config.flash_model
         thinking_enabled = not self.traces
         convergence_note = (
+            "A focused repair read has already returned a current source anchor. "
+            "The next action must be apply_edits or abandon_candidate; do not "
+            "read the same source again."
+            if self.repair_anchor_ready
+            else
             (
                 "Exploration budget is exhausted. Declare the grounded "
                 "parallelization contract now."
@@ -413,6 +460,15 @@ Rules:
             "source_evidence": self.working_files,
             "recent_search_results": self.recent_searches[-3:],
             "parallelization_contract": self.parallel_contract,
+            "available_edit_anchors": [
+                {
+                    "path": path,
+                    "start": start,
+                    "end": end,
+                    "anchor_sha256": anchor,
+                }
+                for path, start, end, anchor in sorted(self.read_anchors)
+            ],
             "action_history": self.action_summaries[-10:],
             "instruction": convergence_note,
         }
@@ -511,6 +567,8 @@ Rules:
         }
 
     def _apply_edits(self, data: dict[str, Any]) -> dict[str, Any]:
+        if self.candidate_abandoned:
+            raise RepositoryAgentError("candidate was abandoned; finish the run")
         if self.config.contract_mode and self.parallel_contract is None:
             raise RepositoryAgentError(
                 "declare a grounded parallelization contract before editing"
@@ -556,6 +614,10 @@ Rules:
             if path not in modified_paths:
                 modified_paths.append(path)
         for path, content in updated_contents.items():
+            self.original_contents.setdefault(
+                path,
+                path.read_text(encoding="utf-8"),
+            )
             path.write_text(content, encoding="utf-8")
         self.edit_rounds += 1
         return {
@@ -716,6 +778,10 @@ Rules:
             updated_contents[path] = "".join(lines)
 
         for path, content in updated_contents.items():
+            self.original_contents.setdefault(
+                path,
+                path.read_text(encoding="utf-8"),
+            )
             path.write_text(content, encoding="utf-8")
             relative = path.relative_to(self.root).as_posix()
             self.read_anchors = {
@@ -787,8 +853,174 @@ Rules:
             "stderr": _trim(str(result["stderr"])),
         }
 
+    @staticmethod
+    def _parse_benchmark_output(stdout: str) -> dict[str, Any] | None:
+        try:
+            parsed = json.loads(stdout)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+
+    def _evaluate_candidate(self) -> dict[str, Any]:
+        """Run correctness first, then expose compact end-to-end feedback."""
+        test = run_controlled(self.config.test_command)
+        test_path = self.run_dir / f"auto-test-edit-{self.edit_rounds:02d}.json"
+        test_path.write_text(
+            json.dumps(test, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        tests_pass = test["returncode"] == 0 and not test["timed_out"]
+        if not tests_pass:
+            evaluation = {
+                "status": "correctness_failure",
+                "tests_pass": False,
+                "test_returncode": test["returncode"],
+                "test_timed_out": test["timed_out"],
+                "test_stdout_tail": _trim(str(test["stdout"]), 4_000),
+                "test_stderr_tail": _trim(str(test["stderr"]), 4_000),
+                "instruction": "Repair correctness before measuring performance.",
+            }
+            self.last_candidate_evaluation = evaluation
+            return evaluation
+
+        benchmark = run_controlled(self.config.benchmark_command)
+        benchmark_path = (
+            self.run_dir / f"auto-benchmark-edit-{self.edit_rounds:02d}.json"
+        )
+        benchmark_path.write_text(
+            json.dumps(benchmark, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        parsed = self._parse_benchmark_output(str(benchmark["stdout"]))
+        expected_hash = str(self.project_context.get("baseline_output_hash", ""))
+        output_hashes = parsed.get("output_hashes", []) if parsed else []
+        hashes_stable = bool(parsed and parsed.get("stable_output"))
+        output_matches = bool(
+            expected_hash
+            and output_hashes
+            and hashes_stable
+            and all(str(value) == expected_hash for value in output_hashes)
+        )
+        benchmark_ok = (
+            benchmark["returncode"] == 0
+            and not benchmark["timed_out"]
+            and parsed is not None
+        )
+        if not benchmark_ok or not output_matches:
+            evaluation = {
+                "status": "integration_or_output_failure",
+                "tests_pass": True,
+                "benchmark_returncode": benchmark["returncode"],
+                "benchmark_timed_out": benchmark["timed_out"],
+                "expected_output_hash": expected_hash,
+                "actual_output_hashes": output_hashes,
+                "stable_output": hashes_stable,
+                "benchmark_stdout_tail": _trim(str(benchmark["stdout"]), 4_000),
+                "benchmark_stderr_tail": _trim(str(benchmark["stderr"]), 4_000),
+                "instruction": "Repair the registered workload or output semantics.",
+            }
+            self.last_candidate_evaluation = evaluation
+            return evaluation
+
+        try:
+            baseline_seconds = float(self.project_context["serial_median_seconds"])
+            candidate_seconds = float(parsed["median_seconds"])
+            speedup = baseline_seconds / candidate_seconds
+        except (KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
+            raise RepositoryAgentError(
+                "benchmark feedback needs positive serial and candidate medians"
+            ) from exc
+        if speedup >= self.config.minimum_speedup:
+            status = "effective_end_to_end_gain"
+            instruction = "The candidate meets the measured acceptance threshold."
+        elif speedup < 0.95:
+            status = "end_to_end_performance_regression"
+            instruction = (
+                "The correct candidate is slower than serial. Revise target, "
+                "backend, granularity or transfer strategy, or abandon it."
+            )
+        else:
+            status = "no_meaningful_end_to_end_gain"
+            instruction = (
+                "The correct candidate does not reach the required speedup. "
+                "Revise it using the measured gap, or abandon it."
+            )
+        evaluation = {
+            "status": status,
+            "tests_pass": True,
+            "output_matches_baseline": True,
+            "serial_median_seconds": baseline_seconds,
+            "candidate_median_seconds": candidate_seconds,
+            "speedup": speedup,
+            "required_speedup": self.config.minimum_speedup,
+            "timings_seconds": parsed.get("timings_seconds", []),
+            "instruction": instruction,
+        }
+        self.last_candidate_evaluation = evaluation
+        return evaluation
+
+    def _fresh_repair_anchors(self, edit_result: dict[str, Any]) -> list[dict[str, Any]]:
+        """Return bounded, current source evidence after an accepted edit."""
+        starts_by_path: dict[str, list[int]] = {}
+        for match in edit_result.get("matches", []):
+            if isinstance(match, dict) and "start" in match:
+                starts_by_path.setdefault(str(match.get("path", "")), []).append(
+                    int(match["start"])
+                )
+        anchors: list[dict[str, Any]] = []
+        for relative in edit_result.get("files", []):
+            path = _safe_path(self.root, str(relative))
+            total_lines = len(path.read_text(encoding="utf-8").splitlines())
+            if total_lines == 0:
+                continue
+            if total_lines <= 400:
+                start, end = 1, total_lines
+            else:
+                first_edit = min(starts_by_path.get(str(relative), [1]))
+                start = max(1, first_edit - 100)
+                end = min(total_lines, start + 399)
+            anchors.append(self._read_lines({"path": str(relative), "start": start, "end": end}))
+        return anchors
+
+    def _abandon_candidate(self, data: dict[str, Any]) -> dict[str, Any]:
+        if not self.config.performance_feedback_mode:
+            raise RepositoryAgentError("performance feedback mode is not enabled")
+        if not self.original_contents:
+            raise RepositoryAgentError("there is no edited candidate to abandon")
+        if self.edit_rounds < 2:
+            raise RepositoryAgentError(
+                "use the first candidate's feedback for at least one repair "
+                "edit before abandoning it"
+            )
+        for path, content in self.original_contents.items():
+            path.write_text(content, encoding="utf-8")
+        self.read_anchors.clear()
+        self.candidate_abandoned = True
+        self.last_candidate_evaluation = {
+            "status": "safe_serial_fallback",
+            "tests_pass": True,
+            "output_matches_baseline": True,
+            "speedup": 1.0,
+            "required_speedup": self.config.minimum_speedup,
+            "reason": str(data.get("reason", "")),
+        }
+        return {"ok": True, **self.last_candidate_evaluation}
+
     def _execute_action(self, data: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         action = str(data.get("action", "")).strip()
+        is_feedback_repair_read = bool(
+            self.config.performance_feedback_mode
+            and self.edit_rounds > 0
+            and action == "read_lines"
+        )
+        if (
+            self.repair_anchor_ready
+            and action in {"read_files", "read_lines", "search"}
+        ):
+            raise RepositoryAgentError(
+                "a current repair anchor is already available; apply an edit "
+                "or abandon the candidate"
+            )
         if (
             self.config.edit_mode == "anchored"
             and action in {"read_files", "search"}
@@ -802,6 +1034,7 @@ Rules:
         if (
             action in {"read_files", "read_lines", "search"}
             and self.exploration_actions >= self.config.max_exploration_actions
+            and not is_feedback_repair_read
         ):
             raise RepositoryAgentError(
                 "exploration budget exhausted; apply edits or finish"
@@ -811,8 +1044,17 @@ Rules:
             self.exploration_actions += 1
             return result, False
         if action == "read_lines":
+            if (
+                is_feedback_repair_read
+                and self.repair_read_actions >= self.config.max_repair_read_actions
+            ):
+                raise RepositoryAgentError("focused repair-read budget exhausted")
             result = self._read_lines(data)
-            self.exploration_actions += 1
+            if is_feedback_repair_read:
+                self.repair_read_actions += 1
+                self.repair_anchor_ready = True
+            else:
+                self.exploration_actions += 1
             return result, False
         if action == "search":
             result = {
@@ -824,10 +1066,34 @@ Rules:
         if action == "declare_contract":
             return self._declare_contract(data), False
         if action == "apply_edits":
-            return self._apply_edits(data), False
+            result = self._apply_edits(data)
+            self.repair_anchor_ready = False
+            if self.config.performance_feedback_mode:
+                result["candidate_evaluation"] = self._evaluate_candidate()
+                result["repair_anchors"] = self._fresh_repair_anchors(result)
+            return result, False
         if action == "run_validation":
+            if self.config.performance_feedback_mode:
+                raise RepositoryAgentError(
+                    "validation is automatic after every edit in feedback mode"
+                )
             return self._validation(str(data.get("kind", ""))), False
+        if action == "abandon_candidate":
+            result = self._abandon_candidate(data)
+            self.repair_anchor_ready = False
+            return result, False
         if action == "finish":
+            if self.config.performance_feedback_mode:
+                status = (self.last_candidate_evaluation or {}).get("status")
+                accepted = {
+                    "effective_end_to_end_gain",
+                    "safe_serial_fallback",
+                }
+                if status not in accepted:
+                    raise RepositoryAgentError(
+                        "finish rejected: repair the latest candidate or use "
+                        "abandon_candidate for a safe serial fallback"
+                    )
             return {"ok": True, "reason": str(data.get("reason", ""))}, True
         raise RepositoryAgentError(f"unknown action: {action!r}")
 
@@ -862,6 +1128,21 @@ Rules:
                     "matches": observation.get("matches", []),
                 }
             )
+        elif observation.get("ok") and action_name == "apply_edits":
+            for item in observation.get("repair_anchors", []):
+                if not isinstance(item, dict):
+                    continue
+                key = f"{item['path']}:{item['start']}-{item['end']}"
+                self.working_files[key] = json.dumps(
+                    {
+                        "path": item["path"],
+                        "start": item["start"],
+                        "end": item["end"],
+                        "anchor_sha256": item["anchor_sha256"],
+                        "content": item["content"],
+                    },
+                    ensure_ascii=False,
+                )
 
         # Keep source evidence bounded. Recent evidence is more useful for an
         # exact edit than files read many turns ago.
@@ -896,8 +1177,16 @@ Rules:
                     if action_name == "run_validation"
                     else None
                 ),
+                "candidate_evaluation": observation.get("candidate_evaluation"),
             }
         )
+
+        if action_name == "abandon_candidate" and observation.get("ok"):
+            self.action_summaries[-1]["candidate_evaluation"] = {
+                "status": observation.get("status"),
+                "speedup": observation.get("speedup"),
+                "reason": observation.get("reason"),
+            }
 
     def run(self, project_context: dict[str, Any]) -> dict[str, Any]:
         self.project_context = project_context
@@ -943,6 +1232,38 @@ Rules:
             )
             if finished:
                 break
+        accepted_statuses = {
+            "effective_end_to_end_gain",
+            "safe_serial_fallback",
+        }
+        latest_status = (self.last_candidate_evaluation or {}).get("status")
+        if (
+            self.config.performance_feedback_mode
+            and latest_status not in accepted_statuses
+            and self.original_contents
+        ):
+            for path, content in self.original_contents.items():
+                path.write_text(content, encoding="utf-8")
+            self.candidate_abandoned = True
+            self.last_candidate_evaluation = {
+                "status": "automatic_safe_serial_fallback",
+                "tests_pass": True,
+                "output_matches_baseline": True,
+                "speedup": 1.0,
+                "required_speedup": self.config.minimum_speedup,
+                "reason": "turn budget ended without an acceptable candidate",
+            }
+            fallback_event = {
+                "turn": len(events) + 1,
+                "action": {"action": "automatic_safe_fallback"},
+                "observation": {"ok": True, **self.last_candidate_evaluation},
+            }
+            events.append(fallback_event)
+            finished = True
+            (self.run_dir / "events.json").write_text(
+                json.dumps(events, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
         return {
             "finished": finished,
             "turns": len(events),

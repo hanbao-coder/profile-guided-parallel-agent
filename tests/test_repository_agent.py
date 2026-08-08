@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 import pytest
+import parallel_agent.repository_agent as repository_agent
 
 from parallel_agent.repository_agent import (
     ControlledCommand,
@@ -30,6 +32,7 @@ def _session(
     *,
     edit_mode: str = "legacy",
     contract_mode: bool = False,
+    performance_feedback_mode: bool = False,
 ) -> RepositoryAgentSession:
     command = _command(tmp_path)
     return RepositoryAgentSession(
@@ -45,6 +48,7 @@ def _session(
             benchmark_command=command,
             edit_mode=edit_mode,
             contract_mode=contract_mode,
+            performance_feedback_mode=performance_feedback_mode,
         )
     )
 
@@ -335,6 +339,238 @@ def test_contract_rejects_ungrounded_evidence(tmp_path: Path) -> None:
         session._declare_contract(
             {"action": "declare_contract", "contract": contract}
         )
+
+
+def test_performance_feedback_accepts_only_correct_end_to_end_gain(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "main.py").write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, performance_feedback_mode=True)
+    session.project_context = {
+        "serial_median_seconds": 10.0,
+        "baseline_output_hash": "expected",
+    }
+    results = iter(
+        [
+            {
+                "name": "tests",
+                "returncode": 0,
+                "elapsed_seconds": 1.0,
+                "timed_out": False,
+                "stdout": "all tests passed",
+                "stderr": "",
+            },
+            {
+                "name": "benchmark",
+                "returncode": 0,
+                "elapsed_seconds": 8.0,
+                "timed_out": False,
+                "stdout": json.dumps(
+                    {
+                        "median_seconds": 8.0,
+                        "timings_seconds": [8.0],
+                        "output_hashes": ["expected"],
+                        "stable_output": True,
+                    }
+                ),
+                "stderr": "",
+            },
+        ]
+    )
+    monkeypatch.setattr(repository_agent, "run_controlled", lambda command: next(results))
+
+    evaluation = session._evaluate_candidate()
+
+    assert evaluation["status"] == "effective_end_to_end_gain"
+    assert evaluation["speedup"] == pytest.approx(1.25)
+
+
+def test_feedback_finish_rejects_slow_candidate_then_allows_safe_fallback(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, performance_feedback_mode=True)
+    session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "old": "value = 1",
+                    "new": "value = 2",
+                }
+            ]
+        }
+    )
+    session.last_candidate_evaluation = {
+        "status": "end_to_end_performance_regression"
+    }
+
+    with pytest.raises(RepositoryAgentError, match="finish rejected"):
+        session._execute_action({"action": "finish"})
+
+    with pytest.raises(RepositoryAgentError, match="at least one repair"):
+        session._execute_action(
+            {"action": "abandon_candidate", "reason": "measured slower than serial"}
+        )
+
+    session.edit_rounds = 2
+    fallback, finished = session._execute_action(
+        {"action": "abandon_candidate", "reason": "measured slower than serial"}
+    )
+    assert finished is False
+    assert fallback["status"] == "safe_serial_fallback"
+    assert source.read_text(encoding="utf-8") == "value = 1\n"
+    _, finished = session._execute_action({"action": "finish"})
+    assert finished is True
+
+
+def test_feedback_rejects_fast_but_wrong_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "main.py").write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, performance_feedback_mode=True)
+    session.project_context = {
+        "serial_median_seconds": 10.0,
+        "baseline_output_hash": "expected",
+    }
+    results = iter(
+        [
+            {
+                "name": "tests",
+                "returncode": 0,
+                "elapsed_seconds": 1.0,
+                "timed_out": False,
+                "stdout": "all tests passed",
+                "stderr": "",
+            },
+            {
+                "name": "benchmark",
+                "returncode": 0,
+                "elapsed_seconds": 0.01,
+                "timed_out": False,
+                "stdout": json.dumps(
+                    {
+                        "median_seconds": 0.01,
+                        "timings_seconds": [0.01],
+                        "output_hashes": ["wrong"],
+                        "stable_output": True,
+                    }
+                ),
+                "stderr": "",
+            },
+        ]
+    )
+    monkeypatch.setattr(repository_agent, "run_controlled", lambda command: next(results))
+
+    evaluation = session._evaluate_candidate()
+
+    assert evaluation["status"] == "integration_or_output_failure"
+    assert evaluation["expected_output_hash"] == "expected"
+
+
+def test_feedback_mode_allows_focused_read_after_edit(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("value = 1\n", encoding="utf-8")
+    session = _session(tmp_path, performance_feedback_mode=True)
+    session.edit_rounds = 1
+    session.exploration_actions = session.config.max_exploration_actions
+
+    result, finished = session._execute_action(
+        {
+            "action": "read_lines",
+            "path": "main.py",
+            "start": 1,
+            "end": 1,
+        }
+    )
+
+    assert finished is False
+    assert result["content"] == "value = 1"
+    assert session.repair_read_actions == 1
+    assert session.repair_anchor_ready is True
+    assert session.exploration_actions == session.config.max_exploration_actions
+
+    with pytest.raises(RepositoryAgentError, match="already available"):
+        session._execute_action(
+            {
+                "action": "read_lines",
+                "path": "main.py",
+                "start": 1,
+                "end": 1,
+            }
+        )
+
+
+def test_feedback_mode_automatically_restores_rejected_candidate_at_turn_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("value = 2\n", encoding="utf-8")
+    session = _session(tmp_path, performance_feedback_mode=True)
+    session.original_contents[source] = "value = 1\n"
+    session.edit_rounds = 2
+    session.last_candidate_evaluation = {
+        "status": "end_to_end_performance_regression"
+    }
+    monkeypatch.setattr(
+        session,
+        "_call_model",
+        lambda: {"action": "finish", "reason": "incorrect early finish"},
+    )
+
+    result = session.run(
+        {
+            "serial_median_seconds": 10.0,
+            "baseline_output_hash": "expected",
+        }
+    )
+
+    assert result["finished"] is True
+    assert result["events"][-1]["action"]["action"] == "automatic_safe_fallback"
+    assert source.read_text(encoding="utf-8") == "value = 1\n"
+
+
+def test_feedback_mode_returns_fresh_anchor_after_edit(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("first = 1\nsecond = 2\n", encoding="utf-8")
+    session = _session(
+        tmp_path,
+        edit_mode="anchored",
+        performance_feedback_mode=True,
+    )
+    initial = session._read_lines({"path": "main.py", "start": 1, "end": 2})
+    edit_result = session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "start": 1,
+                    "end": 2,
+                    "anchor_sha256": initial["anchor_sha256"],
+                    "new": "first = 10\nsecond = 20",
+                }
+            ]
+        }
+    )
+
+    anchors = session._fresh_repair_anchors(edit_result)
+
+    assert len(anchors) == 1
+    assert anchors[0]["content"] == "first = 10\nsecond = 20"
+    assert (
+        "main.py",
+        1,
+        2,
+        anchors[0]["anchor_sha256"],
+    ) in session.read_anchors
 
 
 def test_read_files_returns_subset_that_fits_budget(tmp_path: Path) -> None:
