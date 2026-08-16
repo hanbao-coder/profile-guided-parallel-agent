@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "research_phase": "M9 verified relational boundary-delta experiment",
+  "task": "scikit-learn__scikit-learn-29330",
+  "success_rule": "A non-empty patch must satisfy boundary invariants, pass project checks, preserve caller-selected loky backend semantics, preserve output, and achieve paired formal speedup >= 1.05.",
+  "protocol": {
+    "pilot_runs_excluded": 1,
+    "formal_runs_preregistered": 3,
+    "formal_runs_completed": 2,
+    "deviation": "The third formal repetition was cancelled after two independent, consistent runs to limit model and compute cost. Results are treated as replicated engineering evidence, not a statistical significance claim."
+  },
+  "formal_trials": 2,
+  "effective_trials": 2,
+  "effective_rate": 1.0,
+  "speedup_median": 48.22719156904081,
+  "speedup_min": 47.688739981319756,
+  "speedup_max": 48.76564315676186,
+  "all_project_tests_pass": true,
+  "all_backend_semantics_pass": true,
+  "comparison_with_m8_freeform_agent": {
+    "b1_ordinary": {
+      "included_trials": 3,
+      "effective_trials": 0,
+      "effective_rate": 0.0
+    },
+    "b2_location": {
+      "included_trials": 3,
+      "effective_trials": 0,
+      "effective_rate": 0.0
+    },
+    "b3_boundary": {
+      "included_trials": 3,
+      "effective_trials": 0,
+      "effective_rate": 0.0
+    }
+  },
+  "trials": [
+    {
+      "run_id": "formal-01",
+      "status": "completed",
+      "effective": true,
+      "tests_pass": true,
+      "project_test_summary": "350 passed, 4 skipped",
+      "backend_semantics_pass": true,
+      "boundary_invariants_pass": true,
+      "patch_nonempty": true,
+      "paired_performance_valid": true,
+      "baseline_seconds": 53.43532659500124,
+      "candidate_seconds": 1.0957576510008948,
+      "speedup": 48.76564315676186,
+      "turns": 5,
+      "edit_rounds": 1,
+      "prompt_tokens": 90907,
+      "completion_tokens": 724,
+      "outcome_sha256": "59953a1b5814c3566c6782dfba01392068e7d9083fe4309733a11fd297567806",
+      "delta_sha256": "0770308c98efafd8d6aad5617d08c998a8f9c98f9c2931bec5c2b2d7b66c738f",
+      "patch_sha256": "e73937d826bf6f391d9f1292c0f79c10cbf1f1ebd89a91a144f3a1973ae34db1"
+    },
+    {
+      "run_id": "formal-02",
+      "status": "completed",
+      "effective": true,
+      "tests_pass": true,
+      "project_test_summary": "350 passed, 4 skipped",
+      "backend_semantics_pass": true,
+      "boundary_invariants_pass": true,
+      "patch_nonempty": true,
+      "paired_performance_valid": true,
+      "baseline_seconds": 61.492700195,
+      "candidate_seconds": 1.2894595290017605,
+      "speedup": 47.688739981319756,
+      "turns": 6,
+      "edit_rounds": 1,
+      "prompt_tokens": 75178,
+      "completion_tokens": 1442,
+      "outcome_sha256": "9d5ac3740a4ceca408ad0b29506aedeb85b5a16858aa032353e83b58eff5d6ad",
+      "delta_sha256": "115987fdd68eb2fe6c015ab993f07942bc74b03267f2b5cc51bfe8857db7b7e2",
+      "patch_sha256": "e73937d826bf6f391d9f1292c0f79c10cbf1f1ebd89a91a144f3a1973ae34db1"
+    }
+  ]
+}
