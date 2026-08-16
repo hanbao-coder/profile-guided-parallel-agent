@@ -3,13 +3,30 @@
 本项目研究一个具体问题：通用代码 Agent 直接把真实的多文件 Python 项目并行化时，为什么
 经常得到“有并行语法，但项目不能用或整体没有变快”的结果？
 
-当前观点是：项目级自动并行化不应只做一次代码生成，而应成为一个**允许拒绝候选的决策过程**。
-Agent 需要检查源码位置、共享状态和输出语义，并用原项目测试、固定输出及配对性能测量决定
-是否保留修改；证据不合格时恢复串行版本。
+当前准备检验的观点是：真实项目中的并行单位不能只由循环结构决定，还取决于
+**Worker 边界**——每个线程或进程到底接收什么数据、依赖什么状态、返回什么结果，以及
+跨边界传输的代价。系统把这些实测证据提供给 Agent，再用原项目检查和前后夹测决定是否
+保留修改。
 
-当前代码版本：`v0.25.0-evidence-corrected-repository-study`。
+当前代码版本：`v0.26.0-worker-boundary-protocol`。
 
-## 当前实验结论
+## 当前研究阶段
+
+早期 Radon、Vulture、Chardet 和 MkDocs 实验用于发现问题，不再作为新方法的主结果。人工
+复核30个候选后，29个失败候选中有16个主要问题与 Worker 边界有关。M8据此重新提出研究
+问题，并复现了 scikit-learn #28064 和 #29330 两个公开专家性能补丁。现在已经接入同一套
+真实项目测试、格式检查、输出检查和前后夹测管线，下一步正式比较：
+
+- B1：普通仓库级 Agent；
+- B2：只告诉 Agent 修改位置；
+- B3：再提供实测 Worker 边界证据；
+- B4：公开专家补丁，只作参考，不计入 Agent 成绩。
+
+研究问题、可被否定的假设和冻结协议见
+[M8 Worker 边界预注册](docs/m8-worker-boundary-hypothesis.md)。所有 `pilot-*` 运行只用于
+排查实验管线，不进入正式结论。
+
+## 早期问题发现结果
 
 主实验覆盖 Radon、Vulture、Chardet 和 MkDocs 四个真实开源项目，每种方法独立运行 12 次：
 
@@ -62,8 +79,9 @@ Radon 的 Worker 边界实验原先建立在“人工参考版本有明显加速
 
 ## 环境
 
-项目使用 Python 3.10～3.12。当前本机已经配置仓库专用环境，Python 位于
-`.venv\Scripts\python.exe`。在新的 Windows 环境中可使用 Conda：
+项目使用 Python 3.10～3.12。当前本机的 Conda 前缀环境解释器位于
+`.venv\python.exe`；普通 `venv` 环境通常位于 `.venv\Scripts\python.exe`。在新的
+Windows 环境中可使用 Conda：
 
 ```powershell
 conda create -n parallel-agent python=3.12 -y

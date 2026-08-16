@@ -1,0 +1,31 @@
+﻿id,raw_status,root_cause,worker_boundary_related,speedup,evidence
+chardet/run-01/edit-01,effective_end_to_end_gain,effective,False,3.3586652596802162,9324项测试通过，输出哈希一致，正式端到端基准获得有效加速。
+chardet/run-02/edit-01,correctness_failure,process_state_not_preserved,True,,3项CLI测试失败；测试在父进程替换chardet.detect，但ProcessPool子进程看不到该替换。
+chardet/run-02/edit-02,correctness_failure,process_state_not_preserved,True,,仍是相同3项CLI语义失败；Agent误以为只是errors计数位置问题。
+chardet/run-02/edit-03,correctness_failure,process_state_not_preserved,True,,仍未保留父进程动态替换状态，3项CLI测试继续失败。
+chardet/run-02/edit-04,correctness_failure,process_state_not_preserved,True,,第四轮仍重复修补表面控制流，没有处理进程状态隔离。
+chardet/run-03/edit-01,correctness_failure,process_state_not_preserved,True,,引入ProcessPool后，同一组进程状态相关CLI测试失败。
+chardet/run-03/edit-02,correctness_failure,process_state_not_preserved,True,,Agent将原因猜成函数不可序列化和顺序问题，但测试仍证明父进程状态没有保留。
+chardet/run-03/edit-03,correctness_failure,process_state_not_preserved,True,,重复上一修复后仍有相同3项CLI失败。
+mkdocs/run-01/edit-01,non_parallel_candidate,no_parallel_change,False,0.997381550620754,候选明确为no-op，只重新写回原串行循环。
+mkdocs/run-01/edit-02,no_meaningful_end_to_end_gain,shared_state_bottleneck,True,0.9809386784767565,为config._current_page和Jinja2渲染加入锁；测试和输出通过，但加速比仅0.981x。
+mkdocs/run-02/edit-01,correctness_failure,repository_context_mislocation,False,,并行块插入过早，doc_files、nav、env等变量尚未定义，15项测试出现NameError。
+mkdocs/run-02/edit-02,correctness_failure,repository_context_mislocation,False,,Agent识别出作用域错误，但没有把代码移动到正确位置，NameError保持不变。
+mkdocs/run-02/edit-03,correctness_failure,repository_context_mislocation,False,,第三轮仍处于同一错误位置，15项测试继续失败。
+mkdocs/run-03/edit-01,non_parallel_candidate,no_parallel_change,False,0.9464170080773517,候选明确为建立基线的空修改。
+mkdocs/run-03/edit-02,integration_or_output_failure,shared_state_output_drift,True,,项目测试通过，但真实站点输出与串行基线不一致；候选让线程共享插件事件、配置和渲染状态。
+mkdocs/run-03/edit-03,non_parallel_candidate,no_parallel_change,False,0.9452184095388,为恢复正确输出退回原串行实现。
+radon/run-01/edit-01,end_to_end_performance_regression,process_transfer_overhead,True,0.9363289459391345,测试和输出通过，但进程池版本仅0.936x；任务提交和结果传输成本超过计算收益。
+radon/run-01/edit-02,end_to_end_performance_regression,process_transfer_overhead,True,0.9275625138478378,更换为ProcessPoolExecutor后仍只有0.928x，说明更换API没有改变边界开销。
+radon/run-02/edit-01,integration_or_output_failure,unserializable_worker_input,True,,config.order包含lambda，作为Worker输入时无法pickle。
+radon/run-02/edit-02,integration_or_output_failure,unserializable_worker_input,True,,Agent识别lambda问题，但转换方案仍未恢复真实入口输出。
+radon/run-02/edit-03,integration_or_output_failure,unserializable_worker_input,True,,第三轮继续围绕配置序列化修补，真实端到端输出仍无法生成。
+radon/run-03/edit-01,no_meaningful_end_to_end_gain,process_transfer_overhead,True,1.009263800128755,结果正确但加速仅1.009x，进程化收益不足5%。
+radon/run-03/edit-02,no_meaningful_end_to_end_gain,process_transfer_overhead,True,0.9946025701025142,调整chunksize并减少结果转换后仍仅0.995x。
+vulture/run-01/edit-01,correctness_failure,patch_structure_corruption,False,,整段类代码改写后出现unexpected indent，项目无法导入。
+vulture/run-01/edit-02,correctness_failure,patch_structure_corruption,False,,尝试删除重复方法后仍未形成可通过测试的文件。
+vulture/run-01/edit-03,correctness_failure,patch_structure_corruption,False,,第三轮仍为unexpected indent。
+vulture/run-03/edit-01,correctness_failure,patch_structure_corruption,False,,首次修改出现unmatched parenthesis。
+vulture/run-03/edit-02,correctness_failure,patch_structure_corruption,False,,修补后变为unterminated triple-quoted string。
+vulture/run-03/edit-03,correctness_failure,patch_structure_corruption,False,,同一未闭合三引号错误继续存在。
+vulture/run-03/edit-04,correctness_failure,patch_structure_corruption,False,,第四轮仍未恢复文件结构，代码无法导入。

@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "task": "scikit-learn__scikit-learn-28064",
+  "candidate_region": "_BinMapper.fit 中逐特征计算分箱阈值的循环",
+  "worker_unit": "为一个数值特征计算分箱阈值",
+  "worker_inputs": [
+    "一个特征列",
+    "max_bins"
+  ],
+  "worker_outputs": [
+    "该特征的阈值数组"
+  ],
+  "state_risks": [
+    "结果完成顺序可能变化，必须按原特征编号放回",
+    "类别特征仍需保留原来的单独处理逻辑",
+    "必须继续遵守现有self.n_threads设置，不能把实验中的4个Worker写死到项目代码中"
+  ],
+  "payload_evidence": {
+    "full_matrix_repeated_for_each_task_bytes": 640002820,
+    "projected_feature_tasks_total_bytes": 32003340,
+    "full_to_projected_ratio": 19.998000833662985,
+    "note": "进程传输代理；线程共享内存时不等于实际传输量。"
+  },
+  "backend_evidence": {
+    "workers": 4,
+    "task_count": 20,
+    "repeats": 3,
+    "backends": {
+      "serial": {
+        "ok": true,
+        "timings_seconds": [
+          0.20896625099976518,
+          0.16279070400014461,
+          0.14403183000013087
+        ],
+        "median_seconds": 0.16279070400014461,
+        "output_hashes": [
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d",
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d",
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d"
+        ],
+        "stable_output": true,
+        "output_matches_serial": true,
+        "speedup_over_serial": 1.0
+      },
+      "thread": {
+        "ok": true,
+        "timings_seconds": [
+          0.05433526300021185,
+          0.052069584000491886,
+          0.05471066200061614
+        ],
+        "median_seconds": 0.05433526300021185,
+        "output_hashes": [
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d",
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d",
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d"
+        ],
+        "stable_output": true,
+        "output_matches_serial": true,
+        "speedup_over_serial": 2.996041520945797
+      },
+      "process": {
+        "ok": true,
+        "timings_seconds": [
+          0.11862590300006559,
+          0.10717072399984318,
+          0.10881816399978561
+        ],
+        "median_seconds": 0.10881816399978561,
+        "output_hashes": [
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d",
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d",
+          "e48ac03b0e4f9f2de3929e51d3afbd5a5385b54aff021b71f9db18dbd785641d"
+        ],
+        "stable_output": true,
+        "output_matches_serial": true,
+        "speedup_over_serial": 1.4959883351869945
+      }
+    }
+  },
+  "ordering_and_merge": "保留长度为n_features的结果槽，按feature index写回。",
+  "evidence_limit": "代表性输入上的小规模后端试验，不是最终补丁性能。",
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "logical_cpus": 24,
+    "numpy": "2.5.2",
+    "joblib": "1.5.3",
+    "scikit_learn": "1.6.dev0"
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "task": "scikit-learn__scikit-learn-29330",
+  "candidate_region": "ColumnTransformer._call_func_on_transformers 的并行任务提交",
+  "worker_unit": "对一个transformer所需的列执行fit_transform或transform",
+  "worker_inputs": [
+    "transformer",
+    "该transformer需要的列",
+    "y",
+    "参数"
+  ],
+  "worker_outputs": [
+    "转换后的列块"
+  ],
+  "state_risks": [
+    "对象类型列不能依赖joblib自动memmap共享",
+    "完整DataFrame若作为每个任务参数，会被重复序列化"
+  ],
+  "payload_evidence": {
+    "probe_rows": 10000,
+    "task_count": 40,
+    "full_dataframe_repeated_for_each_task_bytes": 493220160,
+    "presliced_columns_total_bytes": 12354587,
+    "full_to_projected_ratio": 39.92202734093823
+  },
+  "backend_evidence": {
+    "full_input_boundary": {
+      "workers": 2,
+      "task_count": 40,
+      "repeats": 3,
+      "backends": {
+        "serial": {
+          "ok": true,
+          "timings_seconds": [
+            0.06317846599995391,
+            0.062412704000053054,
+            0.06175817000075767
+          ],
+          "median_seconds": 0.062412704000053054,
+          "output_hashes": [
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9"
+          ],
+          "stable_output": true,
+          "output_matches_serial": true,
+          "speedup_over_serial": 1.0
+        },
+        "thread": {
+          "ok": true,
+          "timings_seconds": [
+            0.07041346400001203,
+            0.06724277500052267,
+            0.0653839960004916
+          ],
+          "median_seconds": 0.06724277500052267,
+          "output_hashes": [
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9"
+          ],
+          "stable_output": true,
+          "output_matches_serial": true,
+          "speedup_over_serial": 0.9281696658052546
+        },
+        "process": {
+          "ok": true,
+          "timings_seconds": [
+            6.3024999070003105,
+            6.27359833599985,
+            6.13998663700022
+          ],
+          "median_seconds": 6.27359833599985,
+          "output_hashes": [
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9"
+          ],
+          "stable_output": true,
+          "output_matches_serial": true,
+          "speedup_over_serial": 0.00994846986647354
+        }
+      }
+    },
+    "projected_input_boundary": {
+      "workers": 2,
+      "task_count": 40,
+      "repeats": 3,
+      "backends": {
+        "serial": {
+          "ok": true,
+          "timings_seconds": [
+            0.06173796599978232,
+            0.05596411099941179,
+            0.053463252000256034
+          ],
+          "median_seconds": 0.05596411099941179,
+          "output_hashes": [
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9"
+          ],
+          "stable_output": true,
+          "output_matches_serial": true,
+          "speedup_over_serial": 1.0
+        },
+        "thread": {
+          "ok": true,
+          "timings_seconds": [
+            0.05433331799940788,
+            0.05826132000038342,
+            0.05787428999974509
+          ],
+          "median_seconds": 0.05787428999974509,
+          "output_hashes": [
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9"
+          ],
+          "stable_output": true,
+          "output_matches_serial": true,
+          "speedup_over_serial": 0.9669943423868921
+        },
+        "process": {
+          "ok": true,
+          "timings_seconds": [
+            0.1667979940002624,
+            0.15561868099939602,
+            0.1551267659997393
+          ],
+          "median_seconds": 0.15561868099939602,
+          "output_hashes": [
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9",
+            "0d26f92a1d908e95a00e640eb504a8ffa95005c79eac68a59f0cc693da4988f9"
+          ],
+          "stable_output": true,
+          "output_matches_serial": true,
+          "speedup_over_serial": 0.35962334753132236
+        }
+      }
+    }
+  },
+  "ordering_and_merge": "保持transformers原顺序，继续由ColumnTransformer合并结果。",
+  "evidence_limit": "边界试验使用代表性子样本；最终结论仍由10万行端到端基准决定。",
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "logical_cpus": 24,
+    "numpy": "2.5.2",
+    "joblib": "1.5.3",
+    "scikit_learn": "1.6.dev0",
+    "pandas": "2.2.3"
+  }
+}

@@ -63,6 +63,16 @@ class RepositoryAgentError(RuntimeError):
     pass
 
 
+def _read_text_exact(path: Path) -> str:
+    """Read UTF-8 text without changing LF/CRLF byte representation."""
+    return path.read_bytes().decode("utf-8")
+
+
+def _write_text_exact(path: Path, content: str) -> None:
+    """Write UTF-8 text without platform newline translation."""
+    path.write_bytes(content.encode("utf-8"))
+
+
 def detect_parallel_constructs(patch: str) -> list[str]:
     """Return explicit concurrency constructs introduced by a unified diff."""
     added = "\n".join(
@@ -74,6 +84,20 @@ def detect_parallel_constructs(patch: str) -> list[str]:
         name
         for name, pattern in PARALLEL_CONSTRUCT_PATTERNS.items()
         if pattern.search(added)
+    ]
+
+
+def detect_parallel_constructs_in_files(paths: list[Path]) -> list[str]:
+    """Return concurrency constructs present in the current candidate files."""
+    text_parts: list[str] = []
+    for path in paths:
+        if path.is_file() and path.suffix.lower() in TEXT_SUFFIXES:
+            text_parts.append(path.read_text(encoding="utf-8"))
+    text = "\n".join(text_parts)
+    return [
+        name
+        for name, pattern in PARALLEL_CONSTRUCT_PATTERNS.items()
+        if pattern.search(text)
     ]
 
 
@@ -237,6 +261,110 @@ def analyze_process_worker_boundaries(paths: list[Path]) -> dict[str, Any]:
     }
 
 
+def analyze_python_patch_quality(paths: list[Path]) -> dict[str, Any]:
+    """Find high-confidence structural damage in edited Python modules."""
+    findings: list[dict[str, Any]] = []
+    for path in paths:
+        if path.suffix.lower() != ".py" or not path.is_file():
+            continue
+        try:
+            tree = ast.parse(_read_text_exact(path), filename=str(path))
+        except SyntaxError as exc:
+            findings.append(
+                {
+                    "path": str(path),
+                    "line": exc.lineno,
+                    "kind": "syntax_error",
+                    "message": str(exc),
+                }
+            )
+            continue
+        seen_imports: dict[str, int] = {}
+        definition_seen = False
+        for node in tree.body:
+            if isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            ):
+                definition_seen = True
+            if not isinstance(node, (ast.Import, ast.ImportFrom)):
+                continue
+            if definition_seen:
+                findings.append(
+                    {
+                        "path": str(path),
+                        "line": node.lineno,
+                        "kind": "late_module_import",
+                        "message": (
+                            "A module-level import appears after a function or "
+                            "class definition; keep the import block together."
+                        ),
+                    }
+                )
+            signature = ast.dump(node, include_attributes=False)
+            first_line = seen_imports.get(signature)
+            if first_line is None:
+                seen_imports[signature] = node.lineno
+            else:
+                findings.append(
+                    {
+                        "path": str(path),
+                        "line": node.lineno,
+                        "kind": "duplicate_module_import",
+                        "first_line": first_line,
+                        "message": (
+                            "The edit duplicated an existing module-level import."
+                        ),
+                    }
+                )
+        for parent in ast.walk(tree):
+            for _, value in ast.iter_fields(parent):
+                if not isinstance(value, list) or len(value) < 2:
+                    continue
+                statements = [item for item in value if isinstance(item, ast.stmt)]
+                if len(statements) != len(value):
+                    continue
+                for index, statement in enumerate(statements[:-1]):
+                    if isinstance(statement, (ast.Return, ast.Raise)):
+                        findings.append(
+                            {
+                                "path": str(path),
+                                "line": statements[index + 1].lineno,
+                                "kind": "unreachable_statement",
+                                "terminator_line": statement.lineno,
+                                "message": (
+                                    "The edit left a statement after an "
+                                    "unconditional return or raise in the same block."
+                                ),
+                            }
+                        )
+                for first, second in zip(statements, statements[1:]):
+                    if isinstance(first, ast.Pass):
+                        continue
+                    if ast.dump(first, include_attributes=False) == ast.dump(
+                        second, include_attributes=False
+                    ):
+                        findings.append(
+                            {
+                                "path": str(path),
+                                "line": second.lineno,
+                                "kind": "duplicate_consecutive_statement",
+                                "first_line": first.lineno,
+                                "message": (
+                                    "The edit left the same statement twice in a row."
+                                ),
+                            }
+                        )
+    return {
+        "status": "clean" if not findings else "structural_damage",
+        "findings": findings,
+        "scope": (
+            "High-confidence syntax, duplicate/late module-import, identical "
+            "consecutive statement and unreachable-after-return checks. This "
+            "is not a general style or maintainability score."
+        ),
+    }
+
+
 @dataclass(frozen=True)
 class ControlledCommand:
     name: str
@@ -268,7 +396,10 @@ class RepositoryAgentConfig:
     contract_mode: bool = False
     performance_feedback_mode: bool = False
     worker_boundary_mode: bool = False
+    boundary_evidence_mode: bool = False
     minimum_speedup: float = 1.05
+    max_anchored_edit_span: int = 120
+    parallelism_mode: str = "introduce"
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -472,6 +603,26 @@ class RepositoryAgentSession:
         self.repair_anchor_ready = False
 
     def _system_prompt(self) -> str:
+        if self.config.parallelism_mode == "introduce":
+            task_description = (
+                "modify a real multi-file serial Python project so its "
+                "registered end-to-end workload uses safe CPU parallelism"
+            )
+            construct_requirement = (
+                "the patch introduces an explicit executable parallel construct"
+            )
+        elif self.config.parallelism_mode == "optimize_existing":
+            task_description = (
+                "improve a real multi-file Python project whose registered "
+                "workload already uses CPU parallelism"
+            )
+            construct_requirement = (
+                "the candidate retains an explicit executable parallel construct"
+            )
+        else:
+            raise RepositoryAgentError(
+                f"unknown parallelism mode: {self.config.parallelism_mode!r}"
+            )
         if self.config.edit_mode == "anchored":
             edit_action = (
                 '{"action":"apply_edits","edits":[{"path":"relative/path.py",'
@@ -484,7 +635,14 @@ class RepositoryAgentSession:
                 "- One of the six exploration actions is reserved for "
                 "read_lines; use at most five read_files/search actions.\n"
                 "- Re-read the current range after an earlier edit before "
-                "editing that file again."
+                "editing that file again.\n"
+                "- Keep every edit local: an edit range may cover at most "
+                f"{self.config.max_anchored_edit_span} lines. Never replace a "
+                "whole file or a large file prefix to change one import or loop.\n"
+                "- An anchor_sha256 from read_lines may authorize a smaller "
+                "start/end range contained inside that read. Select only the "
+                "complete statements that must be replaced; do not include "
+                "the next function or an unfinished surrounding statement."
             )
         elif self.config.edit_mode == "legacy":
             edit_action = (
@@ -525,8 +683,8 @@ class RepositoryAgentSession:
 - Tests and the registered end-to-end benchmark run automatically after every
   edit. Do not request a separate validation action.
 - A candidate is successful only when tests pass, output matches the paired
-  serial baseline, the patch introduces an explicit executable parallel
-  construct, and measured speedup is at least {self.config.minimum_speedup:.3f}x.
+  baseline, {construct_requirement}, and measured speedup is at least
+  {self.config.minimum_speedup:.3f}x.
 - If feedback reports a correctness failure, performance regression or no
   meaningful gain, use the evidence to revise the candidate. Do not finish.
 - Every edit observation includes fresh repair_anchors for the current file
@@ -557,10 +715,20 @@ class RepositoryAgentSession:
 """
         else:
             boundary_rule = ""
+        if self.config.boundary_evidence_mode:
+            evidence_rule = """
+- The project context contains a measured `worker_boundary_evidence_card`.
+  Use it when selecting the Worker unit, minimum inputs, backend and merge.
+- The card is evidence, not a hidden patch. Inspect the referenced source and
+  derive the edit yourself. Do not invent stronger claims than the card shows.
+- Before editing, cite the relevant card fields in the parallelization
+  contract and explain how the proposed boundary avoids the recorded risks.
+"""
+        else:
+            evidence_rule = ""
         return f"""
-You are a general repository-level coding Agent. Your task is to modify a real
-multi-file serial Python project so its registered end-to-end workload uses
-safe CPU parallelism and becomes faster while preserving the project's public
+You are a general repository-level coding Agent. Your task is to
+{task_description} and make it faster while preserving the project's public
 entry point, output semantics, error behavior and tests.
 
 You have no hidden answer. Inspect the repository before editing. Do not assume
@@ -585,6 +753,10 @@ Every reply must be one JSON object with exactly one action:
 
 Rules:
 - Read relevant implementation and caller files before changing them.
+- If project_context contains `candidate_source_ranges`, treat them as
+  registered location evidence. Keep initial edits inside those ranges (using
+  a separate listed import range when needed) unless test feedback proves a
+  small adjacent repair is necessary.
 - `read_files` accepts at most eight paths and may return only the leading
   subset that fits a 40000-character observation. Use `read_lines` for a
   precise block in a large file.
@@ -592,6 +764,7 @@ Rules:
 {contract_rule}
 {feedback_rule}
 {boundary_rule}
+{evidence_rule}
 - Return complete JSON, with no Markdown fences.
 - Do not create shell commands, access secrets, use the network, or edit files
   outside the repository.
@@ -600,12 +773,16 @@ Rules:
 """.strip()
 
     def _initial_payload(self, project_context: dict[str, Any]) -> dict[str, Any]:
+        goal = (
+            "Parallelize the registered serial end-to-end workload without "
+            "changing externally observable behavior."
+            if self.config.parallelism_mode == "introduce"
+            else "Improve the registered parallel workload by changing its "
+            "Worker boundary without changing externally observable behavior."
+        )
         return {
             "project": self.config.project_id,
-            "goal": (
-                "Parallelize the registered serial end-to-end workload without "
-                "changing externally observable behavior."
-            ),
+            "goal": goal,
             "project_context": project_context,
             "file_tree": _tree(self.root),
             "available_actions": [
@@ -798,7 +975,7 @@ Rules:
             path = _safe_path(self.root, relative)
             content = updated_contents.get(path)
             if content is None:
-                content = path.read_text(encoding="utf-8")
+                content = _read_text_exact(path)
             if not old:
                 raise RepositoryAgentError("edit old text must not be empty")
             try:
@@ -822,9 +999,9 @@ Rules:
         for path, content in updated_contents.items():
             self.original_contents.setdefault(
                 path,
-                path.read_text(encoding="utf-8"),
+                _read_text_exact(path),
             )
-            path.write_text(content, encoding="utf-8")
+            _write_text_exact(path, content)
         self.edit_rounds += 1
         return {
             "ok": True,
@@ -913,7 +1090,9 @@ Rules:
         if not isinstance(edits, list) or not edits:
             raise RepositoryAgentError("apply_edits requires non-empty edits")
 
-        grouped: dict[Path, list[tuple[int, int, str, str, str]]] = {}
+        grouped: dict[
+            Path, list[tuple[int, int, str, str, str, int, int]]
+        ] = {}
         for edit in edits:
             if not isinstance(edit, dict):
                 raise RepositoryAgentError("each edit must be an object")
@@ -928,24 +1107,62 @@ Rules:
                 ) from exc
             anchor = str(edit.get("anchor_sha256", ""))
             new = str(edit.get("new", ""))
-            if (relative, start, end, anchor) not in self.read_anchors:
+            authorizing_ranges = [
+                (anchor_start, anchor_end)
+                for (
+                    anchor_path,
+                    anchor_start,
+                    anchor_end,
+                    anchor_digest,
+                ) in self.read_anchors
+                if anchor_path == relative
+                and anchor_digest == anchor
+                and anchor_start <= start
+                and end <= anchor_end
+            ]
+            if not authorizing_ranges:
                 raise RepositoryAgentError(
-                    f"{relative}:{start}-{end}: anchor was not returned by read_lines"
+                    f"{relative}:{start}-{end}: range is not contained in the "
+                    "read_lines anchor"
                 )
+            anchor_start, anchor_end = min(
+                authorizing_ranges, key=lambda item: item[1] - item[0]
+            )
             grouped.setdefault(path, []).append(
-                (start, end, anchor, new, relative)
+                (
+                    start,
+                    end,
+                    anchor,
+                    new,
+                    relative,
+                    anchor_start,
+                    anchor_end,
+                )
             )
 
         updated_contents: dict[Path, str] = {}
         matches: list[dict[str, Any]] = []
         for path, path_edits in grouped.items():
-            content = path.read_text(encoding="utf-8")
+            content = _read_text_exact(path)
             lines = content.splitlines(keepends=True)
             occupied: list[tuple[int, int]] = []
-            for start, end, anchor, _, relative in path_edits:
+            for (
+                start,
+                end,
+                anchor,
+                _,
+                relative,
+                anchor_start,
+                anchor_end,
+            ) in path_edits:
                 if start < 1 or end < start or end > len(lines):
                     raise RepositoryAgentError(
                         f"{relative}:{start}-{end}: line range is outside current file"
+                    )
+                if end - start + 1 > self.config.max_anchored_edit_span:
+                    raise RepositoryAgentError(
+                        f"{relative}:{start}-{end}: edit range is too large; "
+                        "read and edit only the smallest local source block"
                     )
                 if any(
                     not (end < other_start or start > other_end)
@@ -955,22 +1172,26 @@ Rules:
                         f"{relative}:{start}-{end}: anchored edits overlap"
                     )
                 occupied.append((start, end))
-                block = "".join(lines[start - 1 : end])
+                block = "".join(lines[anchor_start - 1 : anchor_end])
                 actual = hashlib.sha256(block.encode("utf-8")).hexdigest()
                 if actual != anchor:
                     raise RepositoryAgentError(
                         f"{relative}:{start}-{end}: source changed; re-read lines"
                     )
 
-            for start, end, anchor, new, relative in sorted(
+            for start, end, anchor, new, relative, _, _ in sorted(
                 path_edits,
                 key=lambda item: item[0],
                 reverse=True,
             ):
                 old_block = "".join(lines[start - 1 : end])
-                replacement = new
-                if old_block.endswith(("\n", "\r")) and not replacement.endswith("\n"):
-                    replacement += "\n"
+                newline = "\r\n" if "\r\n" in old_block else "\n"
+                replacement = new.replace("\r\n", "\n").replace("\r", "\n")
+                replacement = replacement.replace("\n", newline)
+                if old_block.endswith(("\n", "\r")) and not replacement.endswith(
+                    ("\n", "\r")
+                ):
+                    replacement += newline
                 lines[start - 1 : end] = [replacement]
                 matches.append(
                     {
@@ -978,6 +1199,8 @@ Rules:
                         "mode": "anchored",
                         "start": start,
                         "end": end,
+                        "new_start": start,
+                        "new_end": start + max(1, len(new.splitlines())) - 1,
                         "anchor_sha256": anchor,
                     }
                 )
@@ -986,9 +1209,9 @@ Rules:
         for path, content in updated_contents.items():
             self.original_contents.setdefault(
                 path,
-                path.read_text(encoding="utf-8"),
+                _read_text_exact(path),
             )
-            path.write_text(content, encoding="utf-8")
+            _write_text_exact(path, content)
             relative = path.relative_to(self.root).as_posix()
             self.read_anchors = {
                 item for item in self.read_anchors if item[0] != relative
@@ -1015,7 +1238,7 @@ Rules:
             raise RepositoryAgentError(
                 "read_lines requires 1 <= start <= end and at most 400 lines"
             )
-        content = path.read_text(encoding="utf-8")
+        content = _read_text_exact(path)
         lines_with_endings = content.splitlines(keepends=True)
         lines = content.splitlines()
         selected = lines[start - 1 : end]
@@ -1069,6 +1292,27 @@ Rules:
 
     def _evaluate_candidate(self) -> dict[str, Any]:
         """Run correctness first, then expose compact end-to-end feedback."""
+        patch_quality = analyze_python_patch_quality(
+            sorted(self.original_contents)
+        )
+        quality_path = self.run_dir / f"patch-quality-edit-{self.edit_rounds:02d}.json"
+        quality_path.write_text(
+            json.dumps(patch_quality, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        if patch_quality["status"] != "clean":
+            evaluation = {
+                "status": "patch_quality_failure",
+                "tests_pass": None,
+                "patch_quality": patch_quality,
+                "instruction": (
+                    "Repair the local structural damage before running the "
+                    "expensive project tests. Do not duplicate existing imports "
+                    "or rewrite unrelated source."
+                ),
+            }
+            self.last_candidate_evaluation = evaluation
+            return evaluation
         boundary_report = None
         if self.config.worker_boundary_mode:
             boundary_report = analyze_process_worker_boundaries(
@@ -1187,7 +1431,17 @@ Rules:
             capture_output=True,
             check=False,
         ).stdout
-        parallel_constructs = detect_parallel_constructs(patch)
+        introduced_parallel_constructs = detect_parallel_constructs(patch)
+        retained_parallel_constructs = (
+            detect_parallel_constructs_in_files(sorted(self.original_contents))
+            if self.config.parallelism_mode == "optimize_existing"
+            else []
+        )
+        parallel_constructs = (
+            introduced_parallel_constructs
+            if self.config.parallelism_mode == "introduce"
+            else retained_parallel_constructs
+        )
         if not parallel_constructs:
             status = "non_parallel_candidate"
             instruction = (
@@ -1219,6 +1473,9 @@ Rules:
             "speedup": speedup,
             "required_speedup": self.config.minimum_speedup,
             "parallel_constructs": parallel_constructs,
+            "introduced_parallel_constructs": introduced_parallel_constructs,
+            "retained_parallel_constructs": retained_parallel_constructs,
+            "parallelism_mode": self.config.parallelism_mode,
             "timings_seconds": parsed.get("timings_seconds", []),
             "instruction": instruction,
         }
@@ -1228,26 +1485,68 @@ Rules:
         return evaluation
 
     def _fresh_repair_anchors(self, edit_result: dict[str, Any]) -> list[dict[str, Any]]:
-        """Return bounded, current source evidence after an accepted edit."""
-        starts_by_path: dict[str, list[int]] = {}
+        """Return bounded current evidence around an accepted edit.
+
+        A replacement can change the length of a block or accidentally leave the
+        original tail immediately after the new text.  Returning only the exact
+        replacement made that stale tail invisible to the next repair turn.  A
+        small amount of adjacent context keeps repairs local while exposing that
+        common boundary error.
+        """
+        current_ranges: list[tuple[str, int, int]] = []
         for match in edit_result.get("matches", []):
             if isinstance(match, dict) and "start" in match:
-                starts_by_path.setdefault(str(match.get("path", "")), []).append(
-                    int(match["start"])
+                current_ranges.append(
+                    (
+                        str(match.get("path", "")),
+                        int(match.get("new_start", match["start"])),
+                        int(match.get("new_end", match.get("end", match["start"]))),
+                    )
                 )
         anchors: list[dict[str, Any]] = []
-        for relative in edit_result.get("files", []):
-            path = _safe_path(self.root, str(relative))
-            total_lines = len(path.read_text(encoding="utf-8").splitlines())
+        seen: set[tuple[str, int, int]] = set()
+        for relative, start, end in current_ranges:
+            path = _safe_path(self.root, relative)
+            total_lines = len(_read_text_exact(path).splitlines())
             if total_lines == 0:
                 continue
-            if total_lines <= 400:
-                start, end = 1, total_lines
-            else:
-                first_edit = min(starts_by_path.get(str(relative), [1]))
-                start = max(1, first_edit - 100)
-                end = min(total_lines, start + 399)
-            anchors.append(self._read_lines({"path": str(relative), "start": start, "end": end}))
+            context_lines = 3
+            current_start = max(1, min(start - context_lines, total_lines))
+            current_end = max(
+                current_start,
+                min(end + context_lines, total_lines),
+            )
+            key = (relative, current_start, current_end)
+            if key in seen:
+                continue
+            seen.add(key)
+            anchors.append(
+                self._read_lines(
+                    {
+                        "path": relative,
+                        "start": current_start,
+                        "end": current_end,
+                    }
+                )
+            )
+
+        # Legacy edit mode does not expose line ranges. Keep a bounded fallback
+        # for those older diagnostic runs, while anchored trials receive exact
+        # post-edit ranges that can be safely reused for repair.
+        if not anchors:
+            for relative in edit_result.get("files", []):
+                path = _safe_path(self.root, str(relative))
+                total_lines = len(_read_text_exact(path).splitlines())
+                if total_lines:
+                    anchors.append(
+                        self._read_lines(
+                            {
+                                "path": str(relative),
+                                "start": 1,
+                                "end": min(total_lines, 400),
+                            }
+                        )
+                    )
         return anchors
 
     def _abandon_candidate(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -1261,7 +1560,7 @@ Rules:
                 "edit before abandoning it"
             )
         for path, content in self.original_contents.items():
-            path.write_text(content, encoding="utf-8")
+            _write_text_exact(path, content)
         self.read_anchors.clear()
         self.candidate_abandoned = True
         self.last_candidate_evaluation = {
@@ -1511,7 +1810,7 @@ Rules:
             and self.original_contents
         ):
             for path, content in self.original_contents.items():
-                path.write_text(content, encoding="utf-8")
+                _write_text_exact(path, content)
             self.candidate_abandoned = True
             self.last_candidate_evaluation = {
                 "status": "automatic_safe_serial_fallback",

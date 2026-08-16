@@ -11,8 +11,10 @@ from parallel_agent.repository_agent import (
     RepositoryAgentConfig,
     RepositoryAgentError,
     RepositoryAgentSession,
+    analyze_python_patch_quality,
     analyze_process_worker_boundaries,
     detect_parallel_constructs,
+    detect_parallel_constructs_in_files,
     _safe_path,
     _search,
     _replace_with_context,
@@ -35,6 +37,7 @@ def _session(
     edit_mode: str = "legacy",
     contract_mode: bool = False,
     performance_feedback_mode: bool = False,
+    parallelism_mode: str = "introduce",
 ) -> RepositoryAgentSession:
     command = _command(tmp_path)
     return RepositoryAgentSession(
@@ -51,6 +54,7 @@ def _session(
             edit_mode=edit_mode,
             contract_mode=contract_mode,
             performance_feedback_mode=performance_feedback_mode,
+            parallelism_mode=parallelism_mode,
         )
     )
 
@@ -215,7 +219,7 @@ def test_anchored_edit_requires_a_previously_read_current_range(
 
     assert result["matches"][0]["mode"] == "anchored"
     assert source.read_text(encoding="utf-8") == "first = 10\nsecond = 2\n"
-    with pytest.raises(RepositoryAgentError, match="anchor was not returned"):
+    with pytest.raises(RepositoryAgentError, match="not contained"):
         session._apply_edits(
             {
                 "edits": [
@@ -225,6 +229,87 @@ def test_anchored_edit_requires_a_previously_read_current_range(
                         "end": 1,
                         "anchor_sha256": observed["anchor_sha256"],
                         "new": "first = 20",
+                    }
+                ]
+            }
+        )
+
+
+def test_anchored_edit_can_use_smaller_range_inside_read_anchor(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("first = 1\nsecond = 2\nthird = 3\n", encoding="utf-8")
+    session = _session(tmp_path, edit_mode="anchored")
+    observed = session._read_lines(
+        {"path": "main.py", "start": 1, "end": 3}
+    )
+
+    session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "start": 2,
+                    "end": 2,
+                    "anchor_sha256": observed["anchor_sha256"],
+                    "new": "second = 20",
+                }
+            ]
+        }
+    )
+
+    assert source.read_text(encoding="utf-8") == (
+        "first = 1\nsecond = 20\nthird = 3\n"
+    )
+
+
+def test_anchored_edit_preserves_lf_newlines(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_bytes(b"first = 1\nsecond = 2\n")
+    session = _session(tmp_path, edit_mode="anchored")
+    observed = session._read_lines(
+        {"path": "main.py", "start": 1, "end": 2}
+    )
+
+    session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "start": 2,
+                    "end": 2,
+                    "anchor_sha256": observed["anchor_sha256"],
+                    "new": "second = 20",
+                }
+            ]
+        }
+    )
+
+    assert source.read_bytes() == b"first = 1\nsecond = 20\n"
+
+
+def test_anchored_edit_rejects_large_file_replacement(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "".join(f"value_{index} = {index}\n" for index in range(150)),
+        encoding="utf-8",
+    )
+    session = _session(tmp_path, edit_mode="anchored")
+    observed = session._read_lines(
+        {"path": "main.py", "start": 1, "end": 150}
+    )
+
+    with pytest.raises(RepositoryAgentError, match="edit range is too large"):
+        session._apply_edits(
+            {
+                "edits": [
+                    {
+                        "path": "main.py",
+                        "start": 1,
+                        "end": 150,
+                        "anchor_sha256": observed["anchor_sha256"],
+                        "new": "value = 1",
                     }
                 ]
             }
@@ -479,6 +564,146 @@ def test_detect_parallel_constructs_ignores_removed_parallel_code() -> None:
     assert detect_parallel_constructs(patch) == []
 
 
+def test_detect_parallel_constructs_in_existing_candidate_file(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "from joblib import Parallel, delayed\n"
+        "result = Parallel(n_jobs=2)(delayed(work)(x) for x in items)\n",
+        encoding="utf-8",
+    )
+
+    constructs = detect_parallel_constructs_in_files([source])
+
+    assert "joblib.Parallel" in constructs
+
+
+def test_patch_quality_detects_duplicate_module_import(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "from pathlib import Path\nfrom pathlib import Path\n",
+        encoding="utf-8",
+    )
+
+    report = analyze_python_patch_quality([source])
+
+    assert report["status"] == "structural_damage"
+    assert report["findings"][0]["kind"] == "duplicate_module_import"
+
+
+def test_patch_quality_accepts_same_import_inside_function(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "from pathlib import Path\n\ndef work():\n    from pathlib import Path\n",
+        encoding="utf-8",
+    )
+
+    assert analyze_python_patch_quality([source])["status"] == "clean"
+
+
+def test_patch_quality_detects_import_after_function(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "def work():\n    return 1\n\nfrom pathlib import Path\n",
+        encoding="utf-8",
+    )
+
+    report = analyze_python_patch_quality([source])
+
+    assert any(
+        finding["kind"] == "late_module_import"
+        for finding in report["findings"]
+    )
+
+
+def test_patch_quality_detects_duplicate_consecutive_statement(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "def work():\n    result = list(values)\n    result = list(values)\n",
+        encoding="utf-8",
+    )
+
+    report = analyze_python_patch_quality([source])
+
+    assert report["status"] == "structural_damage"
+    assert any(
+        finding["kind"] == "duplicate_consecutive_statement"
+        for finding in report["findings"]
+    )
+
+
+def test_patch_quality_detects_statement_after_return(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "def work():\n    return 1\n    value = 2\n",
+        encoding="utf-8",
+    )
+
+    report = analyze_python_patch_quality([source])
+
+    assert any(
+        finding["kind"] == "unreachable_statement"
+        for finding in report["findings"]
+    )
+
+
+def test_existing_parallel_optimization_does_not_require_new_construct(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "from joblib import Parallel\nresult = Parallel(n_jobs=2)(tasks)\n",
+        encoding="utf-8",
+    )
+    session = _session(
+        tmp_path,
+        performance_feedback_mode=True,
+        parallelism_mode="optimize_existing",
+    )
+    session.original_contents[source] = source.read_text(encoding="utf-8")
+    session.project_context = {
+        "serial_median_seconds": 10.0,
+        "baseline_output_hash": "expected",
+    }
+    results = iter(
+        [
+            {
+                "name": "tests",
+                "returncode": 0,
+                "elapsed_seconds": 1.0,
+                "timed_out": False,
+                "stdout": "passed",
+                "stderr": "",
+            },
+            {
+                "name": "benchmark",
+                "returncode": 0,
+                "elapsed_seconds": 8.0,
+                "timed_out": False,
+                "stdout": json.dumps(
+                    {
+                        "median_seconds": 8.0,
+                        "timings_seconds": [8.0],
+                        "output_hashes": ["expected"],
+                        "stable_output": True,
+                    }
+                ),
+                "stderr": "",
+            },
+        ]
+    )
+    monkeypatch.setattr(repository_agent, "run_controlled", lambda command: next(results))
+    monkeypatch.setattr(repository_agent, "detect_parallel_constructs", lambda patch: [])
+
+    evaluation = session._evaluate_candidate()
+
+    assert evaluation["status"] == "effective_end_to_end_gain"
+    assert evaluation["introduced_parallel_constructs"] == []
+    assert "joblib.Parallel" in evaluation["retained_parallel_constructs"]
+
+
 def test_feedback_finish_rejects_slow_candidate_then_allows_safe_fallback(
     tmp_path: Path,
 ) -> None:
@@ -664,6 +889,74 @@ def test_feedback_mode_returns_fresh_anchor_after_edit(
         2,
         anchors[0]["anchor_sha256"],
     ) in session.read_anchors
+
+
+def test_feedback_anchor_tracks_expanded_replacement_range(tmp_path: Path) -> None:
+    source = tmp_path / "main.py"
+    source.write_text("before = 0\nvalue = 1\nafter = 2\n", encoding="utf-8")
+    session = _session(tmp_path, edit_mode="anchored")
+    initial = session._read_lines({"path": "main.py", "start": 2, "end": 2})
+    edit_result = session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "start": 2,
+                    "end": 2,
+                    "anchor_sha256": initial["anchor_sha256"],
+                    "new": "value = 10\nextra = 20",
+                }
+            ]
+        }
+    )
+
+    anchors = session._fresh_repair_anchors(edit_result)
+
+    assert len(anchors) == 1
+    assert anchors[0]["start"] == 1
+    assert anchors[0]["end"] == 4
+    assert anchors[0]["content"] == (
+        "before = 0\nvalue = 10\nextra = 20\nafter = 2"
+    )
+
+
+def test_feedback_anchor_exposes_original_tail_after_short_replacement(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "main.py"
+    source.write_text(
+        "def work():\n"
+        "    first = 1\n"
+        "    second = 2\n"
+        "    result = first + second\n"
+        "    return result\n"
+        "\n"
+        "def next_work():\n"
+        "    return 3\n",
+        encoding="utf-8",
+    )
+    session = _session(tmp_path, edit_mode="anchored")
+    initial = session._read_lines({"path": "main.py", "start": 2, "end": 5})
+    edit_result = session._apply_edits(
+        {
+            "edits": [
+                {
+                    "path": "main.py",
+                    "start": 2,
+                    "end": 5,
+                    "anchor_sha256": initial["anchor_sha256"],
+                    "new": "    result = 10",
+                }
+            ]
+        }
+    )
+
+    anchors = session._fresh_repair_anchors(edit_result)
+
+    assert len(anchors) == 1
+    assert anchors[0]["start"] == 1
+    assert anchors[0]["end"] == 5
+    assert "def next_work():" in anchors[0]["content"]
 
 
 def test_read_files_returns_subset_that_fits_budget(tmp_path: Path) -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from scripts.run_repository_diagnostic import _import_preflight
+from scripts.run_repository_diagnostic import _import_preflight, _paired_formal_summary
 
 
 def test_import_preflight_accepts_module_from_trial_src_layout(
@@ -39,3 +39,17 @@ def test_import_preflight_rejects_module_resolved_outside_trial(
 
     assert result["ok"] is False
     assert result["belongs_to_trial"] is False
+
+
+def test_paired_formal_summary_brackets_candidate_with_two_baselines() -> None:
+    def benchmark_result(seconds: float) -> dict[str, object]:
+        return {"stdout": '{"median_seconds": ' + str(seconds) + "}"}
+
+    summary = _paired_formal_summary(
+        baseline_before=benchmark_result(10.0),
+        candidate=benchmark_result(5.0),
+        baseline_after=benchmark_result(12.0),
+    )
+
+    assert summary["paired_baseline_median_seconds"] == 11.0
+    assert summary["speedup"] == 2.2

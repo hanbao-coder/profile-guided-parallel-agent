@@ -1,0 +1,3 @@
+﻿task,base_median_seconds,expert_median_seconds,expert_speedup,output_equal,tests,failures
+scikit-learn__scikit-learn-28064,0.10751434399935533,0.042180452999673435,2.548913924660499,True,54,0
+scikit-learn__scikit-learn-29330,53.9789095039996,1.147057494999899,47.05859099417188,True,354,0

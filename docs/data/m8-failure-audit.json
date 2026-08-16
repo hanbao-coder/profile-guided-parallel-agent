@@ -1,0 +1,265 @@
+{
+  "summary": {
+    "schema_version": 1,
+    "study": "M8 真实项目 Agent 候选修改根因复核",
+    "candidate_count": 30,
+    "effective_count": 1,
+    "non_effective_count": 29,
+    "worker_boundary_related_failures": 16,
+    "worker_boundary_related_failure_fraction": 0.5517241379310345,
+    "root_cause_counts": {
+      "effective": 1,
+      "no_parallel_change": 3,
+      "patch_structure_corruption": 7,
+      "process_state_not_preserved": 7,
+      "process_transfer_overhead": 4,
+      "repository_context_mislocation": 3,
+      "shared_state_bottleneck": 1,
+      "shared_state_output_drift": 1,
+      "unserializable_worker_input": 3
+    },
+    "interpretation_limit": "这是对30个实际候选修改的人工主因编码，不代表所有Python项目；后续需要在公开大型项目任务上继续验证。"
+  },
+  "candidates": [
+    {
+      "id": "chardet/run-01/edit-01",
+      "raw_status": "effective_end_to_end_gain",
+      "root_cause": "effective",
+      "worker_boundary_related": false,
+      "speedup": 3.3586652596802162,
+      "evidence": "9324项测试通过，输出哈希一致，正式端到端基准获得有效加速。"
+    },
+    {
+      "id": "chardet/run-02/edit-01",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "3项CLI测试失败；测试在父进程替换chardet.detect，但ProcessPool子进程看不到该替换。"
+    },
+    {
+      "id": "chardet/run-02/edit-02",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "仍是相同3项CLI语义失败；Agent误以为只是errors计数位置问题。"
+    },
+    {
+      "id": "chardet/run-02/edit-03",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "仍未保留父进程动态替换状态，3项CLI测试继续失败。"
+    },
+    {
+      "id": "chardet/run-02/edit-04",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "第四轮仍重复修补表面控制流，没有处理进程状态隔离。"
+    },
+    {
+      "id": "chardet/run-03/edit-01",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "引入ProcessPool后，同一组进程状态相关CLI测试失败。"
+    },
+    {
+      "id": "chardet/run-03/edit-02",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "Agent将原因猜成函数不可序列化和顺序问题，但测试仍证明父进程状态没有保留。"
+    },
+    {
+      "id": "chardet/run-03/edit-03",
+      "raw_status": "correctness_failure",
+      "root_cause": "process_state_not_preserved",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "重复上一修复后仍有相同3项CLI失败。"
+    },
+    {
+      "id": "mkdocs/run-01/edit-01",
+      "raw_status": "non_parallel_candidate",
+      "root_cause": "no_parallel_change",
+      "worker_boundary_related": false,
+      "speedup": 0.997381550620754,
+      "evidence": "候选明确为no-op，只重新写回原串行循环。"
+    },
+    {
+      "id": "mkdocs/run-01/edit-02",
+      "raw_status": "no_meaningful_end_to_end_gain",
+      "root_cause": "shared_state_bottleneck",
+      "worker_boundary_related": true,
+      "speedup": 0.9809386784767565,
+      "evidence": "为config._current_page和Jinja2渲染加入锁；测试和输出通过，但加速比仅0.981x。"
+    },
+    {
+      "id": "mkdocs/run-02/edit-01",
+      "raw_status": "correctness_failure",
+      "root_cause": "repository_context_mislocation",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "并行块插入过早，doc_files、nav、env等变量尚未定义，15项测试出现NameError。"
+    },
+    {
+      "id": "mkdocs/run-02/edit-02",
+      "raw_status": "correctness_failure",
+      "root_cause": "repository_context_mislocation",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "Agent识别出作用域错误，但没有把代码移动到正确位置，NameError保持不变。"
+    },
+    {
+      "id": "mkdocs/run-02/edit-03",
+      "raw_status": "correctness_failure",
+      "root_cause": "repository_context_mislocation",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "第三轮仍处于同一错误位置，15项测试继续失败。"
+    },
+    {
+      "id": "mkdocs/run-03/edit-01",
+      "raw_status": "non_parallel_candidate",
+      "root_cause": "no_parallel_change",
+      "worker_boundary_related": false,
+      "speedup": 0.9464170080773517,
+      "evidence": "候选明确为建立基线的空修改。"
+    },
+    {
+      "id": "mkdocs/run-03/edit-02",
+      "raw_status": "integration_or_output_failure",
+      "root_cause": "shared_state_output_drift",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "项目测试通过，但真实站点输出与串行基线不一致；候选让线程共享插件事件、配置和渲染状态。"
+    },
+    {
+      "id": "mkdocs/run-03/edit-03",
+      "raw_status": "non_parallel_candidate",
+      "root_cause": "no_parallel_change",
+      "worker_boundary_related": false,
+      "speedup": 0.9452184095388,
+      "evidence": "为恢复正确输出退回原串行实现。"
+    },
+    {
+      "id": "radon/run-01/edit-01",
+      "raw_status": "end_to_end_performance_regression",
+      "root_cause": "process_transfer_overhead",
+      "worker_boundary_related": true,
+      "speedup": 0.9363289459391345,
+      "evidence": "测试和输出通过，但进程池版本仅0.936x；任务提交和结果传输成本超过计算收益。"
+    },
+    {
+      "id": "radon/run-01/edit-02",
+      "raw_status": "end_to_end_performance_regression",
+      "root_cause": "process_transfer_overhead",
+      "worker_boundary_related": true,
+      "speedup": 0.9275625138478378,
+      "evidence": "更换为ProcessPoolExecutor后仍只有0.928x，说明更换API没有改变边界开销。"
+    },
+    {
+      "id": "radon/run-02/edit-01",
+      "raw_status": "integration_or_output_failure",
+      "root_cause": "unserializable_worker_input",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "config.order包含lambda，作为Worker输入时无法pickle。"
+    },
+    {
+      "id": "radon/run-02/edit-02",
+      "raw_status": "integration_or_output_failure",
+      "root_cause": "unserializable_worker_input",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "Agent识别lambda问题，但转换方案仍未恢复真实入口输出。"
+    },
+    {
+      "id": "radon/run-02/edit-03",
+      "raw_status": "integration_or_output_failure",
+      "root_cause": "unserializable_worker_input",
+      "worker_boundary_related": true,
+      "speedup": null,
+      "evidence": "第三轮继续围绕配置序列化修补，真实端到端输出仍无法生成。"
+    },
+    {
+      "id": "radon/run-03/edit-01",
+      "raw_status": "no_meaningful_end_to_end_gain",
+      "root_cause": "process_transfer_overhead",
+      "worker_boundary_related": true,
+      "speedup": 1.009263800128755,
+      "evidence": "结果正确但加速仅1.009x，进程化收益不足5%。"
+    },
+    {
+      "id": "radon/run-03/edit-02",
+      "raw_status": "no_meaningful_end_to_end_gain",
+      "root_cause": "process_transfer_overhead",
+      "worker_boundary_related": true,
+      "speedup": 0.9946025701025142,
+      "evidence": "调整chunksize并减少结果转换后仍仅0.995x。"
+    },
+    {
+      "id": "vulture/run-01/edit-01",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "整段类代码改写后出现unexpected indent，项目无法导入。"
+    },
+    {
+      "id": "vulture/run-01/edit-02",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "尝试删除重复方法后仍未形成可通过测试的文件。"
+    },
+    {
+      "id": "vulture/run-01/edit-03",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "第三轮仍为unexpected indent。"
+    },
+    {
+      "id": "vulture/run-03/edit-01",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "首次修改出现unmatched parenthesis。"
+    },
+    {
+      "id": "vulture/run-03/edit-02",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "修补后变为unterminated triple-quoted string。"
+    },
+    {
+      "id": "vulture/run-03/edit-03",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "同一未闭合三引号错误继续存在。"
+    },
+    {
+      "id": "vulture/run-03/edit-04",
+      "raw_status": "correctness_failure",
+      "root_cause": "patch_structure_corruption",
+      "worker_boundary_related": false,
+      "speedup": null,
+      "evidence": "第四轮仍未恢复文件结构，代码无法导入。"
+    }
+  ]
+}

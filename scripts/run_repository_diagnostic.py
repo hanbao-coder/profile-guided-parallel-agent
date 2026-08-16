@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import statistics
 import subprocess
 import sys
 import time
@@ -19,6 +20,7 @@ from parallel_agent.repository_agent import (
     RepositoryAgentConfig,
     RepositoryAgentSession,
     detect_parallel_constructs,
+    detect_parallel_constructs_in_files,
     run_controlled,
 )
 
@@ -51,6 +53,12 @@ def _args() -> argparse.Namespace:
     parser.add_argument("--contract-mode", action="store_true")
     parser.add_argument("--performance-feedback-mode", action="store_true")
     parser.add_argument("--worker-boundary-mode", action="store_true")
+    parser.add_argument("--boundary-evidence-mode", action="store_true")
+    parser.add_argument(
+        "--parallelism-mode",
+        choices=("introduce", "optimize_existing"),
+        default="introduce",
+    )
     parser.add_argument("--test-command", type=_parse_command)
     parser.add_argument("--benchmark-command", type=_parse_command)
     parser.add_argument(
@@ -90,6 +98,8 @@ def _initialize_trial(source: Path, trial: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=trial, check=True)
     subprocess.run(["git", "config", "user.email", "diagnostic@localhost"], cwd=trial, check=True)
     subprocess.run(["git", "config", "user.name", "Diagnostic Baseline"], cwd=trial, check=True)
+    subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=trial, check=True)
+    subprocess.run(["git", "config", "core.safecrlf", "false"], cwd=trial, check=True)
     subprocess.run(["git", "add", "-A"], cwd=trial, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "serial baseline"], cwd=trial, check=True)
 
@@ -124,6 +134,39 @@ def _benchmark_summary(result: dict[str, object]) -> dict[str, object]:
     except json.JSONDecodeError:
         return {}
     return parsed if isinstance(parsed, dict) else {}
+
+
+def _paired_formal_summary(
+    *,
+    baseline_before: dict[str, object],
+    candidate: dict[str, object],
+    baseline_after: dict[str, object] | None,
+) -> dict[str, object]:
+    before = _benchmark_summary(baseline_before)
+    candidate_summary = _benchmark_summary(candidate)
+    after = _benchmark_summary(baseline_after or {})
+    baseline_medians = [
+        float(summary["median_seconds"])
+        for summary in (before, after)
+        if summary.get("median_seconds") is not None
+    ]
+    candidate_seconds = candidate_summary.get("median_seconds")
+    if not baseline_medians or candidate_seconds is None:
+        return {"valid": False, "reason": "missing formal benchmark median"}
+    paired_baseline = statistics.median(baseline_medians)
+    candidate_median = float(candidate_seconds)
+    return {
+        "valid": bool(candidate_median > 0),
+        "baseline_medians_seconds": baseline_medians,
+        "paired_baseline_median_seconds": paired_baseline,
+        "candidate_median_seconds": candidate_median,
+        "speedup": paired_baseline / candidate_median,
+        "method": (
+            "median of before/after baseline medians divided by candidate median"
+            if len(baseline_medians) == 2
+            else "single before baseline median divided by candidate median"
+        ),
+    }
 
 
 def _import_preflight(
@@ -288,20 +331,42 @@ def main() -> int:
     baseline: dict[str, object] = {}
     if not args.skip_baseline:
         baseline["test"] = run_controlled(test_command)
+        # The Agent receives feedback from the quick benchmark after every edit.
+        # Measure the unmodified project with that exact command as well.  This
+        # matters when the quick workload is a smaller representative sample of
+        # the formal workload: comparing a small candidate run with a large
+        # baseline would create a meaningless speedup.
+        baseline["quick_benchmark"] = run_controlled(benchmark_command)
         baseline["benchmark"] = run_controlled(final_benchmark_command)
+        quick_baseline_summary = _benchmark_summary(baseline["quick_benchmark"])
         baseline_summary = _benchmark_summary(baseline["benchmark"])
+        quick_baseline_hashes = quick_baseline_summary.get("output_hashes", [])
         baseline_hashes = baseline_summary.get("output_hashes", [])
         expected_context_hash = str(context.get("baseline_output_hash", ""))
-        baseline_hash_matches = bool(
+        quick_baseline_hash_matches = bool(
+            quick_baseline_hashes
+            and all(
+                str(value) == expected_context_hash
+                for value in quick_baseline_hashes
+            )
+        )
+        formal_baseline_hash_matches = bool(
             baseline_hashes
             and all(str(value) == expected_context_hash for value in baseline_hashes)
         )
-        baseline["output_matches_registered_baseline"] = baseline_hash_matches
+        baseline["quick_output_matches_registered_baseline"] = (
+            quick_baseline_hash_matches
+        )
+        baseline["output_matches_registered_baseline"] = (
+            formal_baseline_hash_matches
+        )
         _write_json(run_dir / "baseline" / "validation.json", baseline)
         if (
             baseline["test"]["returncode"] != 0  # type: ignore[index]
+            or baseline["quick_benchmark"]["returncode"] != 0  # type: ignore[index]
             or baseline["benchmark"]["returncode"] != 0  # type: ignore[index]
-            or not baseline_hash_matches
+            or not quick_baseline_hash_matches
+            or not formal_baseline_hash_matches
         ):
             _write_json(
                 run_dir / "outcome.json",
@@ -313,9 +378,15 @@ def main() -> int:
             )
             return 2
         context = dict(context)
-        context["serial_median_seconds"] = float(baseline_summary["median_seconds"])
-        context["baseline_output_hash"] = str(baseline_hashes[0])
+        context["serial_median_seconds"] = float(
+            quick_baseline_summary["median_seconds"]
+        )
+        context["formal_serial_median_seconds"] = float(
+            baseline_summary["median_seconds"]
+        )
+        context["baseline_output_hash"] = str(quick_baseline_hashes[0])
         context["paired_baseline_measured_in_current_trial"] = True
+        context["paired_quick_and_formal_baselines"] = True
 
     config = RepositoryAgentConfig(
         project_id=args.project,
@@ -331,8 +402,11 @@ def main() -> int:
         contract_mode=args.contract_mode,
         performance_feedback_mode=args.performance_feedback_mode,
         worker_boundary_mode=args.worker_boundary_mode,
+        boundary_evidence_mode=args.boundary_evidence_mode,
+        parallelism_mode=args.parallelism_mode,
     )
-    agent_result = RepositoryAgentSession(config).run(context)
+    agent_session = RepositoryAgentSession(config)
+    agent_result = agent_session.run(context)
     final_test = run_controlled(test_command)
     patch = subprocess.run(
         ["git", "diff", "--binary"],
@@ -344,7 +418,23 @@ def main() -> int:
         check=False,
     ).stdout
     (run_dir / "agent" / "patch.diff").write_text(patch, encoding="utf-8")
-    parallel_constructs = detect_parallel_constructs(patch)
+    introduced_parallel_constructs = detect_parallel_constructs(patch)
+    retained_parallel_constructs = (
+        detect_parallel_constructs_in_files(
+            [
+                path
+                for path in trial.rglob("*.py")
+                if ".git" not in path.parts
+            ]
+        )
+        if args.parallelism_mode == "optimize_existing"
+        else []
+    )
+    parallel_constructs = (
+        introduced_parallel_constructs
+        if args.parallelism_mode == "introduce"
+        else retained_parallel_constructs
+    )
     expected_output_hash = str(context.get("baseline_output_hash", "")) or None
     tests_passed = (
         final_test.get("returncode") == 0 and not final_test.get("timed_out")
@@ -386,6 +476,31 @@ def main() -> int:
             "output_matches_baseline": True,
         }
 
+    post_candidate_baseline: dict[str, object] | None = None
+    if patch.strip() and tests_passed and agent_session.original_contents:
+        candidate_contents = {
+            path: path.read_bytes() for path in agent_session.original_contents
+        }
+        try:
+            for path, content in agent_session.original_contents.items():
+                path.write_bytes(content.encode("utf-8"))
+            post_candidate_baseline = _annotate_benchmark(
+                run_controlled(final_benchmark_command),
+                expected_output_hash=expected_output_hash,
+                valid_for_performance=True,
+            )
+        finally:
+            for path, content in candidate_contents.items():
+                path.write_bytes(content)
+        baseline["post_candidate_benchmark"] = post_candidate_baseline
+        _write_json(run_dir / "baseline" / "validation.json", baseline)
+
+    paired_formal = _paired_formal_summary(
+        baseline_before=baseline.get("benchmark", {}),
+        candidate=final_benchmark,
+        baseline_after=post_candidate_baseline,
+    )
+
     outcome = {
         "schema_version": 1,
         "project": args.project,
@@ -397,8 +512,12 @@ def main() -> int:
             "test": final_test,
             "benchmark": final_benchmark,
         },
+        "paired_formal_performance": paired_formal,
         "patch_nonempty": bool(patch.strip()),
         "parallel_constructs": parallel_constructs,
+        "introduced_parallel_constructs": introduced_parallel_constructs,
+        "retained_parallel_constructs": retained_parallel_constructs,
+        "parallelism_mode": args.parallelism_mode,
     }
     _write_json(run_dir / "outcome.json", outcome)
     return 0

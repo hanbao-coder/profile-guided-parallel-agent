@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "source_benchmark": "SWE-efficiency public task records",
+  "claim_boundary": "这些数字复现的是公开任务中的人工专家补丁，只用于证明研究问题真实存在，不能当作本项目Agent已经达到的结果。",
+  "tasks": [
+    {
+      "task": "scikit-learn__scikit-learn-28064",
+      "base_commit": "619a1c1028335e9fa7abd4d7fb6477200a4bce67",
+      "mechanism": "按特征并行计算分箱阈值，使用线程执行能够释放GIL的底层数值计算。",
+      "result_kind": "public_expert_reference_reproduction",
+      "base_median_seconds": 0.10751434399935533,
+      "expert_median_seconds": 0.042180452999673435,
+      "expert_speedup": 2.548913924660499,
+      "base_iqr_seconds": 0.008602719000009529,
+      "expert_iqr_seconds": 0.0005389470006775809,
+      "output_hash": "1e8d52a1bec6856a040371e8dcca3c9c1bb53908bf29dce0c699fea1fa6bed28",
+      "output_equal": true,
+      "expert_patch_sha256": "bb31a6288f7f0af9362bf542a768dd778204beabfaffba56dd66c1c79edf64ac",
+      "targeted_tests": {
+        "tests": 54,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 1.378
+      },
+      "configuration": {
+        "samples": 200000,
+        "features": 20,
+        "bins": 256,
+        "threads": 4,
+        "warmups": 1,
+        "repeats": 5,
+        "random_seed": 20260816
+      },
+      "environment": {
+        "python": "3.12.3",
+        "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "logical_cpus": 24,
+        "numpy": "2.5.2"
+      }
+    },
+    {
+      "task": "scikit-learn__scikit-learn-29330",
+      "base_commit": "a490ab19667988de62024eb98acd61117f8c292a",
+      "mechanism": "在提交并行任务前先切出所需列，避免把完整DataFrame反复送入Worker。",
+      "result_kind": "public_expert_reference_reproduction",
+      "base_median_seconds": 53.9789095039996,
+      "expert_median_seconds": 1.147057494999899,
+      "expert_speedup": 47.05859099417188,
+      "base_iqr_seconds": 6.442482336000012,
+      "expert_iqr_seconds": 0.014606192500195903,
+      "output_hash": "a065e626e39a24327ed5ccb8c0cac7b73627398330fb3642d39472eba6d2908d",
+      "output_equal": true,
+      "expert_patch_sha256": "6d87da41d4f8a98c35f2c4acb9a8e467400e2739c868f1da09c122b831a9da59",
+      "targeted_tests": {
+        "tests": 354,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4,
+        "seconds": 3.812
+      },
+      "configuration": {
+        "rows": 100000,
+        "columns": 40,
+        "jobs": 2,
+        "warmups": 1,
+        "repeats": 3,
+        "seed": 20260816
+      },
+      "environment": {
+        "python": "3.12.3",
+        "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "logical_cpus": 24,
+        "numpy": "2.5.2",
+        "pandas": "2.2.3",
+        "joblib": "1.5.3",
+        "scikit_learn": "1.6.dev0"
+      },
+      "boundary_serialization_proxy": {
+        "sample_rows": 1000,
+        "full_dataframe_once_bytes": 1231173,
+        "old_full_dataframe_per_task_bytes": 49246920,
+        "expert_presliced_columns_total_bytes": 1255346,
+        "old_to_expert_ratio": 39.22975817025744
+      }
+    }
+  ]
+}
