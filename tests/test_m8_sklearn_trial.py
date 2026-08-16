@@ -30,3 +30,10 @@ def test_registered_tasks_are_pinned_to_commits_and_hashes() -> None:
     for spec in TASKS.values():
         assert len(str(spec["commit"])) == 40
         assert len(str(spec["baseline_output_hash"])) == 64
+        assert len(str(spec["quick_baseline_output_hash"])) == 64
+
+
+def test_quick_and_formal_hashes_are_distinct_for_scaled_dataframe_workload() -> None:
+    context = _project_context("29330", "b1_ordinary")
+
+    assert context["quick_baseline_output_hash"] != context["baseline_output_hash"]

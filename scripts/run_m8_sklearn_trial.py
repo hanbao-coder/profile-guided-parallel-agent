@@ -26,6 +26,9 @@ TASKS: dict[str, dict[str, object]] = {
         "baseline_output_hash": (
             "1e8d52a1bec6856a040371e8dcca3c9c1bb53908bf29dce0c699fea1fa6bed28"
         ),
+        "quick_baseline_output_hash": (
+            "1e8d52a1bec6856a040371e8dcca3c9c1bb53908bf29dce0c699fea1fa6bed28"
+        ),
         "problem_statement": (
             "Improve the end-to-end fitting performance of the histogram "
             "gradient boosting bin mapper on a fixed dense numerical input."
@@ -77,6 +80,9 @@ TASKS: dict[str, dict[str, object]] = {
         "commit": "a490ab19667988de62024eb98acd61117f8c292a",
         "baseline_output_hash": (
             "a065e626e39a24327ed5ccb8c0cac7b73627398330fb3642d39472eba6d2908d"
+        ),
+        "quick_baseline_output_hash": (
+            "e1616157074823caf49bf8e7bfc2e8bb292832c1c559f56b48f3c1b34e01ebe9"
         ),
         "problem_statement": (
             "Improve the end-to-end performance of a ColumnTransformer that "
@@ -182,6 +188,7 @@ def _project_context(task: str, group: str) -> dict[str, object]:
         "public_entrypoint": spec["public_entrypoint"],
         "registered_workload": spec["registered_workload"],
         "baseline_output_hash": spec["baseline_output_hash"],
+        "quick_baseline_output_hash": spec["quick_baseline_output_hash"],
         "correctness_requirements": spec["correctness_requirements"],
         "interface_constraints": spec["interface_constraints"],
         "constraints": [

@@ -343,10 +343,13 @@ def main() -> int:
         quick_baseline_hashes = quick_baseline_summary.get("output_hashes", [])
         baseline_hashes = baseline_summary.get("output_hashes", [])
         expected_context_hash = str(context.get("baseline_output_hash", ""))
+        expected_quick_hash = str(
+            context.get("quick_baseline_output_hash", expected_context_hash)
+        )
         quick_baseline_hash_matches = bool(
             quick_baseline_hashes
             and all(
-                str(value) == expected_context_hash
+                str(value) == expected_quick_hash
                 for value in quick_baseline_hashes
             )
         )
