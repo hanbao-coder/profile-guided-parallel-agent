@@ -24,8 +24,10 @@ Agent在#28064上的1次补丁有效。
 
 M9进一步把问题收窄为“调用方和Worker必须成套变化的数据投影迁移”，提出Verified
 Boundary Delta：Agent先声明关系变化，再由守卫工具原子执行，并保护调用者选择的并行后端。
-M8结果见[正式汇总](docs/data/m8-formal-summary.json)，新方法和可否定假设见
-[M9预注册](docs/m9-boundary-delta-hypothesis.md)。所有 `pilot-*` 只用于排查管线。
+两次独立正式运行均通过350项项目测试和隐藏后端语义检查，加速分别为48.77倍和47.69倍，
+并生成相同最终补丁。M8结果见[正式汇总](docs/data/m8-formal-summary.json)，M9结果见
+[M9正式汇总](docs/data/m9-formal-summary.json)，研究过程见
+[M9方法与结果](docs/m9-boundary-delta-hypothesis.md)。所有 `pilot-*` 只用于排查管线。
 
 ## 早期问题发现结果
 
@@ -55,13 +57,13 @@ Radon 的 Worker 边界实验原先建立在“人工参考版本有明显加速
 ## 方法流程
 
 ```text
-固定串行项目
-  → 运行原测试、固定工作负载和串行计时
-  → Agent 阅读入口、调用关系和状态
-  → 生成任务边界与语义约束
-  → 生成候选并行修改
-  → 项目测试、固定输出和端到端性能检查
-  → 合格则保留；不合格则修复，仍失败就恢复串行代码
+固定真实项目
+  → 从源码提取调用方、Worker和调度策略关系
+  → Agent声明结构化Boundary Delta
+  → 守卫工具原子修改调用方和全部Worker
+  → AST关系检查、项目测试、隐藏后端语义检查
+  → 原始—候选—恢复原始的配对端到端计时
+  → 全部门槛通过才保留
 ```
 
 有效并行化必须同时满足：原项目测试通过、固定输出一致、存在实际并行结构、端到端中位加速
@@ -73,6 +75,7 @@ Radon 的 Worker 边界实验原先建立在“人工参考版本有明显加速
 - [实验设计与结果](docs/experiments.md)：项目、对照组、指标和真实数字；
 - [相关工作](docs/related-work.md)：论文、研究空白与本项目的区别；
 - [最终研究报告](docs/final-research-report.md)：从诊断、观点、方法到实验结论的完整整理；
+- [M9 方法与结果](docs/m9-boundary-delta-hypothesis.md)：最终 Insight、预注册和正式结果；
 - [当前局限](docs/limitations.md)：哪些结论现在还不能说；
 - [Worker 边界实验](docs/m7-worker-boundary-design.md)：为什么该支线因实验前提失效而终止；
 - [复现说明](docs/reproducibility.md)：环境与运行入口；

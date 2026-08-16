@@ -1,172 +1,145 @@
-# 相关工作：Agent 驱动的项目级自动并行化
+# 相关工作：真实项目中的 Agent 并行化与 Worker 边界
 
-## 1. 调研目的
+## 1. 为什么重新整理相关工作
 
-本文档不把论文按标题简单罗列，而是比较已有研究分别解决了什么，以及项目级自动
-并行化还缺少哪些证据。M6 诊断后，研究问题已经收敛为：通用代码 Agent 在真实
-多文件项目中为什么容易生成“有并行语法但不可交付”的修改，以及怎样用项目测试、
-固定输出、配对性能反馈和安全回退降低错误交付。后续 M7 曾计划检验 Worker 边界证据能否
-提高正确候选的生成概率，但其 Radon 人工性能参考未能在固定协议下复现，因此该实验按前提
-失效终止。
+项目最早关注“让 Agent 生成 Ray 并行代码并根据性能反馈调整配置”。这条路线可以做出完整
+系统，但研究问题太散，容易变成功能堆叠。完成真实项目诊断后，问题收敛为：
 
-## 2. 核心工作对照
+> 在已经具有并行结构的真实仓库中，Agent 能否正确修改调用方与多个 Worker 之间的数据边界，
+> 同时保持原有调度语义？
 
-| 工作 | 研究对象 | 主要方法与指标 | 与本项目的关系 | 尚未覆盖 |
-|---|---|---|---|---|
-| ParEval（HPDC 2024） | 420个独立并行编程任务 | 比较正确率、加速比和并行效率 | 证明并行代码必须真实运行和测性能 | 不研究多文件项目的修改和集成 |
-| ParEval-Repo（2025） | 仓库级HPC/GPGPU代码迁移 | 构建、正确性、错误类型和Token | 说明仓库扩大后构建和跨文件依赖变难 | 重点是执行模型翻译，不是从串行项目发现并行机会 |
-| CodeAgent（ACL 2024） | 真实仓库代码生成 | 检索、实现、测试工具组成Agent | 说明仓库任务需要主动找文件并执行验证 | 不专门研究并行正确性和性能 |
-| RepoExec（NAACL 2025） | 仓库级代码生成上下文 | 可执行性、功能正确性、依赖利用 | 说明不完整上下文会误导代码生成 | 不回答并行修改需要哪些运行证据 |
-| PerfCodeGen（2024） | 通用Python代码性能优化 | 正确性门控后反馈真实运行时间 | 支持“运行后再优化”的闭环 | 不处理项目级并行区域选择和跨文件集成 |
-| SWE-Perf（2025） | 140个真实仓库性能优化任务 | 专家补丁、性能测试和可执行环境 | 证明仓库级性能优化明显难于普通修复 | 任务不要求使用并行化，也不分析串行到并行的失败 |
-| SWE-efficiency（ICML 2026） | 9个大型Python仓库中的498个任务 | 真实工作负载、守护测试、专家加速比 | 提供端到端性能和专家上界的严格评价方法 | 优化手段开放，不专门研究并行语义和并行开销 |
-| FormulaCode（2026） | 70个科学Python仓库中的957个瓶颈 | 多工作负载、专家补丁、多目标指标 | 说明真实仓库需要细粒度、连续性能评价 | 关注一般性能优化，不限定串行到并行转换 |
-| PEACE（2025） | 47个Python项目中的146个优化任务 | 依赖感知的多函数混合编辑 | 与跨函数项目优化直接相关 | 目标是一般代码编辑，不研究任务拆分、共享状态和并行执行 |
-| PerfAgent（2026） | GSO和SWE-efficiency-Lite仓库优化任务 | 剖析摘要、选择性测试、最多5轮再优化 | 已经验证“热点剖析+验证闭环”能够改善仓库优化 | 不专门解决串行项目并行化的安全边界和并行收益 |
-| Profile-driven auto-parallelization（PLDI 2009） | 传统编译器自动并行化 | 静态分析结合性能剖析 | 说明静态安全与实际收益需要同时考虑 | 不使用LLM，也不处理Agent修改过程 |
-| AutoTornado（2022） | Java循环自动并行化 | 依赖与纯函数分析 | 提供保守安全判断思路 | 主要是循环级，不是仓库级 |
-| Ray（OSDI 2018） | 分布式任务与Actor执行 | 动态任务图、调度和对象存储 | 可作为生成代码的执行后端 | 不负责判断项目哪里应该并行 |
+因此，本文围绕四个直接相关的问题比较已有工作：并行代码如何评价、仓库级修改为什么困难、
+执行反馈能解决什么、数据跨进程边界为什么影响性能。
 
-## 3. 已有工作能够支持的事实
+## 2. 并行代码生成与评价
 
-### 3.1 并行代码评价不能只看能否生成
+### 2.1 ParEval
 
-ParEval 同时评价正确性和性能，说明“生成了并行语法”并不等于“得到了有效并行
-程序”。本项目因此把有效并行化定义为：项目可运行、输出正确、端到端性能至少提高
-预设阈值。
+Nichols 等人在 HPDC 2024 提出 ParEval，包含 420 个科学计算与并行编程任务，覆盖 12 类计算
+问题和 6 种并行编程模型。它的重要启发是：并行代码不能只看能否生成，还要检查正确性、运行
+时间和并行效率。
 
-### 3.2 仓库级修改比独立函数更依赖上下文
+本项目继承这一评价原则，但研究对象不同。ParEval 主要是独立编程题；本项目处理真实仓库中
+调用方、Worker、测试和用户配置之间的关系。
 
-ParEval-Repo、CodeAgent 和 RepoExec 从不同角度说明，仓库级任务需要处理构建、
-入口、检索和跨文件依赖。只向模型提供孤立函数可能漏掉调用方和状态；把整个仓库
-不加选择地放进上下文，也不代表模型一定能找到真正相关内容。
+论文：[Can Large Language Models Write Parallel Code?](https://arxiv.org/abs/2401.12554)
 
-### 3.3 代码性能需要用真实执行反馈判断
+### 2.2 ParEval-Repo
 
-PerfCodeGen 先通过正确性检查，再把实际运行时间用于后续修改。传统
-profile-guided auto-parallelization 也表明，静态依赖安全与运行收益是两个不同
-问题。一个区域可以安全并行，不代表它值得并行。
+Davis 等人在 ICPP 2025 提出 ParEval-Repo，把任务扩展为完整 HPC/GPGPU 代码库之间的编程模型
+迁移。论文发现，小程序迁移已经可行，但项目变大后，构建系统和跨文件依赖会明显增加失败。
 
-### 3.4 执行框架不是研究问题本身
+这项工作支持本项目从单文件示例转向真实仓库。区别是，ParEval-Repo 研究 CUDA、OpenMP、
+Kokkos 等执行模型之间的翻译；本项目研究 Python 项目中数据跨 Worker 边界的关系重构。
 
-Ray 提供并行任务执行能力，但它不会替 Agent 判断修改哪个模块、如何保持原项目
-语义，以及修改是否改善端到端时间。本项目使用 Ray 作为候选后端，不把修改 Ray
-调度器作为目标。
+论文：[ParEval-Repo](https://arxiv.org/abs/2506.20938)，
+[ICPP 正式版本](https://doi.org/10.1145/3754598.3754669)
 
-### 3.5 “给 Agent 热点信息”已经不能单独作为创新
+## 3. 执行反馈与仓库级性能优化
 
-2026年7月发布的 PerfAgent 已经系统实现了仓库级性能剖析引导：它向普通代码
-Agent提供经过整理的热点、调用上下文和运行占比，在每轮修改后重新构建、验证和
-剖析，并保留最快的正确补丁。论文报告其专家水平补丁比例在 GSO 上从 19.6%
-提高到39.2%，在 SWE-efficiency-Lite 上从26%提高到74%。
+### 3.1 PerfCodeGen
 
-因此，本项目不能仅仅把“运行 cProfile 后把热点发给模型”写成研究贡献。性能
-剖析可以作为诊断工具或方法中的一部分，但最终问题必须体现串行到并行转换特有的
-困难。
+PerfCodeGen 先用测试保证代码正确，再把真实运行时间反馈给模型继续修改。它说明性能不能只靠
+模型自评，实际执行反馈可以提高生成代码的效率。
 
-### 3.6 真实仓库性能基准为实验设计提供了更高标准
+本项目早期的“测试—计时—反馈—回退”与它思路一致。但 PerfCodeGen 主要使用 HumanEval、
+MBPP 和 APPS 等编程题，不处理真实仓库里的跨文件关系，也没有专门研究并行后端语义。
 
-SWE-efficiency 的公开说明显示，其498个任务来自 NumPy、Pandas、SciPy、
-Scikit-learn、Matplotlib、Xarray、SymPy、Dask和Astropy，并为每个任务提供完整
-代码库、性能工作负载和需要保持通过的仓库测试。它还区分专家加速和模型加速，
-明确统计错误补丁、正确但无加速补丁和达到专家水平的补丁。
+论文：[PerfCodeGen](https://arxiv.org/abs/2412.03578)
 
-FormulaCode、SWE-Perf和PEACE也都使用真实仓库、专家修改或可执行环境。这说明
-本项目如果只使用自己编写的单文件算法，将无法充分支持“项目级”结论。因此主实验
-最终使用四个固定版本的真实开源项目，并保留原项目测试和完整工作负载。
+### 3.2 PerfAgent 与 FormulaCode
 
-## 4. 诊断后仍缺少的研究证据
+PerfAgent 使用性能剖析器引导仓库级 Agent 反复寻找热点、修改、验证和重新剖析。论文指出，
+仓库级性能优化必须同时保持行为并改善端到端性能；仅通过测试仍可能漏掉边界情况。
 
-现有工作已经研究了一般仓库性能优化、热点剖析反馈和依赖感知编辑。M6 进一步观察到：
-普通 Agent 的 12 次项目级并行化中有 6 次留下错误修改，另 6 次没有形成可用方案；错误并不
-只来自某一种语法或调度策略，而是分布在项目测试、最终输出、真实并行结构和端到端收益多个
-阶段。
+FormulaCode 从科学 Python 仓库中整理真实性能瓶颈，并使用多工作负载和多目标指标评价 Agent。
+两项工作都说明，“给 Agent 一个真实仓库和计时结果”本身不能保证得到可靠优化。
 
-因此当前空白不再表述为“尚不知道会不会失败”，而是：
+本项目不把“加入 profiler”作为创新，而是进一步限制到并行化特有的问题：修改 Worker 的数据
+输入时，调用方、所有 Worker 参数和调度策略必须一起变化。
 
-> 面向串行项目到并行项目的结构性修改，仍缺少一种把候选生成和证据门控明确分开的 Agent
-> 流程：候选只有同时满足项目测试、固定输出、真实并行和端到端收益时才交付，否则允许拒绝
-> 修改并保留串行版本。
+论文：[PerfAgent](https://arxiv.org/abs/2607.19653)，
+[FormulaCode](https://arxiv.org/abs/2603.16011)
 
-这一问题与一般性能优化不同。并行补丁可能退出码正常、耗时很短，却通过错误聚合或吞掉子进程
-异常得到错误输出；也可能局部变快但整体变慢。因此模型自评或单项测试不足以支持交付决定。
+### 3.3 SWE-efficiency 与公开专家补丁复现
 
-## 5. 当前研究问题、假设和观点
+SWE-efficiency 使用 NumPy、pandas、SciPy、scikit-learn 等大型 Python 仓库中的真实性能任务，
+同时提供项目测试、工作负载和专家补丁。本项目从中选择两个与并行化直接相关的 scikit-learn
+任务进行复现：
 
-### 研究问题
+- #28064：把独立特征计算放在线程中执行，专家补丁加速约 2.55 倍；
+- #29330：在提交任务前切出所需列，避免把整张 DataFrame 交给每个进程，专家补丁加速约
+  47.06 倍。
 
-在固定模型、项目、工具和运行次数的条件下，加入项目语义约束、真实执行反馈和安全回退，能否
-降低普通 Agent 自动并行化真实项目时的错误交付率，同时保留能够通过端到端验证的有效候选？
+专家补丁只用于证明任务存在可复现优化空间，并作为参考上界；Agent 正式运行前不能看到补丁。
+这相当于部分复现真实仓库性能基准，而不是自行编写一个容易获得加速的示例。
 
-### 可否定假设
+论文：[SWE-efficiency](https://arxiv.org/abs/2511.06090)
 
-如果证据门控和回退确实有作用，那么 B2 的错误交付率应低于 B1；若 B2 仍频繁保留测试失败、
-输出错误或性能退化的补丁，假设被否定。有效并行成功率单独统计，不能把回退算作成功。
+## 4. 分布式执行中的数据边界
 
-### 核心观点
+Ray 的 OSDI 2018 论文说明，任务并行系统不仅要调度计算，还要管理任务对象和分布式对象存储。
+这说明数据移动是任务执行的一部分，而不是并行代码之外的细节。
 
-> 项目级自动并行化不是一次性生成并行语法，而是带拒绝选项的决策过程。项目测试、固定输出
-> 和配对端到端性能共同决定候选是否值得交付；证据不合格时保留串行版本更可靠。
+在本项目最终使用的 joblib/loky 场景中，官方文档明确指出：进程 Worker 的输入输出需要序列化；
+大型 Python 对象会带来明显开销；库代码硬编码 `backend="threading"` 是不推荐的，因为这会让
+调用者无法通过上下文选择后端。
 
-## 6. 当前事实与尚未验证部分
+这些资料解释了 #29330 的两个关键现象：
 
-### 已验证事实
+1. 把完整 DataFrame 重复发给 40 个任务会产生大量数据传递；
+2. 把后端强制改为线程虽然可能更快，但改变了公开库允许调用者选择后端的行为。
 
-- B1 普通 Agent：12 次中 6 次错误交付，6 次未形成方案，0 次有效并行；
-- B2 完整方法：1 次有效并行、10 次安全回退、1 次未形成方案，0 次已知错误交付；
-- B2 共检查 30 个候选，其中 17 个测试失败、4 个输出或集成失败、3 个没有实际并行、
-  3 个收益不足 5%、2 个整体变慢、1 个被接受；
-- MkDocs 的 A1 小规模消融中，单独增加语义约束没有消除错误修改；加入执行反馈和回退后，
-  3 个不合格候选均未被交付；
-- 这些事实支持“执行证据和拒绝选项降低了当前样本中的错误交付”，不支持“已经能稳定自动加速”。
+资料：[Ray OSDI 2018](https://www.usenix.org/conference/osdi18/presentation/moritz)，
+[joblib Parallel 文档](https://joblib.readthedocs.io/en/stable/parallel.html)
 
-### 尚未验证或证据不足
+## 5. 已有工作留下的具体空缺
 
-- 主实验只有四个项目，不能估计所有 Python 项目的平均成功率；
-- 完整方法同时改变多个环节，MkDocs 每组只有 3 次，不能精确分离每个组件的因果贡献；
-- Radon 的 Worker 边界检查只完成 2 次有效探索运行；随后人工性能参考被固定协议否定，故该
-  支线终止，不能判断它是否能提高有效加速成功率；
-- 现阶段只验证 Windows 单机 CPU 进程/线程，不外推到多节点网络和 GPU。
+已有研究分别证明：并行代码需要同时检查正确性和性能；仓库级任务容易受跨文件依赖影响；运行
+反馈和 profiler 能帮助模型寻找性能问题；进程间序列化和调度策略会影响实际性能。
 
-## 7. 核心参考文献
+但在本项目检索到的工作中，尚未看到一种专门面向下面这一类 Agent 修改的受控方法：
 
-1. Nichols et al. *Can Large Language Models Write Parallel Code?*
-   HPDC 2024. https://doi.org/10.1145/3625549.3658689
-2. Davis et al. *ParEval-Repo: A Benchmark Suite for Evaluating LLMs
-   with Repository-level HPC Translation Tasks.* 2025.
-   https://arxiv.org/abs/2506.20938
-3. Peng et al. *PerfCodeGen: Improving Performance of LLM Generated
-   Code with Execution Feedback.* 2024.
-   https://arxiv.org/abs/2412.03578
-4. Zhang et al. *CodeAgent: Enhancing Code Generation with
-   Tool-Integrated Agent Systems for Real-World Repo-level Coding
-   Challenges.* ACL 2024.
-   https://aclanthology.org/2024.acl-long.737/
-5. Hai et al. *On the Impacts of Contexts on Repository-Level Code
-   Generation.* Findings of NAACL 2025.
-   https://aclanthology.org/2025.findings-naacl.82/
-6. Tournavitis et al. *Towards a Holistic Approach to
-   Auto-Parallelization: Integrating Profile-Driven Parallelism
-   Detection and Machine-Learning Based Mapping.* PLDI 2009.
-   https://doi.org/10.1145/1543135.1542496
-7. Sharma et al. *Can We Run in Parallel? Automating Loop
-   Parallelization for TornadoVM.* 2022.
-   https://arxiv.org/abs/2205.03590
-8. Moritz et al. *Ray: A Distributed Framework for Emerging AI
-   Applications.* OSDI 2018.
-   https://www.usenix.org/conference/osdi18/presentation/moritz
-9. He et al. *SWE-Perf: Can Language Models Optimize Code Performance
-   on Real-World Repositories?* 2025.
-   https://arxiv.org/abs/2507.12415
-10. Ma et al. *SWE-efficiency: Can Language Models Optimize Real-World
-    Repositories on Real Workloads?* ICML 2026.
-    https://arxiv.org/abs/2511.06090
-11. Sehgal et al. *FormulaCode: Evaluating Agentic Optimization on
-    Large Codebases.* 2026.
-    https://arxiv.org/abs/2603.16011
-12. Ren et al. *PEACE: Towards Efficient Project-Level Efficiency
-    Optimization via Hybrid Code Editing.* 2025.
-    https://arxiv.org/abs/2510.17142
-13. Deng et al. *PerfAgent: Profiler-Guided Iterative Refinement for
-    Repository-Level Code Optimization.* 2026.
-    https://arxiv.org/abs/2607.19653
+> 当优化需要把某个数据操作从多个 Worker 内部移动到任务提交处时，让 Agent 先声明完整的
+> “边界变化”，再以原子方式同时修改调用方和全部 Worker，并检查调度策略是否保持。
+
+自由文本提示即使告诉模型“数据传得太多”，仍可能只改一个函数、漏掉另一个 Worker，或者通过
+硬编码更快后端来适配基准。本项目把这种失败称为“关系修改失败”，而不是普通语法错误。
+
+## 6. 本项目的 Insight 与创新边界
+
+本项目的核心观点是：
+
+> 对项目级并行化而言，性能优化单位不一定是一行代码或一个循环，而可能是一条由调用方、
+> Worker 参数、Worker 内部操作和调度策略共同组成的边界关系。只有这条关系整体一致，补丁才
+> 可能既正确、又快速、又保持原项目语义。
+
+基于这一观点，项目提出 Verified Boundary Delta：
+
+1. 用 AST 从固定源码中发现调用方与两个 Worker 的原始关系；
+2. 让 Agent 输出结构化边界变化，而不是直接自由编辑多个文件；
+3. 工具用源码哈希和守卫片段一次性完成成对修改；
+4. 修改后检查数据只在提交前投影一次、所有 Worker 参数一致、`n_jobs` 和后端选择保持；
+5. 最后运行项目测试、隐藏后端语义检查和前后夹测性能实验。
+
+这不是通用自动并行化算法，也不是新的编译器。当前创新是一种针对“Worker 数据投影前移”模式
+的 Agent 约束与验证方法。它是否能迁移到更多仓库，仍需要后续实验。
+
+## 7. 论文—问题—本项目对应表
+
+| 相关工作 | 已解决的问题 | 本项目采用的部分 | 本项目继续研究的部分 |
+|---|---|---|---|
+| ParEval | 并行代码的正确性和性能评价 | 真实运行、正确性、加速比 | 多文件边界关系与语义保持 |
+| ParEval-Repo | 仓库级并行模型迁移 | 真实仓库、跨文件失败分析 | Python Worker 数据边界 |
+| PerfCodeGen | 用执行时间反馈优化代码 | 测试后计时、拒绝慢候选 | 关系修改不能只靠反馈修复 |
+| PerfAgent | profiler 引导仓库性能 Agent | 真实热点、验证闭环 | 并行后端与 Worker 关系约束 |
+| SWE-efficiency | 真实性能任务与专家上界 | 复现两个 scikit-learn 任务 | 受控 Agent 对照实验 |
+| Ray/joblib | 任务调度、对象传递与后端 | 理解数据移动和序列化成本 | 自动发现并验证边界变化 |
+
+## 8. 结论
+
+相关工作使本项目避免了三个不成立的“创新点”：生成并行语法、加入运行时间反馈、加入仓库性能
+剖析，这些都已有充分研究。最终研究问题被缩小为一个更具体、可否定的问题：结构化、可验证的
+Worker 边界变化，能否改善自由 Agent 在真实仓库中无法协调多处修改的问题。
+
+现有两次正式实验支持这一方法在 scikit-learn #29330 上有效，但样本不足以证明普适性。

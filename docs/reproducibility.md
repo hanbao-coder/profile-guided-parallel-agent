@@ -10,7 +10,12 @@
 .\.venv\python.exe -m pytest -q
 ```
 
-2026 年 8 月 8 日的完整检查结果为 `130 passed`。
+2026 年 8 月 16 日在全新 pytest 临时目录中的完整检查结果为 `168 passed`。若旧的
+`work/pytest` 被 Windows 进程占用，可指定新的测试临时目录：
+
+```powershell
+.\.venv\python.exe -m pytest -q --basetemp work\pytest-recheck
+```
 
 本机 `.venv` 是 Conda 环境，Python 位于 `.venv\python.exe`，不是常见的 `.venv\Scripts\python.exe`。在其他机器上可以直接使用当前 Python 或新建 Python 3.12 环境，不要求路径完全相同。
 
@@ -123,7 +128,36 @@ DeepSeek Key 只保存在本机 `.env`，不得提交到 Git。M7 的替代运�
 但当前不再等待补跑：固定协议已经证明 Radon 人工参考版本没有有效加速，原 M7 性能假设失去
 实验前提。该决定和被排除运行分别记录，不能混入主实验统计。
 
-## 8. 本轮复现发现并解决的问题
+## 8. M8 与 M9 最终研究结果的轻量复现
+
+不调用模型、不重新运行十分钟级基准，只从本机原始记录重建汇总：
+
+```powershell
+.\.venv\python.exe scripts\summarize_m8_formal_trials.py
+.\.venv\python.exe scripts\summarize_m9_boundary_delta_trials.py
+```
+
+提交到 Git 的紧凑结果分别为：
+
+- `docs/data/m8-formal-summary.json`：两个 scikit-learn 任务、三种自由 Agent 组；
+- `docs/data/m9-formal-summary.json`：#29330 Verified Boundary Delta 两次正式结果；
+- `docs/data/m9-boundary-delta-evidence.json`：从固定源码生成的调用方—Worker 关系证据。
+
+M9 的单次完整实验入口为：
+
+```powershell
+.\.venv\python.exe scripts\run_m9_boundary_delta_trial.py --run-id <全新编号>
+```
+
+该命令会调用 DeepSeek，并在 WSL 的固定 scikit-learn 环境中运行350项测试和前后夹测，通常
+需要十分钟以上。阅读、汇报或普通代码检查时不应重复运行；只有需要独立核验原始实验时才使用。
+正式编号不可覆盖，pilot也不计入研究结果。
+
+隐藏语义检查位于 `scripts/check_sklearn_29330_backend_semantics.py`。它不是要求固定使用 loky，
+而是确认：当调用者明确选择 loky 时，修改后的库仍然让任务在子进程执行，不能偷偷硬编码线程
+来获得更高基准速度。
+
+## 9. 本轮复现发现并解决的问题
 
 | 问题 | 原因 | 处理 |
 |---|---|---|
