@@ -41,6 +41,9 @@ TASKS = {
             "compose/_column_transformer.py",
             "pipeline.py",
         ),
+        "semantic_check_script": (
+            ROOT / "scripts" / "check_sklearn_29330_backend_semantics.py"
+        ),
         "quick_args": (
             "--rows", "10000", "--columns", "40", "--jobs", "2",
             "--warmups", "0", "--repeats", "1",
@@ -177,6 +180,21 @@ def main() -> int:
             sys.stderr.write(style_result.stderr)
             if style_result.returncode != 0:
                 return style_result.returncode
+
+        semantic_check = task.get("semantic_check_script")
+        if semantic_check is not None:
+            semantic_result = _run_wsl(
+                distro=args.distro,
+                argv=[
+                    args.wsl_python,
+                    windows_to_wsl_path(semantic_check),
+                ],
+                timeout=args.timeout,
+            )
+            sys.stdout.write(semantic_result.stdout)
+            sys.stderr.write(semantic_result.stderr)
+            if semantic_result.returncode != 0:
+                return semantic_result.returncode
         return 0
     else:
         benchmark_script = windows_to_wsl_path(task["benchmark_script"])

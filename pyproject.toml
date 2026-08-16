@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "profile-guided-parallel-agent"
-version = "0.26.0"
-description = "A worker-boundary-evidence agent for project-level parallel performance patches."
+version = "0.27.0"
+description = "A verified boundary-delta agent for project-level parallel performance patches."
 requires-python = ">=3.10,<3.13"
 dependencies = [
   "numpy>=1.26",

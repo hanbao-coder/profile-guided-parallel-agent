@@ -54,6 +54,7 @@ def _args() -> argparse.Namespace:
     parser.add_argument("--performance-feedback-mode", action="store_true")
     parser.add_argument("--worker-boundary-mode", action="store_true")
     parser.add_argument("--boundary-evidence-mode", action="store_true")
+    parser.add_argument("--boundary-delta-mode", action="store_true")
     parser.add_argument(
         "--parallelism-mode",
         choices=("introduce", "optimize_existing"),
@@ -407,6 +408,7 @@ def main() -> int:
         worker_boundary_mode=args.worker_boundary_mode,
         boundary_evidence_mode=args.boundary_evidence_mode,
         parallelism_mode=args.parallelism_mode,
+        boundary_delta_mode=args.boundary_delta_mode,
     )
     agent_session = RepositoryAgentSession(config)
     try:

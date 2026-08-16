@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "pattern": "hoist_projection_before_dispatch",
+  "source_evidence": {
+    "caller_file_sha256": "31fd50f6082a56e7f0314c73ee7ca79ee6fe9d90334e152a6c9506a1a821042c",
+    "worker_file_sha256": "06d6223676de418659a11d56320f589a282efd968d4f60d26fca1c6695692e40"
+  },
+  "caller": {
+    "path": "sklearn/compose/_column_transformer.py",
+    "function": "_call_func_on_transformers",
+    "delayed_call_range": {
+      "start": 874,
+      "end": 882
+    },
+    "payload_argument": "X",
+    "payload_before": "X",
+    "selector_argument": "columns",
+    "projection_function": "_safe_indexing",
+    "scheduler": {
+      "call": "Parallel",
+      "keywords": {
+        "n_jobs": "self.n_jobs"
+      },
+      "source": "Parallel(n_jobs=self.n_jobs)",
+      "must_remain_backend_agnostic": true
+    }
+  },
+  "workers": [
+    {
+      "function": "_transform_one",
+      "parameters": [
+        "transformer",
+        "X",
+        "y",
+        "weight",
+        "columns",
+        "params"
+      ],
+      "projection_block": {
+        "start": 1289,
+        "end": 1290,
+        "operation": "X = _safe_indexing(X, columns, axis=1)"
+      }
+    },
+    {
+      "function": "_fit_transform_one",
+      "parameters": [
+        "transformer",
+        "X",
+        "y",
+        "weight",
+        "columns",
+        "message_clsname",
+        "message",
+        "params"
+      ],
+      "projection_block": {
+        "start": 1316,
+        "end": 1317,
+        "operation": "X = _safe_indexing(X, columns, axis=1)"
+      }
+    }
+  ],
+  "required_atomic_delta": [
+    "Project X with columns at the delayed-call site before dispatch.",
+    "Remove columns from the delayed Worker call.",
+    "Remove columns from every registered Worker signature.",
+    "Remove the now-redundant Worker-side projection blocks.",
+    "Keep the Parallel scheduler call backend-agnostic and preserve ordering."
+  ],
+  "files": {
+    "caller_path": "sklearn/compose/_column_transformer.py",
+    "caller_function": "_call_func_on_transformers",
+    "worker_path": "sklearn/pipeline.py",
+    "worker_functions": [
+      "_transform_one",
+      "_fit_transform_one"
+    ]
+  },
+  "task": "scikit-learn__scikit-learn-29330",
+  "source_commit": "a490ab19667988de62024eb98acd61117f8c292a",
+  "provenance": "Generated from the pinned base source by AST inspection. The public expert patch is not read by this script or included in the evidence."
+}

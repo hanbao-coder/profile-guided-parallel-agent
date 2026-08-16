@@ -8,23 +8,24 @@
 跨边界传输的代价。系统把这些实测证据提供给 Agent，再用原项目检查和前后夹测决定是否
 保留修改。
 
-当前代码版本：`v0.26.0-worker-boundary-protocol`。
+当前代码版本：`v0.27.0-verified-boundary-delta`。
 
 ## 当前研究阶段
 
-早期 Radon、Vulture、Chardet 和 MkDocs 实验用于发现问题，不再作为新方法的主结果。人工
-复核30个候选后，29个失败候选中有16个主要问题与 Worker 边界有关。M8据此重新提出研究
-问题，并复现了 scikit-learn #28064 和 #29330 两个公开专家性能补丁。现在已经接入同一套
-真实项目测试、格式检查、输出检查和前后夹测管线，下一步正式比较：
+早期 Radon、Vulture、Chardet 和 MkDocs 实验用于发现问题，不作为新方法的主结果。人工
+复核30个候选后，29个失败候选中有16个主要问题与 Worker 边界有关。M8据此在
+scikit-learn #28064 和 #29330 上完成18次正式Agent实验，但边界证据组没有提高最终有效率：
+6次结构失败、6次正确性失败、4次没有修改，另有1次表面加速但语义退化，最终只有普通
+Agent在#28064上的1次补丁有效。
 
 - B1：普通仓库级 Agent；
 - B2：只告诉 Agent 修改位置；
-- B3：再提供实测 Worker 边界证据；
-- B4：公开专家补丁，只作参考，不计入 Agent 成绩。
+- B3：再提供实测 Worker 边界证据。
 
-研究问题、可被否定的假设和冻结协议见
-[M8 Worker 边界预注册](docs/m8-worker-boundary-hypothesis.md)。所有 `pilot-*` 运行只用于
-排查实验管线，不进入正式结论。
+M9进一步把问题收窄为“调用方和Worker必须成套变化的数据投影迁移”，提出Verified
+Boundary Delta：Agent先声明关系变化，再由守卫工具原子执行，并保护调用者选择的并行后端。
+M8结果见[正式汇总](docs/data/m8-formal-summary.json)，新方法和可否定假设见
+[M9预注册](docs/m9-boundary-delta-hypothesis.md)。所有 `pilot-*` 只用于排查管线。
 
 ## 早期问题发现结果
 

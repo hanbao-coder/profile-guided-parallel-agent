@@ -22,6 +22,12 @@ from typing import Any
 
 from openai import OpenAI
 
+from .boundary_delta import (
+    BoundaryDeltaError,
+    apply_projection_boundary_delta,
+    validate_plan as validate_boundary_delta_plan,
+)
+
 
 TEXT_SUFFIXES = {
     ".py",
@@ -402,6 +408,7 @@ class RepositoryAgentConfig:
     parallelism_mode: str = "introduce"
     api_timeout_seconds: float = 120.0
     api_max_retries: int = 1
+    boundary_delta_mode: bool = False
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -608,6 +615,7 @@ class RepositoryAgentSession:
         self.candidate_abandoned = False
         self.repair_read_actions = 0
         self.repair_anchor_ready = False
+        self.boundary_delta_plan: dict[str, Any] | None = None
 
     def _system_prompt(self) -> str:
         if self.config.parallelism_mode == "introduce":
@@ -665,11 +673,31 @@ class RepositoryAgentSession:
             raise RepositoryAgentError(
                 f"unknown edit mode: {self.config.edit_mode!r}"
             )
+        if self.config.boundary_delta_mode:
+            edit_action = (
+                '{"action":"apply_boundary_delta","plan":{'
+                '"pattern":"hoist_projection_before_dispatch",'
+                '"caller_function":"...","payload_argument":"...",'
+                '"selector_argument":"...","projection_function":"...",'
+                '"worker_functions":["..."],'
+                '"remove_selector_from_workers":true,'
+                '"preserve_scheduler_policy":true},"reason":"..."}'
+            )
+            edit_rule = """
+- The project context contains a statically discovered `boundary_delta_evidence`
+  record. After reading its caller and Worker source, use apply_boundary_delta.
+- The delta is relational and atomic: name every discovered Worker, move the
+  projection to the caller, remove the migrated selector on both sides, and
+  preserve the existing Parallel scheduler/backend policy.
+- Do not use free-form apply_edits in this mode. The guarded transformation tool
+  applies only a plan that exactly matches current source evidence, then checks
+  the caller/Worker relation before project tests run.
+"""
         if self.config.contract_mode:
             contract_action = """
 {"action":"declare_contract","contract":{"target":"symbol to change","worker_inputs":["..."],"worker_outputs":["..."],"shared_or_dynamic_state":["..."],"ordering":"...","error_and_exit_behavior":"...","serialization_risks":["..."],"backend":"serial|thread|process","backend_rationale":"...","fallback_conditions":["..."],"evidence":[{"path":"relative/path.py","start":1,"end":20,"anchor_sha256":"hash from read_lines"}]},"reason":"..."}"""
             contract_rule = """
-- Before apply_edits, declare one parallelization contract grounded in current
+- Before changing code, declare one parallelization contract grounded in current
   read_lines anchors.
 - The contract must explain Worker inputs/outputs, shared or dynamically bound
   state (including plugins, injected callables or runtime replacements), result
@@ -797,7 +825,11 @@ Rules:
                 "read_lines",
                 "search",
                 *(["declare_contract"] if self.config.contract_mode else []),
-                "apply_edits",
+                (
+                    "apply_boundary_delta"
+                    if self.config.boundary_delta_mode
+                    else "apply_edits"
+                ),
                 *(
                     ["abandon_candidate"]
                     if self.config.performance_feedback_mode
@@ -821,7 +853,12 @@ Rules:
             or (
                 self.action_summaries
                 and self.action_summaries[-1]["action"]
-                in {"declare_contract", "apply_edits", "run_validation"}
+                in {
+                    "declare_contract",
+                    "apply_edits",
+                    "apply_boundary_delta",
+                    "run_validation",
+                }
             )
         )
         model = self.config.model if use_pro else self.config.flash_model
@@ -1580,7 +1617,7 @@ Rules:
             raise RepositoryAgentError("performance feedback mode is not enabled")
         if not self.original_contents:
             raise RepositoryAgentError("there is no edited candidate to abandon")
-        if self.edit_rounds < 2:
+        if self.edit_rounds < 2 and not self.config.boundary_delta_mode:
             raise RepositoryAgentError(
                 "use the first candidate's feedback for at least one repair "
                 "edit before abandoning it"
@@ -1598,6 +1635,62 @@ Rules:
             "reason": str(data.get("reason", "")),
         }
         return {"ok": True, **self.last_candidate_evaluation}
+
+    def _apply_boundary_delta(self, data: dict[str, Any]) -> dict[str, Any]:
+        if not self.config.boundary_delta_mode:
+            raise RepositoryAgentError("boundary-delta mode is not enabled")
+        if self.parallel_contract is None and self.config.contract_mode:
+            raise RepositoryAgentError(
+                "declare a parallelization contract before applying the delta"
+            )
+        if self.edit_rounds >= self.config.max_edit_rounds:
+            raise RepositoryAgentError("maximum edit rounds reached")
+        if self.original_contents:
+            raise RepositoryAgentError(
+                "the registered boundary delta is atomic and can only be applied once"
+            )
+        evidence = self.project_context.get("boundary_delta_evidence")
+        plan = data.get("plan")
+        if not isinstance(evidence, dict) or not isinstance(plan, dict):
+            raise RepositoryAgentError(
+                "apply_boundary_delta requires registered evidence and a plan object"
+            )
+        try:
+            validate_boundary_delta_plan(plan, evidence)
+        except BoundaryDeltaError as exc:
+            raise RepositoryAgentError(str(exc)) from exc
+
+        changed_paths = [
+            _safe_path(self.root, str(evidence["files"]["caller_path"])),
+            _safe_path(self.root, str(evidence["files"]["worker_path"])),
+        ]
+        for path in changed_paths:
+            self.original_contents[path] = _read_text_exact(path)
+        try:
+            result = apply_projection_boundary_delta(self.root, evidence)
+        except Exception:
+            for path, content in self.original_contents.items():
+                _write_text_exact(path, content)
+            self.original_contents.clear()
+            raise
+        self.edit_rounds += 1
+        self.boundary_delta_plan = dict(plan)
+        artifact = {
+            "plan": plan,
+            "reason": str(data.get("reason", "")),
+            **result,
+        }
+        (self.run_dir / "boundary-delta.json").write_text(
+            json.dumps(artifact, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return {
+            "ok": True,
+            "mode": "verified_boundary_delta",
+            "files": result["files"],
+            "invariant_report": result["invariant_report"],
+            "matches": [],
+        }
 
     def _execute_action(self, data: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         action = str(data.get("action", "")).strip()
@@ -1658,7 +1751,17 @@ Rules:
             return result, False
         if action == "declare_contract":
             return self._declare_contract(data), False
+        if action == "apply_boundary_delta":
+            result = self._apply_boundary_delta(data)
+            self.repair_anchor_ready = False
+            if self.config.performance_feedback_mode:
+                result["candidate_evaluation"] = self._evaluate_candidate()
+            return result, False
         if action == "apply_edits":
+            if self.config.boundary_delta_mode:
+                raise RepositoryAgentError(
+                    "use apply_boundary_delta in verified boundary-delta mode"
+                )
             result = self._apply_edits(data)
             self.repair_anchor_ready = False
             if self.config.performance_feedback_mode:

@@ -49,3 +49,6 @@ def test_each_public_task_registers_project_style_files() -> None:
         "ensemble/_hist_gradient_boosting/binning.py",
     )
     assert "pipeline.py" in EVALUATOR.TASKS["29330"]["style_files"]
+    assert EVALUATOR.TASKS["29330"]["semantic_check_script"].name == (
+        "check_sklearn_29330_backend_semantics.py"
+    )
