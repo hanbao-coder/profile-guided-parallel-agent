@@ -959,6 +959,33 @@ def test_feedback_anchor_exposes_original_tail_after_short_replacement(
     assert "def next_work():" in anchors[0]["content"]
 
 
+def test_model_api_failure_is_logged_and_raised(tmp_path: Path) -> None:
+    session = _session(tmp_path)
+
+    class FailingCompletions:
+        @staticmethod
+        def create(**kwargs):
+            raise TimeoutError("simulated API timeout")
+
+    class FailingChat:
+        completions = FailingCompletions()
+
+    class FailingClient:
+        chat = FailingChat()
+
+    session.client = FailingClient()
+    session.project_context = {"task": "test"}
+
+    with pytest.raises(RepositoryAgentError, match="model request failed"):
+        session._call_model()
+
+    trace = json.loads(
+        (tmp_path / "run" / "response.jsonl").read_text(encoding="utf-8").strip()
+    )
+    assert trace["status"] == "api_error"
+    assert trace["error_type"] == "TimeoutError"
+
+
 def test_read_files_returns_subset_that_fits_budget(tmp_path: Path) -> None:
     (tmp_path / "one.py").write_text("a" * 30, encoding="utf-8")
     (tmp_path / "two.py").write_text("b" * 30, encoding="utf-8")

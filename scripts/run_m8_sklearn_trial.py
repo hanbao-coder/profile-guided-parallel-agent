@@ -190,7 +190,13 @@ def _project_context(task: str, group: str) -> dict[str, object]:
             "Use only dependencies already present in scikit-learn.",
             "The Agent cannot inspect the public expert patch.",
             "A result counts only after project tests, output comparison and paired timing.",
+            "Model requests use a 120-second timeout with at most one SDK retry.",
         ],
+        "api_execution_policy": {
+            "timeout_seconds": 120,
+            "sdk_max_retries": 1,
+            "infrastructure_failures_excluded": True,
+        },
     }
     if group in {"b2_location", "b3_boundary"}:
         context["candidate_region"] = spec["candidate_region"]

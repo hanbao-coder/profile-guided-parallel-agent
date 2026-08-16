@@ -400,6 +400,8 @@ class RepositoryAgentConfig:
     minimum_speedup: float = 1.05
     max_anchored_edit_span: int = 120
     parallelism_mode: str = "introduce"
+    api_timeout_seconds: float = 120.0
+    api_max_retries: int = 1
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -585,7 +587,12 @@ class RepositoryAgentSession:
         self.root = config.repository_root.resolve()
         self.run_dir = config.run_dir.resolve()
         self.run_dir.mkdir(parents=True, exist_ok=True)
-        self.client = OpenAI(api_key=config.api_key, base_url=config.base_url)
+        self.client = OpenAI(
+            api_key=config.api_key,
+            base_url=config.base_url,
+            timeout=config.api_timeout_seconds,
+            max_retries=config.api_max_retries,
+        )
         self.traces: list[dict[str, Any]] = []
         self.edit_rounds = 0
         self.exploration_actions = 0
@@ -863,20 +870,39 @@ Rules:
                 + json.dumps(working_memory, ensure_ascii=False),
             },
         ]
-        response = self.client.chat.completions.create(
-            model=model,
-            messages=messages,
-            response_format={"type": "json_object"},
-            temperature=0,
-            max_tokens=6_000,
-            stream=False,
-            extra_body={
-                "thinking": {
-                    "type": "enabled" if thinking_enabled else "disabled"
+        try:
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=0,
+                max_tokens=6_000,
+                stream=False,
+                extra_body={
+                    "thinking": {
+                        "type": "enabled" if thinking_enabled else "disabled"
+                    },
+                    "reasoning_effort": "high" if thinking_enabled else "low",
                 },
-                "reasoning_effort": "high" if thinking_enabled else "low",
-            },
-        )
+            )
+        except Exception as exc:
+            elapsed = time.perf_counter() - started
+            trace = {
+                "turn": len(self.traces) + 1,
+                "model": model,
+                "elapsed_seconds": elapsed,
+                "thinking_enabled": thinking_enabled,
+                "status": "api_error",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            }
+            self.traces.append(trace)
+            with (self.run_dir / "response.jsonl").open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(trace, ensure_ascii=False) + "\n")
+            raise RepositoryAgentError(
+                f"model request failed after {elapsed:.1f}s: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
         elapsed = time.perf_counter() - started
         content = response.choices[0].message.content or ""
         usage = getattr(response, "usage", None)

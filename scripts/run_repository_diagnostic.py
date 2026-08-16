@@ -406,7 +406,27 @@ def main() -> int:
         parallelism_mode=args.parallelism_mode,
     )
     agent_session = RepositoryAgentSession(config)
-    agent_result = agent_session.run(context)
+    try:
+        agent_result = agent_session.run(context)
+    except Exception as exc:
+        _write_json(
+            run_dir / "outcome.json",
+            {
+                "schema_version": 1,
+                "project": args.project,
+                "status": "agent_infrastructure_failure",
+                "elapsed_seconds": time.perf_counter() - started,
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+                "baseline": baseline,
+                "excluded_from_research_metrics": True,
+                "exclusion_reason": (
+                    "The model/API execution did not produce a completed Agent "
+                    "trial; this is not counted as a parallelization failure."
+                ),
+            },
+        )
+        return 3
     final_test = run_controlled(test_command)
     patch = subprocess.run(
         ["git", "diff", "--binary"],
