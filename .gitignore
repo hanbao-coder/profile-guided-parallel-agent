@@ -7,9 +7,8 @@ work/
 work-pip-install*.log
 .conda-pkgs/
 generated/
-results/raw/
-results/tables/
-results/figures/
+results/
+~$*.docx
 *.egg-info/
 build/
 dist/
