@@ -5,31 +5,19 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "profile-guided-parallel-agent"
 version = "0.27.0"
-description = "A verified boundary-delta agent for project-level parallel performance patches."
+description = "A verified Worker-boundary delta agent for repository-level parallel performance patches."
 requires-python = ">=3.10,<3.13"
 dependencies = [
   "numpy>=1.26",
-  "psutil>=5.9",
+  "pandas>=2.2",
   "PyYAML>=6.0",
-  "jsonschema>=4.20",
-  "matplotlib>=3.9",
   "openai>=1.68",
   "python-dotenv>=1.0",
-  "ray>=2.40",
+  "scikit-learn>=1.5",
 ]
-
-[project.optional-dependencies]
-dev = ["pytest>=8.0"]
-
-[project.scripts]
-parallel-agent = "parallel_agent.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--basetemp=work/pytest -p no:cacheprovider"

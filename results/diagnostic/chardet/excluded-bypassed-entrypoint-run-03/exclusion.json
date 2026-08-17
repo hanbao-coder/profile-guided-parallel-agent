@@ -1,4 +1,0 @@
-{
-  "status": "excluded_workload_adapter_error",
-  "reason": "The registered workload called chardet.detect directly and bypassed the public chardet.cli.main path modified by the Agent. Its output mismatch and apparent speedup therefore cannot be attributed to the patch. The adapter was corrected and the serial CLI baseline was rebuilt before restarting formal runs."
-}

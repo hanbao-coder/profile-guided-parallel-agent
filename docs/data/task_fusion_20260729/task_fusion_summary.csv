@@ -1,7 +1,0 @@
-﻿workload,strategy,actual_strategy,fanout,correct,runtime_median_seconds,speedup_over_unfused,task_count,intermediate_transfer_bytes,profile_intermediate_bytes,profile_producer_seconds,profile_serialization_seconds,decision_reason
-large_intermediate_chain,unfused,unfused,1,True,0.10085819999949308,1.0,16,8388896,1048612,0.0002913000025728252,0.0003981000008934643,
-large_intermediate_chain,fixed_fused,fused,1,True,0.004258099997969111,23.68619808073956,8,0,1048612,0.0002913000025728252,0.0003981000008934643,
-large_intermediate_chain,aware,fused,1,True,0.004579500000545522,22.02384539523498,8,0,1048612,0.0002913000025728252,0.0003981000008934643,"The intermediate has one consumer, so fusion removes materialization without duplicating producer computation."
-shared_heavy_fanout,unfused,unfused,2,True,0.6327129999990575,1.0,24,50412,4202,0.43533730000126525,0.0001033000007737428,
-shared_heavy_fanout,fixed_fused,fused,2,True,1.160094200000458,0.5453979513032715,16,0,4202,0.43533730000126525,0.0001033000007737428,
-shared_heavy_fanout,aware,unfused,2,True,0.5651969999998983,1.1194556942078098,24,50412,4202,0.43533730000126525,0.0001033000007737428,The intermediate is reused by multiple consumers and producer duplication costs more than the serialization proxy.

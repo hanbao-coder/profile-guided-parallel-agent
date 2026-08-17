@@ -1,4 +1,0 @@
-﻿project,run,primary_outcome,speedup,paired_serial_median_seconds,parallel_constructs,feedback_rounds,accepted_quick_speedup,formal_minus_quick_speedup,turns,edit_rounds,patch_nonempty,model_calls,model_tokens
-radon,run-01,non_parallel_candidate,1.1098857195981953,,,3,1.0968734527805604,0.013012266817634899,12,3,True,12,144713
-radon,run-02,effective_parallelization,1.110544053110762,,concurrent.futures;ProcessPoolExecutor;multiprocessing;executor.submit,1,1.1338345302204238,-0.02329047710966181,8,1,True,8,93918
-radon,run-03,safe_serial_fallback,,,,3,,,13,3,False,12,148299

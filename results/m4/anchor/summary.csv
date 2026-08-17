@@ -1,4 +1,0 @@
-﻿project,run,primary_outcome,speedup,feedback_rounds,accepted_quick_speedup,formal_minus_quick_speedup,turns,edit_rounds,patch_nonempty,model_calls,model_tokens
-radon,run-01,correctness_failure,,0,,,12,2,True,12,144575
-radon,run-02,patch_application_failure,,0,,,12,0,False,12,123856
-radon,run-03,correctness_failure,,0,,,12,2,True,12,136609

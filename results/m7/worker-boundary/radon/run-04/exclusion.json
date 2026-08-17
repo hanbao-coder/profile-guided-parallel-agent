@@ -1,4 +1,0 @@
-{
-  "status": "excluded_external_service_balance",
-  "reason": "The corrected replacement run completed its serial baseline but the first DeepSeek request returned HTTP 402 Insufficient Balance. No model action or candidate edit was produced. This is an external service interruption and a new replacement run is required after API access is restored."
-}

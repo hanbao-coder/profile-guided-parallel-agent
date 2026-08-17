@@ -1,4 +1,0 @@
-﻿project,run,primary_outcome,speedup,feedback_rounds,accepted_quick_speedup,formal_minus_quick_speedup,turns,edit_rounds,patch_nonempty,model_calls,model_tokens
-radon,run-01,end_to_end_performance_regression,0.9454077321485287,2,1.1412421964137178,-0.19583446426518913,11,2,True,11,128763
-radon,run-02,safe_serial_fallback,,3,,,13,3,False,12,136131
-radon,run-03,safe_serial_fallback,,3,,,13,3,False,12,138393

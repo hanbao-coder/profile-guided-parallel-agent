@@ -1,4 +1,0 @@
-{
-  "status": "excluded_worker_boundary_classifier_bug",
-  "reason": "The first and third edited candidates had Python syntax errors, but the initial worker-boundary implementation grouped syntax findings under worker_boundary_failure and returned an irrelevant state-minimization repair instruction. This violates the preregistered mechanism. The raw run is preserved and a corrected replacement run is required."
-}

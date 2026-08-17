@@ -1,3 +1,3 @@
-"""Profile-guided Python-to-Ray parallelization research prototype."""
+"""Verified Worker-boundary delta research prototype."""
 
 __version__ = "0.27.0"

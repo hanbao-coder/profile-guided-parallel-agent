@@ -1,9 +1,0 @@
-{
-  "workloads": 2,
-  "repeats": 5,
-  "all_correct": true,
-  "aware_choices": {
-    "large_intermediate_chain": "fused",
-    "shared_heavy_fanout": "unfused"
-  }
-}
